@@ -70,6 +70,35 @@ import WarehouseList from './pages/warehouses/WarehouseList';
 import GeneralSetting from './pages/settings/GeneralSetting';
 import PermissionSetting from './pages/settings/PermissionSetting';
 
+// POS Billing
+import NewSale from './pages/pos-billing/NewSale';
+import ScanBarcode from './pages/pos-billing/ScanBarcode';
+import AddProductToCart from './pages/pos-billing/AddProduct';
+import ApplyDiscount from './pages/pos-billing/ApplyDiscount';
+import ApplyTax from './pages/pos-billing/ApplyTax';
+import SelectCustomer from './pages/pos-billing/SelectCustomer';
+import PaymentMethods from './pages/pos-billing/PaymentMethods';
+import PrintInvoice from './pages/pos-billing/PrintInvoice';
+import HoldInvoice from './pages/pos-billing/HoldInvoice';
+import ReturnRefund from './pages/pos-billing/ReturnRefund';
+import ReprintInvoice from './pages/pos-billing/ReprintInvoice';
+
+// Inventory
+import StockView from './pages/inventory/StockView';
+import LowStockAlert from './pages/inventory/LowStockAlert';
+import StockAdjustment from './pages/inventory/StockAdjustment';
+import WarehouseStock from './pages/inventory/WarehouseStock';
+import TransferStock from './pages/inventory/TransferStock';
+import BarcodeScanCheck from './pages/inventory/BarcodeScanCheck';
+
+// SMS
+import SendCustomer from './pages/sms/SendCustomer';
+import BulkSMS from './pages/sms/Bulk';
+import InvoiceSMS from './pages/sms/Invoice';
+import PromotionSMS from './pages/sms/Promotion';
+import DuePaymentReminder from './pages/sms/DuePaymentReminder';
+import CustomMessage from './pages/sms/CustomMessage';
+
 function App() {
   const { isAuthenticated } = useAuth();
 
@@ -86,6 +115,19 @@ function App() {
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
 
+        {/* POS Billing */}
+        <Route path="pos-billing/new-sale" element={<NewSale />} />
+        <Route path="pos-billing/scan-barcode" element={<ScanBarcode />} />
+        <Route path="pos-billing/add-product" element={<AddProductToCart />} />
+        <Route path="pos-billing/apply-discount" element={<ApplyDiscount />} />
+        <Route path="pos-billing/apply-tax" element={<ApplyTax />} />
+        <Route path="pos-billing/select-customer" element={<SelectCustomer />} />
+        <Route path="pos-billing/payment-methods" element={<PaymentMethods />} />
+        <Route path="pos-billing/print-invoice" element={<PrintInvoice />} />
+        <Route path="pos-billing/hold-invoice" element={<HoldInvoice />} />
+        <Route path="pos-billing/return-refund" element={<ReturnRefund />} />
+        <Route path="pos-billing/reprint-invoice" element={<ReprintInvoice />} />
+
         {/* Products */}
         <Route path="products/add" element={<AddProduct />} />
         <Route path="products/list" element={<ProductList />} />
@@ -96,6 +138,14 @@ function App() {
         {/* Trading */}
         <Route path="trading/sales" element={<Sales />} />
         <Route path="trading/purchase" element={<Purchase />} />
+
+        {/* Inventory */}
+        <Route path="inventory/stock-view" element={<StockView />} />
+        <Route path="inventory/low-stock-alert" element={<LowStockAlert />} />
+        <Route path="inventory/stock-adjustment" element={<StockAdjustment />} />
+        <Route path="inventory/warehouse-stock" element={<WarehouseStock />} />
+        <Route path="inventory/transfer-stock" element={<TransferStock />} />
+        <Route path="inventory/barcode-scan-check" element={<BarcodeScanCheck />} />
 
         {/* Expense */}
         <Route path="expense/add" element={<AddExpense />} />
@@ -140,6 +190,14 @@ function App() {
         {/* Warehouses */}
         <Route path="warehouses/add" element={<AddWarehouse />} />
         <Route path="warehouses/list" element={<WarehouseList />} />
+
+        {/* SMS */}
+        <Route path="sms/send-customer" element={<SendCustomer />} />
+        <Route path="sms/bulk" element={<BulkSMS />} />
+        <Route path="sms/invoice" element={<InvoiceSMS />} />
+        <Route path="sms/promotion" element={<PromotionSMS />} />
+        <Route path="sms/due-payment-reminder" element={<DuePaymentReminder />} />
+        <Route path="sms/custom-message" element={<CustomMessage />} />
 
         {/* Settings */}
         <Route path="settings/general" element={<GeneralSetting />} />

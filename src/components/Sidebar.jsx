@@ -27,7 +27,19 @@ import {
   UserPlus,
   ShieldCheck,
   FolderPlus,
-  BarChart3
+  BarChart3,
+  ScanLine,
+  Percent,
+  ShoppingCart,
+  Printer,
+  Pause,
+  RotateCcw,
+  PackageSearch,
+  AlertTriangle,
+  ArrowLeftRight,
+  MessageSquare,
+  Send,
+  Mail
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +49,24 @@ const menuItems = [
     to: '/dashboard',
     icon: LayoutDashboard,
     label: 'Dashboard',
+  },
+  {
+    type: 'menu',
+    icon: ShoppingCart,
+    label: 'POS Billing',
+    children: [
+      { to: '/pos-billing/new-sale', label: 'New Sale (POS Screen)', icon: ShoppingCart },
+      { to: '/pos-billing/scan-barcode', label: 'Scan Barcode', icon: ScanLine },
+      { to: '/pos-billing/add-product', label: 'Add Product to Cart', icon: Plus },
+      { to: '/pos-billing/apply-discount', label: 'Apply Discount', icon: Percent },
+      { to: '/pos-billing/apply-tax', label: 'Apply Tax', icon: Receipt },
+      { to: '/pos-billing/select-customer', label: 'Select Customer', icon: Users },
+      { to: '/pos-billing/payment-methods', label: 'Payment Methods (Cash / Card / QR)', icon: CreditCard },
+      { to: '/pos-billing/print-invoice', label: 'Print Invoice', icon: Printer },
+      { to: '/pos-billing/hold-invoice', label: 'Hold Invoice', icon: Pause },
+      { to: '/pos-billing/return-refund', label: 'Return / Refund', icon: RotateCcw },
+      { to: '/pos-billing/reprint-invoice', label: 'Reprint Invoice', icon: Printer },
+    ],
   },
   {
     type: 'menu',
@@ -57,6 +87,19 @@ const menuItems = [
     children: [
       { to: '/trading/sales', label: 'Sales', icon: ShoppingBag },
       { to: '/trading/purchase', label: 'Purchase', icon: Receipt },
+    ],
+  },
+  {
+    type: 'menu',
+    icon: PackageSearch,
+    label: 'Inventory',
+    children: [
+      { to: '/inventory/stock-view', label: 'Product Stock View', icon: Package },
+      { to: '/inventory/low-stock-alert', label: 'Low Stock Alert', icon: AlertTriangle },
+      { to: '/inventory/stock-adjustment', label: 'Stock Adjustment', icon: Settings },
+      { to: '/inventory/warehouse-stock', label: 'Warehouse-wise Stock', icon: Warehouse },
+      { to: '/inventory/transfer-stock', label: 'Transfer Stock (Warehouse → Shop)', icon: ArrowLeftRight },
+      { to: '/inventory/barcode-scan-check', label: 'Barcode Scan Stock Check', icon: ScanLine },
     ],
   },
   {
@@ -105,7 +148,7 @@ const menuItems = [
   {
     type: 'menu',
     icon: UserCog,
-    label: 'User Management',
+    label: 'User Manage',
     children: [
       { to: '/users/add', label: 'Add User', icon: UserPlus },
       { to: '/users/list', label: 'User List', icon: List },
@@ -148,6 +191,19 @@ const menuItems = [
     children: [
       { to: '/warehouses/add', label: 'Add Warehouse', icon: Plus },
       { to: '/warehouses/list', label: 'Warehouse List', icon: List },
+    ],
+  },
+  {
+    type: 'menu',
+    icon: MessageSquare,
+    label: 'SMS',
+    children: [
+      { to: '/sms/send-customer', label: 'Send SMS to Customer', icon: Send },
+      { to: '/sms/bulk', label: 'Bulk SMS', icon: Mail },
+      { to: '/sms/invoice', label: 'Invoice SMS', icon: Receipt },
+      { to: '/sms/promotion', label: 'Promotion SMS', icon: Tag },
+      { to: '/sms/due-payment-reminder', label: 'Due Payment Reminder', icon: AlertTriangle },
+      { to: '/sms/custom-message', label: 'Custom Message', icon: MessageSquare },
     ],
   },
   {
@@ -313,9 +369,9 @@ const Sidebar = ({ isOpen, onClose }) => {
           {/* Logo */}
           <div className="flex items-center justify-between p-6 border-b border-secondary">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center overflow-hidden">
-                <svg className="w-5 h-5 text-white" viewBox="0 0 814 1000" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path fill="white" d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76.5 0-103.7 40.8-165.9 40.8s-105.6-57-155.5-127C46.7 790.7 0 663 0 541.8c0-194.4 126.4-297.5 250.8-297.5 66.1 0 121.2 43.4 162.7 43.4 39.5 0 101.1-46 176.3-46 28.5 0 130.9 2.6 198.3 99.2zm-234-181.5c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z"/>
+              <div className="w-8 h-8 flex items-center justify-center">
+                <svg className="w-5 h-5" viewBox="0 0 814 1000" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path fill="currentColor" className="text-foreground" d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76.5 0-103.7 40.8-165.9 40.8s-105.6-57-155.5-127C46.7 790.7 0 663 0 541.8c0-194.4 126.4-297.5 250.8-297.5 66.1 0 121.2 43.4 162.7 43.4 39.5 0 101.1-46 176.3-46 28.5 0 130.9 2.6 198.3 99.2zm-234-181.5c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z"/>
                 </svg>
               </div>
               <span className="text-xl font-bold text-foreground">iphone center.lk</span>
