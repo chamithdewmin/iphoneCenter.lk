@@ -18,22 +18,24 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
 
-  const addToCart = (car, quantity = 1, selectedColor = null) => {
-    const existingItem = cart.find(item => item.id === car.id && item.selectedColor === selectedColor);
+  const addToCart = (product, quantity = 1, selectedColor = null) => {
+    const existingItem = cart.find(item => item.id === product.id && item.selectedColor === selectedColor);
+    const brand = product.brand || product.make || '';
+    const model = product.model || '';
     
     if (existingItem) {
       setCart(cart.map(item =>
-        item.id === car.id && item.selectedColor === selectedColor
+        item.id === product.id && item.selectedColor === selectedColor
           ? { ...item, quantity: item.quantity + quantity }
           : item
       ));
     } else {
-      setCart([...cart, { ...car, quantity, selectedColor: selectedColor || car.colors[0] }]);
+      setCart([...cart, { ...product, quantity, selectedColor: selectedColor || product.colors?.[0] || 'default' }]);
     }
 
     toast({
       title: "Added to cart",
-      description: `${car.make} ${car.model} added successfully`,
+      description: `${brand} ${model} added successfully`,
     });
   };
 
@@ -61,8 +63,9 @@ export const CartProvider = ({ children }) => {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
 
-  const getTax = () => {
-    return getTotal() * 0.1; // 10% tax
+  const getTax = (subtotal = null) => {
+    const baseAmount = subtotal !== null ? subtotal : getTotal();
+    return baseAmount * 0.1; // 10% tax
   };
 
   const getGrandTotal = () => {

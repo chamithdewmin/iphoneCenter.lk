@@ -55,7 +55,7 @@ const menuItems = [
     icon: ShoppingCart,
     label: 'POS Billing',
     children: [
-      { to: '/pos-billing/new-sale', label: 'New Sale (POS Screen)', icon: ShoppingCart },
+      { to: '/pos-billing/new-sale', label: 'New Sale', icon: ShoppingCart },
       { to: '/pos-billing/scan-barcode', label: 'Scan Barcode', icon: ScanLine },
       { to: '/pos-billing/add-product', label: 'Add Product to Cart', icon: Plus },
       { to: '/pos-billing/apply-discount', label: 'Apply Discount', icon: Percent },
