@@ -11,13 +11,24 @@ export const AuthProvider = ({ children }) => {
     if (authData) {
       const { isAuthenticated: auth, user: userData } = JSON.parse(authData);
       setIsAuthenticated(auth);
+      // Ensure role is set for existing sessions
+      if (userData && !userData.role) {
+        userData.role = userData.email === 'user@gmail.com' ? 'cashier' : 'admin';
+      }
       setUser(userData);
     }
   }, []);
 
   const login = (email, password) => {
     if (email === 'admin@gmail.com' && password === 'admin123') {
-      const userData = { id: 1, email: 'admin@gmail.com', name: 'Admin' };
+      const userData = { id: 1, email: 'admin@gmail.com', name: 'Admin', role: 'admin' };
+      setIsAuthenticated(true);
+      setUser(userData);
+      localStorage.setItem('auth', JSON.stringify({ isAuthenticated: true, user: userData }));
+      return { success: true };
+    }
+    if (email === 'user@gmail.com' && password === 'user123') {
+      const userData = { id: 2, email: 'user@gmail.com', name: 'Cashier', role: 'cashier' };
       setIsAuthenticated(true);
       setUser(userData);
       localStorage.setItem('auth', JSON.stringify({ isAuthenticated: true, user: userData }));

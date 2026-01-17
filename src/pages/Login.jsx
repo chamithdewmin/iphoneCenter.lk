@@ -103,7 +103,8 @@ const Login = () => {
             {/* Demo credentials */}
             <div className="text-center text-sm text-muted-foreground">
               <p>Demo credentials:</p>
-              <p className="font-mono">admin@gmail.com / admin123</p>
+              <p className="font-mono">Admin: admin@gmail.com / admin123</p>
+              <p className="font-mono">Cashier: user@gmail.com / user123</p>
             </div>
           </div>
         </motion.div>

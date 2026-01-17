@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   LayoutDashboard, 
   Package,
@@ -42,6 +43,7 @@ import {
   Mail
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CASHIER_ALLOWED_PATHS } from '@/constants/cashierPaths';
 
 const menuItems = [
   {
@@ -55,6 +57,7 @@ const menuItems = [
     icon: Receipt,
     label: 'Invoice',
     children: [
+      { to: '/pos-billing/new-sale', label: 'New Sale', icon: ShoppingCart },
       { to: '/pos-billing/print-invoice', label: 'Print Invoice', icon: Printer },
       { to: '/pos-billing/hold-invoice', label: 'Hold Invoice', icon: Pause },
       { to: '/pos-billing/return-refund', label: 'Return / Refund', icon: RotateCcw },
@@ -216,6 +219,31 @@ const menuItems = [
   },
 ];
 
+function filterMenuForCashier(items) {
+  return items.reduce((acc, item) => {
+    if (item.type === 'link') {
+      if (item.to && CASHIER_ALLOWED_PATHS.has(item.to)) acc.push(item);
+      return acc;
+    }
+    if (item.type === 'menu' || item.type === 'submenu') {
+      const filteredChildren = (item.children || []).reduce((acc2, child) => {
+        if (child.type === 'submenu') {
+          const filteredSub = (child.children || []).filter(sc => sc.to && CASHIER_ALLOWED_PATHS.has(sc.to));
+          if (filteredSub.length === 0) return acc2;
+          acc2.push({ ...child, children: filteredSub });
+          return acc2;
+        }
+        if (child.to && CASHIER_ALLOWED_PATHS.has(child.to)) acc2.push(child);
+        return acc2;
+      }, []);
+      if (filteredChildren.length > 0) acc.push({ ...item, children: filteredChildren });
+      return acc;
+    }
+    if (item.to && CASHIER_ALLOWED_PATHS.has(item.to)) acc.push(item);
+    return acc;
+  }, []);
+}
+
 const MenuItem = ({ item, onClose, level = 0, parentPath = '' }) => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
@@ -342,6 +370,12 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '' }) => {
 };
 
 const Sidebar = ({ isOpen, onClose }) => {
+  const { user } = useAuth();
+  const displayItems = useMemo(
+    () => (user?.role === 'cashier' ? filterMenuForCashier(menuItems) : menuItems),
+    [user?.role]
+  );
+
   return (
     <>
       {/* Mobile overlay */}
@@ -385,7 +419,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto sidebar-scroll">
-            {menuItems.map((item, idx) => (
+            {displayItems.map((item, idx) => (
               <MenuItem key={idx} item={item} onClose={onClose} />
             ))}
           </nav>
