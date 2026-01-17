@@ -1,20 +1,230 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
+import { motion } from 'framer-motion';
+import { Save, Building2, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { getStorageData, setStorageData } from '@/utils/storage';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/use-toast';
 
 const AddSupplier = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    postalCode: '',
+    contactPerson: '',
+    notes: '',
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (!formData.name || !formData.phone) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in at least name and phone number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const suppliers = getStorageData('suppliers', []);
+    const newSupplier = {
+      id: `SUP-${Date.now()}`,
+      name: formData.name,
+      email: formData.email || '',
+      phone: formData.phone,
+      address: formData.address || '',
+      city: formData.city || '',
+      postalCode: formData.postalCode || '',
+      contactPerson: formData.contactPerson || '',
+      notes: formData.notes || '',
+      createdAt: new Date().toISOString(),
+    };
+
+    const updatedSuppliers = [...suppliers, newSupplier];
+    setStorageData('suppliers', updatedSuppliers);
+
+    toast({
+      title: "Supplier Added",
+      description: `${newSupplier.name} has been added successfully`,
+    });
+
+    navigate('/people/suppliers/list');
+  };
+
   return (
     <>
       <Helmet>
         <title>Add Supplier - iphone center.lk</title>
+        <meta name="description" content="Add a new supplier" />
       </Helmet>
-      <div className="space-y-6">
+
+      <div className="space-y-6 max-w-4xl">
+        {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold">Add Supplier</h1>
-          <p className="text-muted-foreground">Add a new supplier</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            Add Supplier
+          </h1>
+          <p className="text-muted-foreground mt-1">Add a new supplier to your database</p>
         </div>
-        <div className="bg-card rounded-lg p-6 border border-secondary">
-          <p className="text-muted-foreground">Supplier form coming soon...</p>
-        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit}>
+          <div className="bg-card rounded-xl border border-secondary shadow-sm">
+            <div className="p-6 space-y-6">
+              {/* Company Information */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Building2 className="w-5 h-5 text-primary" />
+                  <h2 className="text-xl font-semibold">Company Information</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="name">Company Name *</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="Supplier company name"
+                      className="mt-1"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="contactPerson">Contact Person</Label>
+                    <Input
+                      id="contactPerson"
+                      name="contactPerson"
+                      value={formData.contactPerson}
+                      onChange={handleChange}
+                      placeholder="Contact person name"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      placeholder="0771234567"
+                      className="mt-1"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="supplier@example.com"
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Address Information */}
+              <div className="border-t border-secondary pt-6">
+                <h2 className="text-xl font-semibold mb-4">Address Information</h2>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="address">Street Address</Label>
+                    <Input
+                      id="address"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleChange}
+                      placeholder="123 Main Street"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="city">City</Label>
+                      <Input
+                        id="city"
+                        name="city"
+                        value={formData.city}
+                        onChange={handleChange}
+                        placeholder="Colombo"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="postalCode">Postal Code</Label>
+                      <Input
+                        id="postalCode"
+                        name="postalCode"
+                        value={formData.postalCode}
+                        onChange={handleChange}
+                        placeholder="00100"
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Notes */}
+              <div className="border-t border-secondary pt-6">
+                <h2 className="text-xl font-semibold mb-4">Additional Notes</h2>
+                <div>
+                  <Label htmlFor="notes">Notes</Label>
+                  <textarea
+                    id="notes"
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    placeholder="Any additional information about this supplier..."
+                    rows="4"
+                    className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Form Actions */}
+            <div className="border-t border-secondary p-6 bg-secondary/30">
+              <div className="flex items-center justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate('/people/suppliers/list')}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Supplier
+                </Button>
+              </div>
+            </div>
+          </div>
+        </form>
       </div>
     </>
   );

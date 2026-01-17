@@ -52,20 +52,31 @@ const menuItems = [
   },
   {
     type: 'menu',
-    icon: ShoppingCart,
-    label: 'POS Billing',
+    icon: Receipt,
+    label: 'Invoice',
     children: [
-      { to: '/pos-billing/new-sale', label: 'New Sale', icon: ShoppingCart },
-      { to: '/pos-billing/scan-barcode', label: 'Scan Barcode', icon: ScanLine },
-      { to: '/pos-billing/add-product', label: 'Add Product to Cart', icon: Plus },
-      { to: '/pos-billing/apply-discount', label: 'Apply Discount', icon: Percent },
-      { to: '/pos-billing/apply-tax', label: 'Apply Tax', icon: Receipt },
-      { to: '/pos-billing/select-customer', label: 'Select Customer', icon: Users },
-      { to: '/pos-billing/payment-methods', label: 'Payment Methods (Cash / Card / QR)', icon: CreditCard },
       { to: '/pos-billing/print-invoice', label: 'Print Invoice', icon: Printer },
       { to: '/pos-billing/hold-invoice', label: 'Hold Invoice', icon: Pause },
       { to: '/pos-billing/return-refund', label: 'Return / Refund', icon: RotateCcw },
       { to: '/pos-billing/reprint-invoice', label: 'Reprint Invoice', icon: Printer },
+    ],
+  },
+  {
+    type: 'menu',
+    icon: FileText,
+    label: 'Orders',
+    children: [
+      { to: '/per-order/add', label: 'Add Per Order', icon: Plus },
+      { to: '/per-order/list', label: 'List Per Order', icon: List },
+    ],
+  },
+  {
+    type: 'menu',
+    icon: ArrowRightLeft,
+    label: 'Trading',
+    children: [
+      { to: '/trading/sales', label: 'Sales', icon: ShoppingBag },
+      { to: '/trading/purchase', label: 'Purchase', icon: Receipt },
     ],
   },
   {
@@ -82,15 +93,6 @@ const menuItems = [
   },
   {
     type: 'menu',
-    icon: ArrowRightLeft,
-    label: 'Trading',
-    children: [
-      { to: '/trading/sales', label: 'Sales', icon: ShoppingBag },
-      { to: '/trading/purchase', label: 'Purchase', icon: Receipt },
-    ],
-  },
-  {
-    type: 'menu',
     icon: PackageSearch,
     label: 'Inventory',
     children: [
@@ -99,7 +101,15 @@ const menuItems = [
       { to: '/inventory/stock-adjustment', label: 'Stock Adjustment', icon: Settings },
       { to: '/inventory/warehouse-stock', label: 'Warehouse-wise Stock', icon: Warehouse },
       { to: '/inventory/transfer-stock', label: 'Transfer Stock (Warehouse → Shop)', icon: ArrowLeftRight },
-      { to: '/inventory/barcode-scan-check', label: 'Barcode Scan Stock Check', icon: ScanLine },
+    ],
+  },
+  {
+    type: 'menu',
+    icon: Warehouse,
+    label: 'Warehouses',
+    children: [
+      { to: '/warehouses/add', label: 'Add Warehouse', icon: Plus },
+      { to: '/warehouses/list', label: 'Warehouse List', icon: List },
     ],
   },
   {
@@ -147,16 +157,6 @@ const menuItems = [
   },
   {
     type: 'menu',
-    icon: UserCog,
-    label: 'User Manage',
-    children: [
-      { to: '/users/add', label: 'Add User', icon: UserPlus },
-      { to: '/users/list', label: 'User List', icon: List },
-      { to: '/users/roles', label: 'Roles', icon: ShieldCheck },
-    ],
-  },
-  {
-    type: 'menu',
     icon: FolderTree,
     label: 'Categories',
     children: [
@@ -180,17 +180,6 @@ const menuItems = [
       { to: '/reports/warehouse', label: 'Warehouse Report', icon: FileText },
       { to: '/reports/supplier', label: 'Supplier Report', icon: FileText },
       { to: '/reports/discount', label: 'Discount Report', icon: FileText },
-      { to: '/reports/tax', label: 'Tax Report', icon: FileText },
-      { to: '/reports/shipping', label: 'Shipping Charge Report', icon: FileText },
-    ],
-  },
-  {
-    type: 'menu',
-    icon: Warehouse,
-    label: 'Warehouses',
-    children: [
-      { to: '/warehouses/add', label: 'Add Warehouse', icon: Plus },
-      { to: '/warehouses/list', label: 'Warehouse List', icon: List },
     ],
   },
   {
@@ -204,6 +193,16 @@ const menuItems = [
       { to: '/sms/promotion', label: 'Promotion SMS', icon: Tag },
       { to: '/sms/due-payment-reminder', label: 'Due Payment Reminder', icon: AlertTriangle },
       { to: '/sms/custom-message', label: 'Custom Message', icon: MessageSquare },
+    ],
+  },
+  {
+    type: 'menu',
+    icon: UserCog,
+    label: 'User Manage',
+    children: [
+      { to: '/users/add', label: 'Add User', icon: UserPlus },
+      { to: '/users/list', label: 'User List', icon: List },
+      { to: '/users/roles', label: 'Roles', icon: ShieldCheck },
     ],
   },
   {

@@ -21,6 +21,7 @@ import GenerateBarcode from './pages/products/GenerateBarcode';
 // Trading
 import Sales from './pages/trading/Sales';
 import Purchase from './pages/trading/Purchase';
+import AddPurchase from './pages/trading/AddPurchase';
 
 // Expense
 import AddExpense from './pages/expense/AddExpense';
@@ -99,6 +100,10 @@ import PromotionSMS from './pages/sms/Promotion';
 import DuePaymentReminder from './pages/sms/DuePaymentReminder';
 import CustomMessage from './pages/sms/CustomMessage';
 
+// Per Order
+import AddPerOrder from './pages/per-order/AddPerOrder';
+import ListPerOrder from './pages/per-order/ListPerOrder';
+
 function App() {
   const { isAuthenticated } = useAuth();
 
@@ -138,6 +143,7 @@ function App() {
         {/* Trading */}
         <Route path="trading/sales" element={<Sales />} />
         <Route path="trading/purchase" element={<Purchase />} />
+        <Route path="trading/purchase/add" element={<AddPurchase />} />
 
         {/* Inventory */}
         <Route path="inventory/stock-view" element={<StockView />} />
@@ -202,6 +208,10 @@ function App() {
         {/* Settings */}
         <Route path="settings/general" element={<GeneralSetting />} />
         <Route path="settings/permission" element={<PermissionSetting />} />
+
+        {/* Per Order */}
+        <Route path="per-order/add" element={<AddPerOrder />} />
+        <Route path="per-order/list" element={<ListPerOrder />} />
       </Route>
     </Routes>
   );

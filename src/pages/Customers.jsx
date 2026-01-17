@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Search, Plus, Eye } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { getStorageData, setStorageData } from '@/utils/storage';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -32,12 +33,6 @@ const Customers = () => {
     }
   }, [searchQuery, customers]);
 
-  const handleAddCustomer = () => {
-    toast({
-      title: "Feature coming soon",
-      description: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀",
-    });
-  };
 
   return (
     <>
@@ -52,10 +47,12 @@ const Customers = () => {
             <h1 className="text-3xl font-bold">Customers</h1>
             <p className="text-muted-foreground">Manage your customer database</p>
           </div>
-          <Button onClick={handleAddCustomer}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Customer
-          </Button>
+          <Link to="/people/customers/add">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Customer
+            </Button>
+          </Link>
         </div>
 
         <div className="relative">

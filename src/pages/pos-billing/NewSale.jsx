@@ -39,11 +39,55 @@ const NewSale = () => {
     }
   }, [searchQuery, products]);
 
+  const [barcodeInput, setBarcodeInput] = useState('');
+  const [showBarcodeInput, setShowBarcodeInput] = useState(false);
+
   const handleBarcodeScan = () => {
-    toast({
-      title: "Barcode Scanner",
-      description: "Barcode scanner feature coming soon...",
-    });
+    setShowBarcodeInput(true);
+    setBarcodeInput('');
+  };
+
+  const handleBarcodeSubmit = (e) => {
+    e.preventDefault();
+    if (!barcodeInput.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a barcode",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const product = products.find(p => 
+      p.barcode === barcodeInput ||
+      p.imei === barcodeInput ||
+      p.vin === barcodeInput ||
+      p.id === barcodeInput
+    );
+
+    if (product) {
+      if ((product.stock || 0) > 0) {
+        addToCart(product, 1);
+        toast({
+          title: "Product Added",
+          description: `${product.model || product.brand} added to cart`,
+        });
+        setBarcodeInput('');
+        setShowBarcodeInput(false);
+      } else {
+        toast({
+          title: "Out of Stock",
+          description: "This product is out of stock",
+          variant: "destructive",
+        });
+      }
+    } else {
+      toast({
+        title: "Product Not Found",
+        description: "No product found with this barcode",
+        variant: "destructive",
+      });
+    }
   };
 
   const calculateDiscountAmount = () => {
@@ -100,6 +144,48 @@ const NewSale = () => {
             {selectedCustomer ? selectedCustomer.name : 'Select Customer'}
           </Button>
         </div>
+
+        {/* Barcode Input Modal */}
+        {showBarcodeInput && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-card rounded-xl border border-secondary shadow-lg max-w-md w-full p-6"
+            >
+              <h3 className="text-xl font-bold mb-4">Enter Barcode</h3>
+              <form onSubmit={handleBarcodeSubmit} className="space-y-4">
+                <div>
+                  <Input
+                    type="text"
+                    value={barcodeInput}
+                    onChange={(e) => setBarcodeInput(e.target.value)}
+                    placeholder="Scan or enter barcode..."
+                    className="h-12 text-lg"
+                    autoFocus
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setShowBarcodeInput(false);
+                      setBarcodeInput('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="flex-1">
+                    <ScanLine className="w-4 h-4 mr-2" />
+                    Search
+                  </Button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
 
         {/* Main Content - Split View */}
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 overflow-hidden">
