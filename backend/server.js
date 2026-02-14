@@ -4,6 +4,16 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+// Log startup errors to stdout so they appear in Docker/Dokploy logs
+process.on('uncaughtException', (err) => {
+    console.error('FATAL uncaughtException:', err.message);
+    console.error(err.stack);
+    process.exit(1);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('FATAL unhandledRejection:', reason);
+});
+
 const { validateEnv } = require('./config/env');
 const logger = require('./utils/logger');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
@@ -128,9 +138,19 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 const HOST = '0.0.0.0';
 
-app.listen(PORT, HOST, () => {
-    logger.info(`🚀 Server running on http://${HOST}:${PORT}`);
+const server = app.listen(PORT, HOST, () => {
+    const msg = `Server running on http://${HOST}:${PORT}`;
+    console.log(msg);
+    logger.info(`🚀 ${msg}`);
     logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+});
+
+server.on('error', (err) => {
+    console.error('Server listen error:', err.message);
+    if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is already in use. Set PORT in env to another value.`);
+    }
+    process.exit(1);
 });
 
 // Graceful shutdown

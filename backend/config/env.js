@@ -7,7 +7,7 @@ function validateEnv() {
     if (missing.length > 0) {
         throw new Error(
             `Missing required environment variables: ${missing.join(', ')}. ` +
-            'Set them in .env or your environment. Use long random strings for production.'
+            'In Dokploy/Docker set these in the app Environment tab (not in a file). Use long random strings.'
         );
     }
     if (process.env.NODE_ENV === 'production') {
