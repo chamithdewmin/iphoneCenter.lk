@@ -71,17 +71,16 @@ app.use((req, res, next) => {
     next();
 });
 
-// Health check endpoint (server only)
-app.get('/health', (req, res) => {
+// Health check handlers (used at both /health and /api/health for proxy compatibility)
+const healthHandler = (req, res) => {
     res.json({
         status: 'ok',
         timestamp: new Date().toISOString(),
         uptime: process.uptime()
     });
-});
+};
 
-// Database health check – use this URL to verify DB is running
-app.get('/health/db', async (req, res) => {
+const healthDbHandler = async (req, res) => {
     try {
         const { pool } = require('./config/database');
         const result = await pool.query('SELECT 1 AS ok');
@@ -99,7 +98,12 @@ app.get('/health/db', async (req, res) => {
             timestamp: new Date().toISOString()
         });
     }
-});
+};
+
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
+app.get('/health/db', healthDbHandler);
+app.get('/api/health/db', healthDbHandler);
 
 // API routes
 app.use('/api/auth', authRoutes);
