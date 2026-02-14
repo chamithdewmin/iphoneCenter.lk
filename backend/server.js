@@ -125,7 +125,7 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Start server – bind to 0.0.0.0 so Docker/proxy can reach the app
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 const HOST = '0.0.0.0';
 
 app.listen(PORT, HOST, () => {

@@ -11,7 +11,7 @@ Load from `backend/.env` (copy from `backend/.env.example`).
 | Variable | Required | Default | Used in | Description |
 |----------|----------|---------|---------|-------------|
 | `NODE_ENV` | No | `development` | server.js, errorHandler, logger, helmet | `production` or `development` |
-| `PORT` | No | `3000` | server.js | HTTP port (use 3001 if frontend uses 3000) |
+| `PORT` | No | `5000` | server.js | HTTP port |
 | `DATABASE_URL` | Yes* | — | config/database.js | Full PostgreSQL URL, e.g. `postgresql://user:pass@host:5432/dbname` |
 | `DB_HOST` | If no DATABASE_URL | — | config/database.js | Database host |
 | `DB_PORT` | No | `5432` | config/database.js | Database port |
