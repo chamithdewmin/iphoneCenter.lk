@@ -13,8 +13,9 @@ COPY package*.json ./
 # Install production dependencies (npm install tolerates outdated lock file; use npm ci if lock is in sync)
 RUN npm install --omit=dev && npm cache clean --force
 
-# Copy application
+# Copy application (must include database/init.pg.sql for auto-create tables)
 COPY . .
+RUN test -f /app/database/init.pg.sql || (echo "ERROR: database/init.pg.sql missing" && exit 1)
 
 # Create logs dir for writable volume if needed
 RUN mkdir -p logs && chown -R nodejs:nodejs /app

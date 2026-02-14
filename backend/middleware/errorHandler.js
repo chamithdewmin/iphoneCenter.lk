@@ -22,11 +22,11 @@ const errorHandler = (err, req, res, next) => {
         console.error('Logger failed:', logErr.message);
     }
 
-    // PostgreSQL: relation/table does not exist (schema not run)
+    // PostgreSQL: relation/table does not exist (tables not created)
     if (err.code === '42P01') {
         return res.status(503).json({
             success: false,
-            message: 'Database schema not applied. Run backend/database/schema.pg.sql on your PostgreSQL database, then restart the app.'
+            message: 'Database tables missing. The backend auto-creates them on startup. Set DATABASE_URL in the backend app, redeploy, and check backend container logs for "Database init" or errors. If it still fails, run backend/database/init.pg.sql manually (see RUN_SCHEMA.md).'
         });
     }
     // PostgreSQL: connection/auth errors (e.g. DB unreachable)
