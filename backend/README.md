@@ -1,6 +1,6 @@
 # Enterprise POS Backend System
 
-A secure, scalable enterprise Point of Sale (POS) backend system built with Node.js, Express, and MySQL.
+A secure, scalable enterprise Point of Sale (POS) backend system built with Node.js, Express, and PostgreSQL.
 
 ## Features
 
@@ -42,7 +42,7 @@ A secure, scalable enterprise Point of Sale (POS) backend system built with Node
 
 - **Runtime**: Node.js
 - **Framework**: Express.js
-- **Database**: MySQL (InnoDB)
+- **Database**: PostgreSQL
 - **Authentication**: JWT
 - **Security**: Helmet, CORS, Rate Limiting
 - **Logging**: Winston
@@ -124,7 +124,7 @@ backend/
 
 ## Database Schema
 
-The system uses MySQL with InnoDB engine and includes:
+The system uses PostgreSQL and includes (see `database/schema.pg.sql`):
 
 - **Users & Authentication**: `users`, `refresh_tokens`
 - **Branch Management**: `branches`
@@ -261,8 +261,9 @@ After running the schema, a default admin user is created:
 |----------|-------------|---------|
 | `PORT` | Server port | 3000 |
 | `NODE_ENV` | Environment | development |
-| `DB_HOST` | Database host | localhost |
-| `DB_USER` | Database user | root |
+| `DATABASE_URL` | Full PostgreSQL URL | - |
+| `DB_HOST` | Database host (if not using DATABASE_URL) | localhost |
+| `DB_USER` | Database user | postgres |
 | `DB_PASSWORD` | Database password | - |
 | `DB_NAME` | Database name | pos_system |
 | `JWT_SECRET` | JWT secret key | - |

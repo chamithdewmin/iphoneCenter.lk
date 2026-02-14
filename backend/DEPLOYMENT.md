@@ -4,13 +4,15 @@
 
 The backend returns **500** or **503** when the database is missing tables or unreachable.
 
-### 1. Database URL
+### 1. Database URL (PostgreSQL only)
 
-In Dokploy (or your host), set in the **backend** app environment:
+The backend uses **PostgreSQL only** (no MySQL). In Dokploy, set the connection in the **backend application** (not the database container):
 
-- **`DATABASE_URL`**  
-  Example: `postgresql://user:password@your-postgres-host:5432/pos_system`  
-  Or use: `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` (and optionally `DB_PORT`).
+- Open your **backend** app → **Environment** (or **Variables**).
+- Add **`DATABASE_URL`** and set it to your PostgreSQL connection string.
+- Easiest: copy the **Internal Connection URL** from your PostgreSQL service’s **Internal Credentials** (e.g. `postgresql://user_iphone_center:****@iphone-center-database-2r1ljm:5432/iphone-center-db`). Use the same URL in `DATABASE_URL` so the backend connects to that database.
+
+If you prefer separate vars: set `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` (and optionally `DB_PORT`) instead of `DATABASE_URL`. The host must be the **internal hostname** (e.g. `iphone-center-database-2r1ljm`) so the backend container can reach the DB.
 
 ### 2. Run the schema (required once)
 

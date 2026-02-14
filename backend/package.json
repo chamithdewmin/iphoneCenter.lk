@@ -8,7 +8,7 @@
     "dev": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["pos", "backend", "express", "mysql"],
+  "keywords": ["pos", "backend", "express", "postgresql"],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
