@@ -4,15 +4,37 @@ const logger = require('../utils/logger');
  * Global error handler middleware
  */
 const errorHandler = (err, req, res, next) => {
-    logger.error('Error:', {
-        message: err.message,
-        stack: err.stack,
-        url: req.url,
-        method: req.method,
-        userId: req.user?.id
-    });
+    // Always log to console in production so Dokploy/container logs show the real error
     if (process.env.NODE_ENV === 'production') {
-        console.error('API Error:', err.message, err.code || '', req.method, req.url);
+        console.error('API Error:', err.code || '', err.message, req.method, req.url);
+        if (err.stack) console.error(err.stack);
+    }
+    try {
+        logger.error('Error:', {
+            message: err.message,
+            code: err.code,
+            stack: err.stack,
+            url: req.url,
+            method: req.method,
+            userId: req.user?.id
+        });
+    } catch (logErr) {
+        console.error('Logger failed:', logErr.message);
+    }
+
+    // PostgreSQL: relation/table does not exist (schema not run)
+    if (err.code === '42P01') {
+        return res.status(503).json({
+            success: false,
+            message: 'Database schema not applied. Run backend/database/schema.pg.sql on your PostgreSQL database, then restart the app.'
+        });
+    }
+    // PostgreSQL: connection/auth errors (e.g. DB unreachable)
+    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
+        return res.status(503).json({
+            success: false,
+            message: 'Database unavailable. Check DATABASE_URL and that PostgreSQL is running.'
+        });
     }
 
     // MySQL errors

@@ -25,7 +25,7 @@ const getAllCustomers = async (req, res, next) => {
             data: customers
         });
     } catch (error) {
-        logger.error('Get customers error:', error);
+        logger.error('Get customers error:', { message: error.message, code: error.code });
         next(error);
     }
 };

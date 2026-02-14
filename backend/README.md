@@ -106,11 +106,12 @@ backend/
    - JWT secrets
    - Port number
 
-4. **Set up database**
+4. **Set up database**  
+   The backend uses **PostgreSQL**. Create a database and run the schema:
    ```bash
-   mysql -u root -p < database/schema.sql
+   psql -U postgres -d pos_system -f database/schema.pg.sql
    ```
-   Or import the schema using MySQL Workbench or phpMyAdmin.
+   Or use any PostgreSQL client to run `database/schema.pg.sql`.
 
 5. **Start the server**
    ```bash
@@ -216,6 +217,24 @@ The system will:
 5. Update IMEI status (if provided)
 6. Create payment record
 7. All within a database transaction for data integrity
+
+## Dokploy / Production deployment
+
+If you see **500 Internal Server Error** or **503 Database schema not applied** on API calls (e.g. `/api/customers`):
+
+1. **Create a PostgreSQL database** and set `DATABASE_URL` in your app environment (e.g. Dokploy Environment tab):
+   - Format: `postgresql://USER:PASSWORD@HOST:5432/DATABASE_NAME`
+   - Or set `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` (and optionally `DB_PORT`).
+
+2. **Run the schema once** on that database so tables like `customers`, `users`, `branches`, etc. exist:
+   ```bash
+   psql "$DATABASE_URL" -f database/schema.pg.sql
+   ```
+   Or connect with any PostgreSQL client and execute the contents of `backend/database/schema.pg.sql`.
+
+3. **Set required env vars**: `JWT_SECRET`, `JWT_REFRESH_SECRET` (32+ characters in production). Optionally `CORS_ORIGIN`, `TEST_LOGIN_USERNAME`, `TEST_LOGIN_PASSWORD`.
+
+4. **Redeploy** and check container logs for any remaining errors (the backend now logs full error codes and messages to stdout).
 
 ## Security Features
 
