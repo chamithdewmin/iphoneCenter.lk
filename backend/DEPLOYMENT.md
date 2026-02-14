@@ -14,9 +14,15 @@ The backend uses **PostgreSQL only** (no MySQL). In Dokploy, set the connection 
 
 If you prefer separate vars: set `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` (and optionally `DB_PORT`) instead of `DATABASE_URL`. The host must be the **internal hostname** (e.g. `iphone-center-database-2r1ljm`) so the backend container can reach the DB.
 
-### 2. Tables auto-created on startup
+### 2. First run: all tables auto-created
 
-The backend runs **`database/init.pg.sql`** on every startup and creates all tables/indexes/triggers if they don’t exist (idempotent). So you usually **don’t need to run the schema manually**—just set `DATABASE_URL` and restart the backend. If you still see "Database schema not applied", run the schema once by hand (see **RUN_SCHEMA.md**).
+**When the application runs for the first time**, it automatically:
+
+1. Waits for the database to be reachable (retries for ~30 seconds).
+2. Runs **`database/init.pg.sql`** and creates all tables, indexes, and triggers if they don’t exist.
+3. Verifies that the `users` table exists, then starts the HTTP server.
+
+You do **not** need to run the schema manually. Set **`DATABASE_URL`** in the backend app, deploy, and the backend will create all tables on first run. On later restarts it runs the same script (idempotent); existing tables are left as-is. If you still see "Database schema not applied", check backend logs and see **RUN_SCHEMA.md**.
 
 ```bash
 # With your DATABASE_URL (from Internal Credentials)

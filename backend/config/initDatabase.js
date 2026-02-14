@@ -75,8 +75,8 @@ async function initDatabase() {
         throw new Error(msg);
     }
 
-    console.log('Running database init (creating tables if missing)...');
-    logger.info('Running database init');
+    console.log('Running database init: creating all tables on first run (safe to run every startup)...');
+    logger.info('Running database init (auto-generate tables on first run)');
 
     const sql = fs.readFileSync(sqlPath, 'utf8');
     const statements = splitSqlStatements(sql);

@@ -143,6 +143,9 @@ const PORT = process.env.PORT || 5000;
 const HOST = '0.0.0.0';
 
 async function start() {
+    // First run: auto-create all database tables before accepting requests
+    console.log('First-time setup: connecting to database and creating all tables if needed...');
+    logger.info('First-time setup: initializing database (tables auto-created on first run)');
     const { initDatabase } = require('./config/initDatabase');
     await initDatabase();
     return new Promise((resolve, reject) => {
