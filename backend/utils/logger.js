@@ -28,8 +28,17 @@ const logger = winston.createLogger({
     ]
 });
 
-// Add console transport in development
-if (process.env.NODE_ENV !== 'production') {
+// Console transport: simple in dev, JSON errors in production so Dokploy/docker logs show them
+if (process.env.NODE_ENV === 'production') {
+    logger.add(new winston.transports.Console({
+        level: 'info',
+        format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.errors({ stack: true }),
+            winston.format.json()
+        )
+    }));
+} else {
     logger.add(new winston.transports.Console({
         format: winston.format.combine(
             winston.format.colorize(),

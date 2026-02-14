@@ -11,6 +11,9 @@ const errorHandler = (err, req, res, next) => {
         method: req.method,
         userId: req.user?.id
     });
+    if (process.env.NODE_ENV === 'production') {
+        console.error('API Error:', err.message, err.code || '', req.method, req.url);
+    }
 
     // MySQL errors
     if (err.code === 'ER_DUP_ENTRY') {
@@ -71,13 +74,16 @@ const errorHandler = (err, req, res, next) => {
 
     // Default error
     const statusCode = err.statusCode || 500;
-    const message = process.env.NODE_ENV === 'production' 
-        ? 'Internal server error' 
+    const message = process.env.NODE_ENV === 'production'
+        ? 'Internal server error'
         : err.message;
+    const hint = process.env.NODE_ENV === 'production' && statusCode === 500
+        ? ' Check backend server logs (e.g. Dokploy container logs) for details.'
+        : '';
 
     res.status(statusCode).json({
         success: false,
-        message: message,
+        message: message + hint,
         ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
     });
 };

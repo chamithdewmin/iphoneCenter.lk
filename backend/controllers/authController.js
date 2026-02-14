@@ -163,7 +163,8 @@ const login = async (req, res, next) => {
             }
         });
     } catch (error) {
-        logger.error('Login error:', error);
+        logger.error('Login error:', { message: error.message, stack: error.stack, code: error.code });
+        console.error('Login error (check Dokploy backend logs):', error.message, error.stack || '');
         next(error);
     }
 };
