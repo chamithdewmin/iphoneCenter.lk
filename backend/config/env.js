@@ -1,0 +1,45 @@
+/**
+ * Environment validation - ensures required secrets are set (no fallbacks in production)
+ */
+function validateEnv() {
+    const required = ['JWT_SECRET', 'JWT_REFRESH_SECRET'];
+    const missing = required.filter((key) => !process.env[key] || process.env[key].trim() === '');
+    if (missing.length > 0) {
+        throw new Error(
+            `Missing required environment variables: ${missing.join(', ')}. ` +
+            'Set them in .env or your environment. Use long random strings for production.'
+        );
+    }
+    if (process.env.NODE_ENV === 'production') {
+        const weak = [];
+        if ((process.env.JWT_SECRET || '').length < 32) weak.push('JWT_SECRET');
+        if ((process.env.JWT_REFRESH_SECRET || '').length < 32) weak.push('JWT_REFRESH_SECRET');
+        if (weak.length > 0) {
+            throw new Error(
+                `In production, use strong secrets (32+ characters): ${weak.join(', ')}`
+            );
+        }
+    }
+}
+
+function getJwtSecret() {
+    const secret = process.env.JWT_SECRET;
+    if (!secret || secret.trim() === '') {
+        throw new Error('JWT_SECRET is not set');
+    }
+    return secret;
+}
+
+function getJwtRefreshSecret() {
+    const secret = process.env.JWT_REFRESH_SECRET;
+    if (!secret || secret.trim() === '') {
+        throw new Error('JWT_REFRESH_SECRET is not set');
+    }
+    return secret;
+}
+
+module.exports = {
+    validateEnv,
+    getJwtSecret,
+    getJwtRefreshSecret
+};
