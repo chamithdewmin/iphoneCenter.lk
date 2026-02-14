@@ -15,15 +15,14 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    
-    const result = login(email, password);
+    const result = await login(email, password);
     if (result.success) {
       navigate('/dashboard');
     } else {
-      setError(result.error);
+      setError(result.error || 'Invalid credentials');
     }
   };
 
@@ -70,11 +69,12 @@ const Login = () => {
             {/* Login form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email or username</Label>
                 <Input
                   id="email"
-                  type="email"
-                  placeholder="admin@gmail.com"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="admin@pos.com or admin"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -87,6 +87,7 @@ const Login = () => {
                 <Input
                   id="password"
                   type="password"
+                  autoComplete="current-password"
                   placeholder="admin123"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -100,11 +101,9 @@ const Login = () => {
               </Button>
             </form>
 
-            {/* Demo credentials */}
+            {/* Hint */}
             <div className="text-center text-sm text-muted-foreground">
-              <p>Demo credentials:</p>
-              <p className="font-mono">Admin: admin@gmail.com / admin123</p>
-              <p className="font-mono">Cashier: user@gmail.com / user123</p>
+              <p>Sign in with your backend account (email or username).</p>
             </div>
           </div>
         </motion.div>
