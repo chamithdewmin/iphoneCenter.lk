@@ -11,7 +11,7 @@ const createSale = async (req, res, next) => {
     try {
         await connection.beginTransaction();
 
-        const branchId = req.user.branch_id;
+        let branchId = req.user.branch_id;
         const { customerId, items, discountAmount, taxRate, paidAmount, notes } = req.body;
 
         if (!items || items.length === 0) {
@@ -20,6 +20,21 @@ const createSale = async (req, res, next) => {
                 success: false,
                 message: 'Sale items are required'
             });
+        }
+
+        // If user has no branch (e.g. test user), use first active branch
+        if (branchId == null) {
+            const [firstBranch] = await connection.execute(
+                'SELECT id, code FROM branches WHERE is_active = TRUE ORDER BY id LIMIT 1'
+            );
+            if (firstBranch.length === 0) {
+                await connection.rollback();
+                return res.status(404).json({
+                    success: false,
+                    message: 'No branch found. Create a branch first or assign user to a branch.'
+                });
+            }
+            branchId = firstBranch[0].id;
         }
 
         // Get branch code for invoice number
@@ -43,7 +58,7 @@ const createSale = async (req, res, next) => {
         let subtotal = 0;
         const saleItems = [];
 
-        // Validate items and check stock
+        // Validate items and check stock (use resolved branchId)
         for (const item of items) {
             const { productId, quantity, unitPrice, discount, imei } = item;
 

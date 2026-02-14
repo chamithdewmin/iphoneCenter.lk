@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
 import { Save, Package, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getStorageData, setStorageData } from '@/utils/storage';
+import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,65 +11,56 @@ import { useToast } from '@/components/ui/use-toast';
 const AddProduct = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     brand: '',
     model: '',
+    name: '',
+    sku: '',
     year: new Date().getFullYear(),
     price: '',
     stock: '',
     imei: '',
-    vin: '',
-    colors: '',
-    condition: 'new',
     description: '',
-    images: '',
+    category: '',
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.model || !formData.price) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in at least model and price",
-        variant: "destructive",
-      });
+    const name = formData.name?.trim() || [formData.brand, formData.model].filter(Boolean).join(' ').trim();
+    if (!name) {
+      toast({ title: 'Validation Error', description: 'Product name is required', variant: 'destructive' });
       return;
     }
-
-    const products = getStorageData('products', []);
-    const newProduct = {
-      id: `P-${Date.now()}`,
-      brand: formData.brand || 'Unknown',
-      model: formData.model,
-      year: parseInt(formData.year) || new Date().getFullYear(),
-      price: parseFloat(formData.price) || 0,
-      stock: parseInt(formData.stock) || 0,
-      imei: formData.imei || '',
-      vin: formData.vin || '',
-      colors: formData.colors ? formData.colors.split(',').map(c => c.trim()) : [],
-      condition: formData.condition,
-      description: formData.description || '',
-      images: formData.images ? formData.images.split(',').map(img => img.trim()) : [],
-      createdAt: new Date().toISOString(),
-    };
-
-    const updatedProducts = [...products, newProduct];
-    setStorageData('products', updatedProducts);
-
-    toast({
-      title: "Product Added",
-      description: `${newProduct.model} has been added successfully`,
+    const sku = formData.sku?.trim() || formData.imei?.trim() || `SKU-${Date.now()}`;
+    const basePrice = parseFloat(formData.price);
+    if (isNaN(basePrice) || basePrice < 0) {
+      toast({ title: 'Validation Error', description: 'Valid base price is required', variant: 'destructive' });
+      return;
+    }
+    setLoading(true);
+    const { ok, data } = await authFetch('/api/inventory/products', {
+      method: 'POST',
+      body: JSON.stringify({
+        name,
+        sku,
+        description: formData.description || null,
+        category: formData.category || null,
+        brand: formData.brand || null,
+        basePrice,
+      }),
     });
-
+    setLoading(false);
+    if (!ok) {
+      toast({ title: 'Could not add product', description: data?.message || 'Please try again', variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Product Added', description: `${name} has been saved to the database` });
     navigate('/products/list');
   };
 
@@ -271,9 +261,9 @@ const AddProduct = () => {
                   <X className="w-4 h-4 mr-2" />
                   Cancel
                 </Button>
-                <Button type="submit">
+                <Button type="submit" disabled={loading}>
                   <Save className="w-4 h-4 mr-2" />
-                  Save Product
+                  {loading ? 'Saving…' : 'Save Product'}
                 </Button>
               </div>
             </div>

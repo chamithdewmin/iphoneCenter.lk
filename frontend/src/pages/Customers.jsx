@@ -1,36 +1,48 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Plus, Eye } from 'lucide-react';
+import { Search, Plus, Eye, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getStorageData, setStorageData } from '@/utils/storage';
+import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
 
 const Customers = () => {
   const [customers, setCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    const loadedCustomers = getStorageData('customers', []);
-    setCustomers(loadedCustomers);
-    setFilteredCustomers(loadedCustomers);
+  const fetchCustomers = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    const { ok, data } = await authFetch('/api/customers');
+    setLoading(false);
+    if (!ok) {
+      setError(data?.message || 'Failed to load customers.');
+      setCustomers([]);
+      setFilteredCustomers([]);
+      return;
+    }
+    const list = Array.isArray(data?.data) ? data.data : [];
+    setCustomers(list);
+    setFilteredCustomers(list);
   }, []);
 
   useEffect(() => {
-    if (searchQuery) {
-      const filtered = customers.filter(customer =>
-        customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customer.phone.includes(searchQuery)
-      );
-      setFilteredCustomers(filtered);
-    } else {
-      setFilteredCustomers(customers);
-    }
+    fetchCustomers();
+  }, [fetchCustomers]);
+
+  useEffect(() => {
+    if (!searchQuery) return;
+    const q = searchQuery.toLowerCase();
+    const filtered = customers.filter(c =>
+      (c.name || '').toLowerCase().includes(q) ||
+      (c.email || '').toLowerCase().includes(q) ||
+      (c.phone || '').includes(searchQuery)
+    );
+    setFilteredCustomers(filtered);
   }, [searchQuery, customers]);
 
 
@@ -47,13 +59,22 @@ const Customers = () => {
             <h1 className="text-3xl font-bold">Customers</h1>
             <p className="text-muted-foreground">Manage your customer database</p>
           </div>
-          <Link to="/people/customers/add">
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Customer
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => fetchCustomers()} disabled={loading}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
             </Button>
-          </Link>
+            <Link to="/people/customers/add">
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Customer
+              </Button>
+            </Link>
+          </div>
         </div>
+
+        {error && <div className="text-destructive text-sm">{error}</div>}
+        {loading && <p className="text-muted-foreground text-sm">Loading customers from database…</p>}
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

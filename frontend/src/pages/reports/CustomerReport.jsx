@@ -2,32 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Download, Users, ShoppingBag, DollarSign } from 'lucide-react';
-import { getStorageData } from '@/utils/storage';
+import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 
 const CustomerReport = () => {
   const [customers, setCustomers] = useState([]);
-  const [totalPurchases, setTotalPurchases] = useState(0);
-  const [topCustomers, setTopCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    const loadedCustomers = getStorageData('customers', []);
-    setCustomers(loadedCustomers);
-    
-    const purchases = loadedCustomers.reduce((sum, c) => sum + (c.purchaseHistory?.length || 0), 0);
-    setTotalPurchases(purchases);
-
-    const top = loadedCustomers
-      .map(c => ({
-        name: c.name,
-        purchases: c.purchaseHistory?.length || 0,
-      }))
-      .sort((a, b) => b.purchases - a.purchases)
-      .slice(0, 5);
-    setTopCustomers(top);
+    (async () => {
+      setLoading(true);
+      const { ok, data } = await authFetch('/api/customers');
+      const list = ok && Array.isArray(data?.data) ? data.data : [];
+      setCustomers(list);
+      setLoading(false);
+    })();
   }, []);
+
+  const totalPurchases = customers.reduce((sum, c) => sum + (c.purchaseHistory?.length || 0), 0);
+  const topCustomers = [...customers]
+    .map(c => ({ name: c.name, purchases: c.purchaseHistory?.length || 0 }))
+    .sort((a, b) => b.purchases - a.purchases)
+    .slice(0, 5);
 
   const handleExport = () => {
     toast({

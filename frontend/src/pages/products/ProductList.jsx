@@ -1,51 +1,52 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Plus, Edit, Trash2, Package, Eye, Filter } from 'lucide-react';
+import { Search, Plus, Package, Eye, Filter, RefreshCw, Edit } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getStorageData, setStorageData } from '@/utils/storage';
+import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    const loadedProducts = getStorageData('products', []);
-    setProducts(loadedProducts);
-    setFilteredProducts(loadedProducts);
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    const { ok, data } = await authFetch('/api/inventory/products');
+    setLoading(false);
+    if (!ok) {
+      setError(data?.message || 'Failed to load products.');
+      setProducts([]);
+      setFilteredProducts([]);
+      return;
+    }
+    const list = Array.isArray(data?.data) ? data.data : [];
+    setProducts(list);
+    setFilteredProducts(list);
   }, []);
 
   useEffect(() => {
-    if (searchQuery) {
-      const searchLower = searchQuery.toLowerCase();
-      const filtered = products.filter(product =>
-        (product.brand || product.make || '').toLowerCase().includes(searchLower) ||
-        (product.model || '').toLowerCase().includes(searchLower) ||
-        (product.imei || product.vin || '').toLowerCase().includes(searchLower)
-      );
-      setFilteredProducts(filtered);
-    } else {
-      setFilteredProducts(products);
-    }
-  }, [searchQuery, products]);
+    fetchProducts();
+  }, [fetchProducts]);
 
-  const handleDelete = (productId) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      const updatedProducts = products.filter(p => p.id !== productId);
-      setProducts(updatedProducts);
-      setFilteredProducts(updatedProducts);
-      setStorageData('products', updatedProducts);
-      toast({
-        title: "Product Deleted",
-        description: "The product has been deleted successfully",
-      });
+  useEffect(() => {
+    if (!searchQuery) {
+      setFilteredProducts(products);
+      return;
     }
-  };
+    const q = searchQuery.toLowerCase();
+    setFilteredProducts(products.filter(p =>
+      (p.name || '').toLowerCase().includes(q) ||
+      (p.sku || '').toLowerCase().includes(q) ||
+      (p.brand || '').toLowerCase().includes(q) ||
+      (p.category || '').toLowerCase().includes(q)
+    ));
+  }, [searchQuery, products]);
 
   return (
     <>
@@ -63,13 +64,22 @@ const ProductList = () => {
             </h1>
             <p className="text-muted-foreground mt-1">View and manage all products in your inventory</p>
           </div>
-          <Link to="/products/add">
-            <Button className="w-full sm:w-auto">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Product
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={fetchProducts} disabled={loading}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
             </Button>
-          </Link>
+            <Link to="/products/add">
+              <Button className="w-full sm:w-auto">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Product
+              </Button>
+            </Link>
+          </div>
         </div>
+
+        {error && <div className="text-destructive text-sm">{error}</div>}
+        {loading && <p className="text-muted-foreground text-sm">Loading products from database…</p>}
 
         {/* Search and Filters */}
         <div className="bg-card rounded-xl p-4 border border-secondary shadow-sm">
@@ -91,7 +101,12 @@ const ProductList = () => {
         </div>
 
         {/* Products Grid */}
-        {filteredProducts.length === 0 ? (
+        {loading ? (
+          <div className="bg-card rounded-xl p-12 border border-secondary text-center">
+            <RefreshCw className="w-12 h-12 mx-auto text-muted-foreground animate-spin mb-4" />
+            <p className="text-muted-foreground">Loading products…</p>
+          </div>
+        ) : filteredProducts.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -124,88 +139,41 @@ const ProductList = () => {
                 whileHover={{ y: -4 }}
                 className="bg-card rounded-xl border border-secondary overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 group"
               >
-                {/* Product Image */}
-                <div className="relative h-48 bg-gradient-to-br from-secondary/50 to-secondary/20 overflow-hidden">
-                  {product.images && product.images.length > 0 ? (
-                    <img
-                      src={product.images[0]}
-                      alt={product.model || product.brand}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Package className="w-16 h-16 text-muted-foreground opacity-30" />
-                    </div>
-                  )}
-                  <div className="absolute top-2 right-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      (product.stock || 0) > 0 
-                        ? 'bg-green-500/20 text-green-600 dark:text-green-400' 
-                        : 'bg-red-500/20 text-red-600 dark:text-red-400'
-                    }`}>
-                      Stock: {product.stock || 0}
-                    </span>
-                  </div>
+                <div className="relative h-48 bg-gradient-to-br from-secondary/50 to-secondary/20 overflow-hidden flex items-center justify-center">
+                  <Package className="w-16 h-16 text-muted-foreground opacity-30" />
                 </div>
 
-                {/* Product Info */}
                 <div className="p-5">
                   <div className="mb-3">
                     <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
-                      {product.brand || product.make || 'Brand'}
+                      {product.brand || 'Product'}
                     </p>
-                    <h3 className="font-bold text-lg line-clamp-1">{product.model || 'Product Model'}</h3>
+                    <h3 className="font-bold text-lg line-clamp-1">{product.name || product.sku || '—'}</h3>
                   </div>
 
                   <div className="space-y-2 mb-4">
-                    {product.year && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span className="font-medium">SKU:</span>
+                      <span className="font-mono text-xs">{product.sku || '—'}</span>
+                    </div>
+                    {product.category && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className="font-medium">Year:</span>
-                        <span>{product.year}</span>
-                      </div>
-                    )}
-                    {(product.imei || product.vin) && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className="font-medium">ID:</span>
-                        <span className="font-mono text-xs">{product.imei || product.vin}</span>
+                        <span className="font-medium">Category:</span>
+                        <span>{product.category}</span>
                       </div>
                     )}
                   </div>
 
                   <div className="flex items-center justify-between pt-4 border-t border-secondary">
                     <div>
-                      <p className="text-xs text-muted-foreground">Price</p>
+                      <p className="text-xs text-muted-foreground">Base price</p>
                       <p className="text-xl font-bold text-primary">
-                        LKR {product.price?.toLocaleString() || '0'}
+                        LKR {(product.base_price ?? product.basePrice ?? 0).toLocaleString()}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          toast({
-                            title: "View Product",
-                            description: `Viewing details for ${product.model || product.brand}`,
-                          });
-                        }}
-                      >
+                      <Button size="sm" variant="outline">
                         <Eye className="w-4 h-4" />
-                      </Button>
-                      <Link to={`/products/add?edit=${product.id}`}>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                      </Link>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDelete(product.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>

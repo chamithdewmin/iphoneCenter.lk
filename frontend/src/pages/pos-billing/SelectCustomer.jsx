@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Search, User, Check, Plus } from 'lucide-react';
-import { getStorageData } from '@/utils/storage';
+import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -12,25 +12,31 @@ const SelectCustomer = () => {
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    const loadedCustomers = getStorageData('customers', []);
-    setCustomers(loadedCustomers);
-    setFilteredCustomers(loadedCustomers);
+    (async () => {
+      setLoading(true);
+      const { ok, data } = await authFetch('/api/customers');
+      const list = ok && Array.isArray(data?.data) ? data.data : [];
+      setCustomers(list);
+      setFilteredCustomers(list);
+      setLoading(false);
+    })();
   }, []);
 
   useEffect(() => {
-    if (searchQuery) {
-      const filtered = customers.filter(customer =>
-        customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customer.phone.includes(searchQuery) ||
-        customer.email?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredCustomers(filtered);
-    } else {
+    if (!searchQuery) {
       setFilteredCustomers(customers);
+      return;
     }
+    const q = searchQuery.toLowerCase();
+    setFilteredCustomers(customers.filter(c =>
+      (c.name || '').toLowerCase().includes(q) ||
+      (c.phone || '').includes(searchQuery) ||
+      (c.email || '').toLowerCase().includes(q)
+    ));
   }, [searchQuery, customers]);
 
   const handleSelect = (customer) => {

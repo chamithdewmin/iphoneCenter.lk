@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
 import { Save, User, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getStorageData, setStorageData } from '@/utils/storage';
+import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +11,7 @@ import { useToast } from '@/components/ui/use-toast';
 const AddCustomer = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -24,46 +24,37 @@ const AddCustomer = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.name || !formData.phone) {
+    if (!formData.name?.trim()) {
+      toast({ title: 'Validation Error', description: 'Name is required', variant: 'destructive' });
+      return;
+    }
+    setLoading(true);
+    const addressParts = [formData.address, formData.city, formData.postalCode].filter(Boolean);
+    const address = addressParts.length ? addressParts.join(', ') : (formData.notes || null);
+    const { ok, data } = await authFetch('/api/customers', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: formData.name.trim(),
+        phone: formData.phone || null,
+        email: formData.email || null,
+        address: address || null,
+      }),
+    });
+    setLoading(false);
+    if (!ok) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in at least name and phone number",
-        variant: "destructive",
+        title: 'Could not add customer',
+        description: data?.message || 'Please try again',
+        variant: 'destructive',
       });
       return;
     }
-
-    const customers = getStorageData('customers', []);
-    const newCustomer = {
-      id: `CU-${Date.now()}`,
-      name: formData.name,
-      email: formData.email || '',
-      phone: formData.phone,
-      address: formData.address || '',
-      city: formData.city || '',
-      postalCode: formData.postalCode || '',
-      notes: formData.notes || '',
-      purchaseHistory: [],
-      createdAt: new Date().toISOString(),
-    };
-
-    const updatedCustomers = [...customers, newCustomer];
-    setStorageData('customers', updatedCustomers);
-
-    toast({
-      title: "Customer Added",
-      description: `${newCustomer.name} has been added successfully`,
-    });
-
+    toast({ title: 'Customer Added', description: `${formData.name} has been saved to the database` });
     navigate('/people/customers/list');
   };
 
@@ -201,13 +192,14 @@ const AddCustomer = () => {
                   type="button"
                   variant="outline"
                   onClick={() => navigate('/people/customers/list')}
+                  disabled={loading}
                 >
                   <X className="w-4 h-4 mr-2" />
                   Cancel
                 </Button>
-                <Button type="submit">
+                <Button type="submit" disabled={loading}>
                   <Save className="w-4 h-4 mr-2" />
-                  Save Customer
+                  {loading ? 'Saving…' : 'Save Customer'}
                 </Button>
               </div>
             </div>

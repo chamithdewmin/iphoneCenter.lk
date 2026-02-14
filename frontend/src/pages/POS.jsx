@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { getStorageData } from '@/utils/storage';
+import { authFetch } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
 import FilterBar from '@/components/FilterBar';
 import ProductModal from '@/components/ProductModal';
@@ -10,6 +10,7 @@ const POS = () => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     search: '',
     colors: [],
@@ -20,56 +21,49 @@ const POS = () => {
   });
 
   useEffect(() => {
-    const loadedProducts = getStorageData('products', []);
-    setProducts(loadedProducts);
-    setFilteredProducts(loadedProducts);
+    (async () => {
+      setLoading(true);
+      const { ok, data } = await authFetch('/api/inventory/products');
+      const list = ok && Array.isArray(data?.data) ? data.data : [];
+      setProducts(list);
+      setFilteredProducts(list);
+      setLoading(false);
+    })();
   }, []);
 
   useEffect(() => {
     let result = [...products];
 
-    // Search filter
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      result = result.filter(product =>
-        (product.brand || product.make || '').toLowerCase().includes(searchLower) ||
-        product.model.toLowerCase().includes(searchLower) ||
-        (product.imei || product.vin || '').toLowerCase().includes(searchLower)
+      result = result.filter(p =>
+        (p.name || '').toLowerCase().includes(searchLower) ||
+        (p.sku || '').toLowerCase().includes(searchLower) ||
+        (p.brand || '').toLowerCase().includes(searchLower)
       );
     }
 
-    // Color filter
     if (filters.colors.length > 0) {
-      result = result.filter(product =>
-        product.colors?.some(color => filters.colors.includes(color))
-      );
+      result = result.filter(p => p.colors?.some(c => filters.colors.includes(c)));
     }
 
-    // Price range filter
-    result = result.filter(product =>
-      product.price >= filters.priceRange[0] && product.price <= filters.priceRange[1]
-    );
+    const basePrice = (p) => parseFloat(p.base_price ?? p.basePrice ?? 0);
+    result = result.filter(p => basePrice(p) >= filters.priceRange[0] && basePrice(p) <= filters.priceRange[1]);
 
-    // Year range filter
-    result = result.filter(product =>
-      product.year >= filters.yearRange[0] && product.year <= filters.yearRange[1]
-    );
-
-    // Brand filter
     if (filters.brand) {
-      result = result.filter(product => (product.brand || product.make) === filters.brand);
+      result = result.filter(p => (p.brand || '') === filters.brand);
     }
 
-    // Sorting
+    const price = (p) => parseFloat(p.base_price ?? p.basePrice ?? p.price ?? 0);
     switch (filters.sortBy) {
       case 'price-low':
-        result.sort((a, b) => a.price - b.price);
+        result.sort((a, b) => price(a) - price(b));
         break;
       case 'price-high':
-        result.sort((a, b) => b.price - a.price);
+        result.sort((a, b) => price(b) - price(a));
         break;
       case 'latest':
-        result.sort((a, b) => b.year - a.year);
+        result.sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
         break;
       default:
         break;

@@ -7,7 +7,9 @@ import { useCart } from '@/contexts/CartContext';
 const ProductCard = ({ product, onQuickView }) => {
   const { addToCart } = useCart();
   const brand = product.brand || product.make || '';
-  const model = product.model || '';
+  const model = product.model || product.name || '';
+  const price = product.price ?? product.base_price ?? product.basePrice ?? 0;
+  const stock = product.stock ?? product.quantity;
 
   return (
     <motion.div
@@ -26,7 +28,7 @@ const ProductCard = ({ product, onQuickView }) => {
             NEW
           </span>
         )}
-        {product.stock <= 2 && (
+        {stock != null && stock <= 2 && (
           <span className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-semibold flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />
             Low Stock
@@ -57,7 +59,7 @@ const ProductCard = ({ product, onQuickView }) => {
         )}
 
         <div className="flex items-center justify-between pt-2 border-t border-secondary">
-          <span className="text-2xl font-bold text-primary">LKR {product.price.toLocaleString()}</span>
+          <span className="text-2xl font-bold text-primary">LKR {Number(price).toLocaleString()}</span>
           <span className="text-sm text-muted-foreground">Stock: {product.stock || 0}</span>
         </div>
 

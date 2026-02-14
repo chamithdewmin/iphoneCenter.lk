@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Users, DollarSign, Package, ShoppingBag, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { getStorageData } from '@/utils/storage';
+import { authFetch } from '@/lib/api';
 import KpiCard from '@/components/KpiCard';
 
 const Dashboard = () => {
@@ -13,39 +13,41 @@ const Dashboard = () => {
     totalProducts: 0,
     totalOrders: 0,
   });
-
   const [salesData, setSalesData] = useState([]);
   const [revenueData, setRevenueData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const customers = getStorageData('customers', []);
-    const products = getStorageData('products', []);
-    const orders = getStorageData('orders', []);
-    const perOrders = getStorageData('perOrders', []);
-
-    const revenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
-    const perOrderRevenue = perOrders.reduce((sum, order) => sum + (order.subtotal || 0), 0);
-    const totalRevenue = revenue + perOrderRevenue;
-
-    setStats({
-      totalCustomers: customers.length,
-      totalRevenue: totalRevenue,
-      totalProducts: products.length,
-      totalOrders: orders.length + perOrders.length,
-    });
-
-    // Generate mock sales data
-    const mockSalesData = [
-      { name: 'Mon', sales: 12, revenue: 125000 },
-      { name: 'Tue', sales: 19, revenue: 195000 },
-      { name: 'Wed', sales: 15, revenue: 150000 },
-      { name: 'Thu', sales: 25, revenue: 250000 },
-      { name: 'Fri', sales: 22, revenue: 220000 },
-      { name: 'Sat', sales: 30, revenue: 300000 },
-      { name: 'Sun', sales: 18, revenue: 180000 },
-    ];
-    setSalesData(mockSalesData);
-    setRevenueData(mockSalesData);
+    (async () => {
+      setLoading(true);
+      const [customersRes, productsRes, salesRes, dailyRes] = await Promise.all([
+        authFetch('/api/customers'),
+        authFetch('/api/inventory/products'),
+        authFetch('/api/billing/sales'),
+        authFetch('/api/reports/daily-summary'),
+      ]);
+      const customers = Array.isArray(customersRes.data?.data) ? customersRes.data.data : [];
+      const products = Array.isArray(productsRes.data?.data) ? productsRes.data.data : [];
+      const sales = Array.isArray(salesRes.data?.data) ? salesRes.data.data : [];
+      const totalRevenue = sales.reduce((sum, s) => sum + (parseFloat(s.total_amount) || 0), 0);
+      const daily = dailyRes.data?.data || [];
+      setStats({
+        totalCustomers: customers.length,
+        totalRevenue,
+        totalProducts: products.length,
+        totalOrders: sales.length,
+      });
+      if (Array.isArray(daily) && daily.length > 0) {
+        const chartData = daily.map(d => ({ name: d.date || d.label, sales: d.sale_count || 0, revenue: parseFloat(d.total_sales) || 0 }));
+        setSalesData(chartData);
+        setRevenueData(chartData);
+      } else {
+        const fallback = [{ name: 'Total', sales: sales.length, revenue: totalRevenue }];
+        setSalesData(fallback);
+        setRevenueData(fallback);
+      }
+      setLoading(false);
+    })();
   }, []);
 
   return (
