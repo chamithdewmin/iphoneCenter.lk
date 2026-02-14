@@ -44,7 +44,7 @@ const register = async (req, res, next) => {
         // Insert user
         const [result] = await connection.execute(
             `INSERT INTO users (username, email, password_hash, full_name, role, branch_id) 
-             VALUES (?, ?, ?, ?, ?, ?)`,
+             VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
             [username, email, passwordHash, fullName, role, branchId || null]
         );
 

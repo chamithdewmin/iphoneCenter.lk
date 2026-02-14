@@ -102,7 +102,7 @@ const createProduct = async (req, res, next) => {
 
         const [result] = await connection.execute(
             `INSERT INTO products (name, sku, description, category, brand, base_price) 
-             VALUES (?, ?, ?, ?, ?, ?)`,
+             VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
             [name, sku, description || null, category || null, brand || null, basePrice]
         );
 
@@ -281,7 +281,7 @@ const addIMEI = async (req, res, next) => {
         // Add IMEI
         const [result] = await connection.execute(
             `INSERT INTO product_imeis (product_id, branch_id, imei, purchase_price, status) 
-             VALUES (?, ?, ?, ?, 'available')`,
+             VALUES (?, ?, ?, ?, 'available') RETURNING id`,
             [productId, branchId, imei, purchasePrice || null]
         );
 

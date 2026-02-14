@@ -102,7 +102,7 @@ const createBranch = async (req, res, next) => {
 
         const [result] = await connection.execute(
             `INSERT INTO branches (name, code, address, phone, email) 
-             VALUES (?, ?, ?, ?, ?)`,
+             VALUES (?, ?, ?, ?, ?) RETURNING id`,
             [name, code, address || null, phone || null, email || null]
         );
 

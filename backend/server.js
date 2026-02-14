@@ -71,13 +71,34 @@ app.use((req, res, next) => {
     next();
 });
 
-// Health check endpoint
+// Health check endpoint (server only)
 app.get('/health', (req, res) => {
     res.json({
         status: 'ok',
         timestamp: new Date().toISOString(),
         uptime: process.uptime()
     });
+});
+
+// Database health check – use this URL to verify DB is running
+app.get('/health/db', async (req, res) => {
+    try {
+        const { pool } = require('./config/database');
+        const result = await pool.query('SELECT 1 AS ok');
+        const connected = result.rows && result.rows.length > 0;
+        res.status(connected ? 200 : 503).json({
+            status: connected ? 'ok' : 'error',
+            database: connected ? 'connected' : 'unavailable',
+            timestamp: new Date().toISOString()
+        });
+    } catch (err) {
+        res.status(503).json({
+            status: 'error',
+            database: 'disconnected',
+            message: err.message,
+            timestamp: new Date().toISOString()
+        });
+    }
 });
 
 // API routes

@@ -19,18 +19,30 @@ const errorHandler = (err, req, res, next) => {
             message: 'Duplicate entry. This record already exists.'
         });
     }
-
     if (err.code === 'ER_NO_REFERENCED_ROW_2') {
         return res.status(400).json({
             success: false,
             message: 'Referenced record does not exist.'
         });
     }
-
     if (err.code === 'ER_ROW_IS_REFERENCED_2') {
         return res.status(400).json({
             success: false,
             message: 'Cannot delete. This record is referenced by other records.'
+        });
+    }
+
+    // PostgreSQL errors
+    if (err.code === '23505') {
+        return res.status(409).json({
+            success: false,
+            message: 'Duplicate entry. This record already exists.'
+        });
+    }
+    if (err.code === '23503') {
+        return res.status(400).json({
+            success: false,
+            message: err.message || 'Referenced record does not exist or record is in use.'
         });
     }
 

@@ -1,48 +1,80 @@
-const mysql = require('mysql2/promise');
+const { Pool } = require('pg');
 require('dotenv').config();
 
-// Create connection pool for better performance
-const pool = mysql.createPool({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'pos_system',
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
-    enableKeepAlive: true,
-    keepAliveInitialDelay: 0
+// Use DATABASE_URL (e.g. postgresql://user:pass@host:5432/dbname) or separate env vars
+const connectionString = process.env.DATABASE_URL || (process.env.DB_HOST ? (
+    `postgresql://${encodeURIComponent(process.env.DB_USER || 'postgres')}:${encodeURIComponent(process.env.DB_PASSWORD || '')}@${process.env.DB_HOST}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME || 'pos_system'}`
+) : null);
+
+if (!connectionString) {
+    console.warn('⚠️ DATABASE_URL or DB_* env vars not set');
+}
+
+const pool = new Pool({
+    connectionString: connectionString || 'postgresql://localhost:5432/pos_system',
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
 });
 
-// Test connection
-pool.getConnection()
-    .then(connection => {
-        console.log('✅ Database connected successfully');
-        connection.release();
-    })
-    .catch(err => {
-        console.error('❌ Database connection error:', err.message);
-    });
+// Convert MySQL-style ? placeholders to PostgreSQL $1, $2, ...
+function toPgPlaceholders(query) {
+    let i = 0;
+    return query.replace(/\?/g, () => `$${++i}`);
+}
 
-// Helper function to execute queries with transaction support
-// Returns [rows] so that const [rows] = await executeQuery(...) gives the rows array
+// Test connection
+pool.query('SELECT 1')
+    .then(() => console.log('✅ Database connected successfully'))
+    .catch((err) => console.error('❌ Database connection error:', err.message));
+
+/**
+ * Execute a query. Returns [rows] so that const [rows] = await executeQuery(...) gives the rows array.
+ * Query can use ? placeholders (converted to $1, $2, ...).
+ */
 const executeQuery = async (query, params = []) => {
     try {
-        const [results] = await pool.execute(query, params);
-        return [results];
+        const pgQuery = toPgPlaceholders(query);
+        const result = await pool.query(pgQuery, params);
+        return [result.rows];
     } catch (error) {
         console.error('Query execution error:', error);
         throw error;
     }
 };
 
-// Helper function to get a connection for transactions
+/**
+ * Get a connection wrapper for transactions. API compatible with mysql2-style usage:
+ * beginTransaction(), execute(query, params), commit(), rollback(), release()
+ */
 const getConnection = async () => {
-    return await pool.getConnection();
+    const client = await pool.connect();
+
+    const execute = async (query, params = []) => {
+        const pgQuery = toPgPlaceholders(query);
+        const result = await client.query(pgQuery, params);
+        // Return [data] compatible with mysql2: SELECT -> [rows array], INSERT/UPDATE/DELETE -> [{ insertId?, affectedRows }]
+        if (result.command === 'SELECT') {
+            return [result.rows];
+        }
+        const out = { affectedRows: result.rowCount ?? 0 };
+        if (result.rows[0] && typeof result.rows[0].id !== 'undefined') {
+            out.insertId = result.rows[0].id;
+        }
+        return [out];
+    };
+
+    return {
+        beginTransaction: () => client.query('BEGIN'),
+        execute,
+        commit: () => client.query('COMMIT'),
+        rollback: () => client.query('ROLLBACK'),
+        release: () => client.release(),
+    };
 };
 
 module.exports = {
     pool,
     executeQuery,
-    getConnection
+    getConnection,
 };

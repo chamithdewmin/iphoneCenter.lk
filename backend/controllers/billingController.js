@@ -119,7 +119,7 @@ const createSale = async (req, res, next) => {
         const [saleResult] = await connection.execute(
             `INSERT INTO sales (invoice_number, branch_id, customer_id, user_id, total_amount, 
                                discount_amount, tax_amount, paid_amount, due_amount, payment_status, notes) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
             [invoiceNumber, branchId, customerId || null, req.user.id, totalAmount, 
              discount, tax, paid, due, paymentStatus, notes || null]
         );
@@ -517,7 +517,7 @@ const createRefund = async (req, res, next) => {
         // Create refund record
         const [refundResult] = await connection.execute(
             `INSERT INTO refunds (sale_id, refund_number, amount, reason, status) 
-             VALUES (?, ?, ?, ?, 'pending')`,
+             VALUES (?, ?, ?, ?, 'pending') RETURNING id`,
             [saleId, refundNumber, amount, reason || null]
         );
 

@@ -79,7 +79,7 @@ const createCustomer = async (req, res, next) => {
 
         const [result] = await connection.execute(
             `INSERT INTO customers (name, phone, email, address) 
-             VALUES (?, ?, ?, ?)`,
+             VALUES (?, ?, ?, ?) RETURNING id`,
             [name, phone || null, email || null, address || null]
         );
 
