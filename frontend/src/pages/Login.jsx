@@ -48,24 +48,24 @@ const Login = () => {
         <title>Login - iphone center.lk</title>
         <meta name="description" content="Login to iphone center.lk phone shop POS system" />
       </Helmet>
-      
-      <div className="min-h-screen flex items-center justify-center p-4">
+
+      {/* Peach/orange background like MyAccounts */}
+      <div className="min-h-screen flex items-center justify-center p-4 bg-[#fef3e8]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="w-full max-w-md"
         >
-          <div className="bg-card rounded-lg shadow-2xl p-8 space-y-6">
-            {/* Logo */}
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 flex items-center justify-center mx-auto">
-                <svg className="w-12 h-12" viewBox="0 0 814 1000" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path fill="currentColor" className="text-foreground" d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76.5 0-103.7 40.8-165.9 40.8s-105.6-57-155.5-127C46.7 790.7 0 663 0 541.8c0-194.4 126.4-297.5 250.8-297.5 66.1 0 121.2 43.4 162.7 43.4 39.5 0 101.1-46 176.3-46 28.5 0 130.9 2.6 198.3 99.2zm-234-181.5c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z"/>
-                </svg>
-              </div>
-              <h1 className="text-2xl font-bold">iphone center.lk</h1>
-              <p className="text-muted-foreground">Phone Shop POS System</p>
+          {/* Dark card */}
+          <div className="bg-[#2d2d2d] rounded-2xl shadow-2xl p-8 space-y-6">
+            {/* Brand: two-tone like MyAccounts */}
+            <div className="text-center space-y-1">
+              <h1 className="text-2xl font-bold tracking-tight">
+                <span className="text-orange-500">iphone</span>
+                <span className="text-white"> center.lk</span>
+              </h1>
+              <p className="text-white/90 text-lg">Login to your Account</p>
             </div>
 
             {/* Error message */}
@@ -73,55 +73,67 @@ const Login = () => {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-destructive/10 border border-destructive rounded-lg p-3 flex items-center gap-2"
+                className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 flex items-center gap-2"
                 role="alert"
                 aria-live="assertive"
               >
-                <AlertCircle className="w-5 h-5 text-destructive" />
-                <span className="text-sm text-destructive">{error}</span>
+                <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+                <span className="text-sm text-red-300">{error}</span>
               </motion.div>
             )}
 
-            {/* Login form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="email">Email or username</Label>
+                <Label htmlFor="email" className="text-white font-medium">
+                  Email or username
+                </Label>
                 <Input
                   id="email"
                   type="text"
                   autoComplete="username"
-                  placeholder="admin"
+                  placeholder="hello@yourcompany.com"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setFieldErrors((p) => ({ ...p, email: undefined })); }}
                   required
                   aria-required="true"
                   aria-invalid={!!fieldErrors.email}
-                  className={fieldErrors.email ? 'border-destructive' : ''}
+                  className={`bg-[#1a1a1a] border-[#404040] text-white placeholder:text-gray-500 focus:border-orange-500 focus:ring-orange-500/20 ${fieldErrors.email ? 'border-red-500' : ''}`}
                 />
                 {fieldErrors.email && (
-                  <p className="text-sm text-destructive" role="alert">{fieldErrors.email}</p>
+                  <p className="text-sm text-red-400" role="alert">{fieldErrors.email}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password" className="text-white font-medium">
+                    Password
+                  </Label>
+                  <a
+                    href="#"
+                    className="text-sm text-blue-400 hover:text-blue-300 focus:outline-none focus:underline"
+                    onClick={(e) => e.preventDefault()}
+                  >
+                    Forgot Password?
+                  </a>
+                </div>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
-                    placeholder="123"
+                    placeholder="••••••••"
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); setFieldErrors((p) => ({ ...p, password: undefined })); }}
                     required
                     aria-required="true"
                     aria-invalid={!!fieldErrors.password}
-                    className={`pr-10 ${fieldErrors.password ? 'border-destructive' : ''}`}
+                    className={`bg-[#1a1a1a] border-[#404040] text-white placeholder:text-gray-500 pr-10 focus:border-orange-500 focus:ring-orange-500/20 ${fieldErrors.password ? 'border-red-500' : ''}`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((p) => !p)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                     tabIndex={0}
                   >
@@ -129,19 +141,25 @@ const Login = () => {
                   </button>
                 </div>
                 {fieldErrors.password && (
-                  <p className="text-sm text-destructive" role="alert">{fieldErrors.password}</p>
+                  <p className="text-sm text-red-400" role="alert">{fieldErrors.password}</p>
                 )}
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Signing in…' : 'Sign In'}
+              <Button
+                type="submit"
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 rounded-lg focus:ring-orange-500/30"
+                disabled={loading}
+              >
+                {loading ? 'Signing in…' : 'Sign in'}
               </Button>
             </form>
 
-            {/* Sample credentials hint */}
-            <div className="text-center text-sm text-muted-foreground space-y-1">
-              <p>Demo: username <span className="font-mono">test</span> / password <span className="font-mono">test</span> (no database)</p>
-              <p className="text-xs">Create real users in the panel after logging in.</p>
+            {/* Footer like MyAccounts */}
+            <div className="text-center space-y-2 pt-2">
+              <p className="text-white/80 text-sm">
+                New here? Demo: <span className="font-mono text-orange-400">test</span> / <span className="font-mono text-orange-400">test</span>
+              </p>
+              <p className="text-white/50 text-xs">Version: 1.0.0</p>
             </div>
           </div>
         </motion.div>
