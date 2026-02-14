@@ -143,6 +143,15 @@ const server = app.listen(PORT, HOST, () => {
     console.log(msg);
     logger.info(`🚀 ${msg}`);
     logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+    try {
+        const { getTestLoginCredentials } = require('./config/env');
+        const tc = getTestLoginCredentials();
+        const testMsg = tc ? `Test login enabled: "${tc.username}" / "${tc.password}" (no DB)` : 'Test login disabled (set TEST_LOGIN_USERNAME & TEST_LOGIN_PASSWORD to enable)';
+        console.log(testMsg);
+        logger.info(testMsg);
+    } catch (e) {
+        console.log('Test login: check JWT env vars');
+    }
 });
 
 server.on('error', (err) => {
