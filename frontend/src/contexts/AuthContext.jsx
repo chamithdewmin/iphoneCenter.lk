@@ -40,19 +40,21 @@ export const AuthProvider = ({ children }) => {
   }, [fetchUser]);
 
   const login = async (emailOrUsername, password) => {
-    setLoading(true);
     try {
       const base = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
       const url = `${base}/api/auth/login`;
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: emailOrUsername, password }),
+        body: JSON.stringify({ username: String(emailOrUsername || '').trim(), password: password ? String(password) : '' }),
       });
       const data = await res.json().catch(() => ({}));
 
       if (!data.success || !data.data?.accessToken) {
-        return { success: false, error: data.message || 'Invalid credentials' };
+        const message = data.message || (Array.isArray(data.errors) && data.errors.length
+          ? data.errors.map((e) => e.message).join('. ')
+          : null) || 'Invalid email or password. Please try again.';
+        return { success: false, error: message };
       }
 
       const { accessToken, refreshToken, user: userData } = data.data;
@@ -70,9 +72,9 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       return { success: true };
     } catch (err) {
-      return { success: false, error: err.message || 'Login failed' };
-    } finally {
-      setLoading(false);
+      const message = err.message || 'Network error';
+      const isNetwork = message.includes('fetch') || message.includes('Network') || message === 'Failed to fetch';
+      return { success: false, error: isNetwork ? 'Cannot connect to server. Check your connection and try again.' : message };
     }
   };
 

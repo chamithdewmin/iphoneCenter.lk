@@ -12,17 +12,32 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  const validate = () => {
+    const errs = {};
+    const trimmedEmail = (email || '').trim();
+    if (!trimmedEmail) errs.email = 'Email or username is required';
+    if (!password) errs.password = 'Password is required';
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    const result = await login(email, password);
+    setFieldErrors({});
+    if (!validate()) return;
+    setLoading(true);
+    const result = await login((email || '').trim(), password);
+    setLoading(false);
     if (result.success) {
       navigate('/dashboard');
     } else {
-      setError(result.error || 'Invalid credentials');
+      setError(result.error || 'Invalid email or password. Please try again.');
     }
   };
 
@@ -74,12 +89,17 @@ const Login = () => {
                   id="email"
                   type="text"
                   autoComplete="username"
-                  placeholder="admin@pos.com or admin"
+                  placeholder="e.g. admin@pos.com or admin"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); setFieldErrors((p) => ({ ...p, email: undefined })); }}
                   required
                   aria-required="true"
+                  aria-invalid={!!fieldErrors.email}
+                  className={fieldErrors.email ? 'border-destructive' : ''}
                 />
+                {fieldErrors.email && (
+                  <p className="text-sm text-destructive" role="alert">{fieldErrors.email}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -88,16 +108,21 @@ const Login = () => {
                   id="password"
                   type="password"
                   autoComplete="current-password"
-                  placeholder="admin123"
+                  placeholder="Enter your password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); setFieldErrors((p) => ({ ...p, password: undefined })); }}
                   required
                   aria-required="true"
+                  aria-invalid={!!fieldErrors.password}
+                  className={fieldErrors.password ? 'border-destructive' : ''}
                 />
+                {fieldErrors.password && (
+                  <p className="text-sm text-destructive" role="alert">{fieldErrors.password}</p>
+                )}
               </div>
 
-              <Button type="submit" className="w-full">
-                Sign In
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Signing in…' : 'Sign In'}
               </Button>
             </form>
 
