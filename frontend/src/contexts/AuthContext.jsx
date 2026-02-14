@@ -42,13 +42,20 @@ export const AuthProvider = ({ children }) => {
   const login = async (emailOrUsername, password) => {
     try {
       const base = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
-      const url = `${base}/api/auth/login`;
+      const url = base ? `${base}/api/auth/login` : '/api/auth/login';
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: String(emailOrUsername || '').trim(), password: password ? String(password) : '' }),
       });
       const data = await res.json().catch(() => ({}));
+
+      if (res.status === 405) {
+        return {
+          success: false,
+          error: 'Login request reached the wrong server (405). Set VITE_API_URL to https://backend.iphonecenter.logozodev.com when building the frontend, then redeploy.',
+        };
+      }
 
       if (!data.success || !data.data?.accessToken) {
         const message = data.message || (Array.isArray(data.errors) && data.errors.length
