@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
+import loginBg from '@/assets/login-bg.jpg';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -49,13 +50,18 @@ const Login = () => {
         <meta name="description" content="Login to iphone center.lk phone shop POS system" />
       </Helmet>
 
-      {/* Peach/orange background like MyAccounts */}
-      <div className="min-h-screen flex items-center justify-center p-4 bg-[#fef3e8]">
+      {/* Background image with overlay for readability */}
+      <div
+        className="relative min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${loginBg})` }}
+      >
+        <div className="absolute inset-0 bg-black/40 z-0" aria-hidden="true" />
+        <div className="relative z-10 w-full max-w-md">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-md"
+          className="w-full"
         >
           {/* Dark card */}
           <div className="bg-[#2d2d2d] rounded-2xl shadow-2xl p-8 space-y-6">
@@ -163,6 +169,7 @@ const Login = () => {
             </div>
           </div>
         </motion.div>
+        </div>
       </div>
     </>
   );
