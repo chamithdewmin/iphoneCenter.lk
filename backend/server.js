@@ -120,6 +120,8 @@ app.get('/health', healthHandler);
 app.get('/api/health', healthHandler);
 app.get('/health/db', healthDbHandler);
 app.get('/api/health/db', healthDbHandler);
+// Same as /api/health/db – for parity with projects that use GET /api/test-connection
+app.get('/api/test-connection', healthDbHandler);
 
 // API routes
 app.use('/api/auth', authRoutes);

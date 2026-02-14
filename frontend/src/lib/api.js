@@ -1,8 +1,16 @@
 /**
  * API helper – only tokens are stored in localStorage; user data comes from the server.
+ * Pattern: same as Yala Wild Tusker – getApiUrl() = backend origin, getApiBaseUrl() = backend + /api.
  */
 
-const getApiUrl = () => import.meta.env.VITE_API_URL || '';
+/** Backend origin, no trailing slash (e.g. https://backend.iphonecenter.logozodev.com or http://localhost:5000) */
+export const getApiUrl = () => (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+
+/** Backend API base (e.g. https://backend.iphonecenter.logozodev.com/api). Use with paths like getApiBaseUrl() + '/customers'. */
+export const getApiBaseUrl = () => {
+  const base = getApiUrl();
+  return base ? `${base}/api` : '/api';
+};
 
 /** Read access token from localStorage (only token is stored, not user data) */
 export const getAccessToken = () => localStorage.getItem('accessToken');
@@ -27,7 +35,7 @@ export const clearTokens = () => {
  * Use for all API calls that need auth.
  */
 export const authFetch = async (path, options = {}) => {
-  const base = getApiUrl().replace(/\/$/, '');
+  const base = getApiUrl();
   const url = path.startsWith('http') ? path : `${base}${path.startsWith('/') ? path : `/${path}`}`;
   const token = getAccessToken();
   const headers = {

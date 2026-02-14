@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authFetch, setTokens, clearTokens, getAccessToken } from '@/lib/api';
+import { authFetch, setTokens, clearTokens, getAccessToken, getApiUrl } from '@/lib/api';
 
 const AuthContext = createContext(null);
 
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (emailOrUsername, password) => {
     try {
-      const base = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+      const base = getApiUrl();
       const url = base ? `${base}/api/auth/login` : '/api/auth/login';
       const res = await fetch(url, {
         method: 'POST',
