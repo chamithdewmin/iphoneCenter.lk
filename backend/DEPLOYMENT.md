@@ -14,19 +14,19 @@ The backend uses **PostgreSQL only** (no MySQL). In Dokploy, set the connection 
 
 If you prefer separate vars: set `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` (and optionally `DB_PORT`) instead of `DATABASE_URL`. The host must be the **internal hostname** (e.g. `iphone-center-database-2r1ljm`) so the backend container can reach the DB.
 
-### 2. Run the schema (required once)
+### 2. Tables auto-created on startup
 
-Create all tables (including `customers`, `users`, `branches`, etc.) by running the PostgreSQL schema **once** against the same database:
+The backend runs **`database/init.pg.sql`** on every startup and creates all tables/indexes/triggers if they don’t exist (idempotent). So you usually **don’t need to run the schema manually**—just set `DATABASE_URL` and restart the backend. If you still see "Database schema not applied", run the schema once by hand (see **RUN_SCHEMA.md**).
 
 ```bash
-# From your machine (replace with your real DATABASE_URL or connection details)
-psql "postgresql://user:password@host:5432/pos_system" -f backend/database/schema.pg.sql
+# With your DATABASE_URL (from Internal Credentials)
+psql "postgresql://user_iphone_center:YOUR_PASSWORD@host:5432/iphone-center-db" -f backend/database/schema.pg.sql
 ```
 
-Or from inside the server where PostgreSQL is running:
+Or from the **PostgreSQL container terminal** in Dokploy (if repo is public on GitHub):
 
 ```bash
-psql -U postgres -d pos_system -f /path/to/backend/database/schema.pg.sql
+PGPASSWORD='YOUR_PASSWORD' wget -qO- 'https://raw.githubusercontent.com/chamithdewmin/iphoneCenter.lk/main/backend/database/schema.pg.sql' | psql -U user_iphone_center -d iphone-center-db -h localhost
 ```
 
 If you don’t run the schema, you will get:

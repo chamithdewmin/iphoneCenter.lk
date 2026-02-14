@@ -142,27 +142,38 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 const HOST = '0.0.0.0';
 
-const server = app.listen(PORT, HOST, () => {
-    const msg = `Server running on http://${HOST}:${PORT}`;
-    console.log(msg);
-    logger.info(`🚀 ${msg}`);
-    logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-    try {
-        const { getTestLoginCredentials } = require('./config/env');
-        const tc = getTestLoginCredentials();
-        const testMsg = tc ? `Test login enabled: "${tc.username}" / "${tc.password}" (no DB)` : 'Test login disabled (set TEST_LOGIN_USERNAME & TEST_LOGIN_PASSWORD to enable)';
-        console.log(testMsg);
-        logger.info(testMsg);
-    } catch (e) {
-        console.log('Test login: check JWT env vars');
-    }
-});
+async function start() {
+    const { initDatabase } = require('./config/initDatabase');
+    await initDatabase();
+    return new Promise((resolve, reject) => {
+        const server = app.listen(PORT, HOST, () => {
+            const msg = `Server running on http://${HOST}:${PORT}`;
+            console.log(msg);
+            logger.info(`🚀 ${msg}`);
+            logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+            try {
+                const { getTestLoginCredentials } = require('./config/env');
+                const tc = getTestLoginCredentials();
+                const testMsg = tc ? `Test login enabled: "${tc.username}" / "${tc.password}" (no DB)` : 'Test login disabled (set TEST_LOGIN_USERNAME & TEST_LOGIN_PASSWORD to enable)';
+                console.log(testMsg);
+                logger.info(testMsg);
+            } catch (e) {
+                console.log('Test login: check JWT env vars');
+            }
+            resolve(server);
+        });
+        server.on('error', (err) => {
+            console.error('Server listen error:', err.message);
+            if (err.code === 'EADDRINUSE') {
+                console.error(`Port ${PORT} is already in use. Set PORT in env to another value.`);
+            }
+            reject(err);
+        });
+    });
+}
 
-server.on('error', (err) => {
-    console.error('Server listen error:', err.message);
-    if (err.code === 'EADDRINUSE') {
-        console.error(`Port ${PORT} is already in use. Set PORT in env to another value.`);
-    }
+start().catch((err) => {
+    console.error('Startup failed:', err.message);
     process.exit(1);
 });
 
