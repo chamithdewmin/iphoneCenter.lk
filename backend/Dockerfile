@@ -10,8 +10,8 @@ RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 # Copy package files
 COPY package*.json ./
 
-# Install production dependencies only
-RUN npm ci --omit=dev && npm cache clean --force
+# Install production dependencies (npm install tolerates outdated lock file; use npm ci if lock is in sync)
+RUN npm install --omit=dev && npm cache clean --force
 
 # Copy application
 COPY . .
