@@ -20,6 +20,15 @@ const loginValidation = [
     body('password').notEmpty().withMessage('Password is required')
 ];
 
+// GET /api/auth/login → 405 (login is POST only; avoids "route not found" when URL is opened in browser)
+router.get('/login', (req, res) => {
+    res.set('Allow', 'POST');
+    res.status(405).json({
+        success: false,
+        message: 'Method not allowed. Use POST with JSON body { username, password }.'
+    });
+});
+
 // Routes
 router.post('/register', requireAdmin, registerValidation, handleValidationErrors, authController.register);
 router.post('/login', loginValidation, handleValidationErrors, authController.login);
