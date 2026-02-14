@@ -1,13 +1,13 @@
 # Stage 1: Build
-# Use with: docker build -f frontend/Dockerfile .   (context = repo root)
+# Build context = frontend directory (Dokploy uses this)
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY frontend/package*.json ./
+COPY package*.json ./
 RUN npm ci && npm cache clean --force
 
-COPY frontend/ .
+COPY . .
 ARG VITE_API_URL=
 ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
@@ -16,7 +16,7 @@ RUN npm run build
 FROM nginx:alpine
 
 RUN rm /etc/nginx/conf.d/default.conf
-COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 RUN chown -R nginx:nginx /usr/share/nginx/html
