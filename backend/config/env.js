@@ -38,8 +38,21 @@ function getJwtRefreshSecret() {
     return secret;
 }
 
+/** Test/demo login (not in DB). If set, login with this pair returns success without database. */
+function getTestLoginCredentials() {
+    const user = (process.env.TEST_LOGIN_USERNAME || 'test').trim();
+    const pass = (process.env.TEST_LOGIN_PASSWORD || 'test').trim();
+    if (!user || !pass) return null;
+    return { username: user, password: pass };
+}
+
+/** Synthetic test user id (not in database). */
+const TEST_USER_ID = 0;
+
 module.exports = {
     validateEnv,
     getJwtSecret,
-    getJwtRefreshSecret
+    getJwtRefreshSecret,
+    getTestLoginCredentials,
+    TEST_USER_ID
 };

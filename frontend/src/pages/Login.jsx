@@ -140,8 +140,8 @@ const Login = () => {
 
             {/* Sample credentials hint */}
             <div className="text-center text-sm text-muted-foreground space-y-1">
-              <p>Sample: username <span className="font-mono">admin</span> / password <span className="font-mono">123</span></p>
-              <p className="text-xs">(If that fails, try password <span className="font-mono">Admin@123</span> for default admin.)</p>
+              <p>Demo: username <span className="font-mono">test</span> / password <span className="font-mono">test</span> (no database)</p>
+              <p className="text-xs">Create real users in the panel after logging in.</p>
             </div>
           </div>
         </motion.div>
