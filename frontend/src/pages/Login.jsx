@@ -6,11 +6,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -89,7 +90,7 @@ const Login = () => {
                   id="email"
                   type="text"
                   autoComplete="username"
-                  placeholder="e.g. admin@pos.com or admin"
+                  placeholder="admin"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setFieldErrors((p) => ({ ...p, email: undefined })); }}
                   required
@@ -104,18 +105,29 @@ const Login = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  autoComplete="current-password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => { setPassword(e.target.value); setFieldErrors((p) => ({ ...p, password: undefined })); }}
-                  required
-                  aria-required="true"
-                  aria-invalid={!!fieldErrors.password}
-                  className={fieldErrors.password ? 'border-destructive' : ''}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    placeholder="123"
+                    value={password}
+                    onChange={(e) => { setPassword(e.target.value); setFieldErrors((p) => ({ ...p, password: undefined })); }}
+                    required
+                    aria-required="true"
+                    aria-invalid={!!fieldErrors.password}
+                    className={`pr-10 ${fieldErrors.password ? 'border-destructive' : ''}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((p) => !p)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    tabIndex={0}
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
                 {fieldErrors.password && (
                   <p className="text-sm text-destructive" role="alert">{fieldErrors.password}</p>
                 )}
@@ -126,9 +138,10 @@ const Login = () => {
               </Button>
             </form>
 
-            {/* Hint */}
-            <div className="text-center text-sm text-muted-foreground">
-              <p>Sign in with your backend account (email or username).</p>
+            {/* Sample credentials hint */}
+            <div className="text-center text-sm text-muted-foreground space-y-1">
+              <p>Sample: username <span className="font-mono">admin</span> / password <span className="font-mono">123</span></p>
+              <p className="text-xs">(If that fails, try password <span className="font-mono">Admin@123</span> for default admin.)</p>
             </div>
           </div>
         </motion.div>
