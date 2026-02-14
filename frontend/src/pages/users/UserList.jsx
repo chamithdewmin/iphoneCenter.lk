@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Plus, Eye, Mail, Phone, Shield, User } from 'lucide-react';
+import { Search, Plus, Eye, Mail, Phone, Shield, User, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getStorageData } from '@/utils/storage';
+import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -11,18 +11,35 @@ const UserList = () => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    const { ok, data } = await authFetch('/api/users');
+    setLoading(false);
+    if (!ok) {
+      setError(data?.message || 'Failed to load users. Please log in again.');
+      setUsers([]);
+      setFilteredUsers([]);
+      return;
+    }
+    const list = Array.isArray(data?.data) ? data.data : [];
+    setUsers(list);
+    setFilteredUsers(list);
+    try { localStorage.removeItem('users'); } catch (_) {}
+  }, []);
 
   useEffect(() => {
-    const loadedUsers = getStorageData('users', []);
-    setUsers(loadedUsers);
-    setFilteredUsers(loadedUsers);
-  }, []);
+    fetchUsers();
+  }, [fetchUsers]);
 
   useEffect(() => {
     if (searchQuery) {
       const searchLower = searchQuery.toLowerCase();
       const filtered = users.filter(user =>
-        (user.name || '').toLowerCase().includes(searchLower) ||
+        (user.full_name || user.username || '').toLowerCase().includes(searchLower) ||
         (user.email || '').toLowerCase().includes(searchLower) ||
         (user.role || '').toLowerCase().includes(searchLower)
       );
@@ -36,12 +53,11 @@ const UserList = () => {
     const styles = {
       admin: 'bg-red-500/20 text-red-600 dark:text-red-400',
       manager: 'bg-blue-500/20 text-blue-600 dark:text-blue-400',
-      staff: 'bg-green-500/20 text-green-600 dark:text-green-400',
       cashier: 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',
     };
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${styles[role] || styles.staff}`}>
-        {role?.charAt(0).toUpperCase() + role?.slice(1) || 'Staff'}
+      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${styles[role] || 'bg-green-500/20 text-green-600 dark:text-green-400'}`}>
+        {role?.charAt(0).toUpperCase() + role?.slice(1) || '—'}
       </span>
     );
   };
@@ -61,13 +77,25 @@ const UserList = () => {
             </h1>
             <p className="text-muted-foreground mt-1">View and manage all system users</p>
           </div>
-          <Link to="/users/add">
-            <Button className="w-full sm:w-auto">
-              <Plus className="w-4 h-4 mr-2" />
-              Add User
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={fetchUsers} disabled={loading}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
             </Button>
-          </Link>
+            <Link to="/users/add">
+              <Button className="w-full sm:w-auto">
+                <Plus className="w-4 h-4 mr-2" />
+                Add User
+              </Button>
+            </Link>
+          </div>
         </div>
+
+        {error && (
+          <div className="bg-destructive/10 border border-destructive/50 rounded-lg p-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
 
         <div className="bg-card rounded-xl p-4 border border-secondary shadow-sm">
           <div className="relative">
@@ -81,7 +109,12 @@ const UserList = () => {
           </div>
         </div>
 
-        {filteredUsers.length === 0 ? (
+        {loading ? (
+          <div className="bg-card rounded-xl p-12 border border-secondary text-center">
+            <RefreshCw className="w-12 h-12 mx-auto text-muted-foreground mb-4 animate-spin" />
+            <p className="text-muted-foreground">Loading users from database…</p>
+          </div>
+        ) : filteredUsers.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -90,9 +123,9 @@ const UserList = () => {
             <User className="w-16 h-16 mx-auto text-muted-foreground mb-4 opacity-50" />
             <h3 className="text-xl font-semibold mb-2">No Users Found</h3>
             <p className="text-muted-foreground mb-6">
-              {users.length === 0 
-                ? "Get started by adding your first user"
-                : "No users match your search criteria"}
+              {users.length === 0
+                ? 'Users are stored in the database. Add your first user or log in as admin.'
+                : 'No users match your search criteria.'}
             </p>
             {users.length === 0 && (
               <Link to="/users/add">
@@ -118,11 +151,11 @@ const UserList = () => {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/70 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                        {(user.name || 'U').charAt(0).toUpperCase()}
+                        {(user.full_name || user.username || 'U').charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg">{user.name || 'Unknown User'}</h3>
-                        <p className="text-xs text-muted-foreground">ID: {user.id || 'N/A'}</p>
+                        <h3 className="font-bold text-lg">{user.full_name || user.username || 'Unknown User'}</h3>
+                        <p className="text-xs text-muted-foreground">@{user.username} · ID: {user.id}</p>
                       </div>
                     </div>
                     <Button size="sm" variant="outline">
@@ -133,14 +166,8 @@ const UserList = () => {
                   <div className="space-y-2 mb-4">
                     {user.email && (
                       <div className="flex items-center gap-2 text-sm">
-                        <Mail className="w-4 h-4 text-muted-foreground" />
+                        <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
                         <span className="text-muted-foreground truncate">{user.email}</span>
-                      </div>
-                    )}
-                    {user.phone && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">{user.phone}</span>
                       </div>
                     )}
                   </div>
@@ -151,11 +178,11 @@ const UserList = () => {
                       {getRoleBadge(user.role)}
                     </div>
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      user.status === 'active' 
+                      user.is_active !== false
                         ? 'bg-green-500/20 text-green-600 dark:text-green-400'
                         : 'bg-gray-500/20 text-gray-600 dark:text-gray-400'
                     }`}>
-                      {user.status || 'active'}
+                      {user.is_active !== false ? 'Active' : 'Inactive'}
                     </span>
                   </div>
                 </div>

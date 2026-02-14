@@ -2,28 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Download, User, Shield, CheckCircle } from 'lucide-react';
-import { getStorageData } from '@/utils/storage';
+import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 
 const UserReport = () => {
   const [users, setUsers] = useState([]);
   const [roleBreakdown, setRoleBreakdown] = useState({});
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    const loadedUsers = getStorageData('users', []);
-    setUsers(loadedUsers);
-
-    const breakdown = {};
-    loadedUsers.forEach(user => {
-      const role = user.role || 'staff';
-      if (!breakdown[role]) {
-        breakdown[role] = 0;
-      }
-      breakdown[role] += 1;
-    });
-    setRoleBreakdown(breakdown);
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const { ok, data } = await authFetch('/api/users');
+      if (cancelled) return;
+      setLoading(false);
+      const list = ok && Array.isArray(data?.data) ? data.data : [];
+      setUsers(list);
+      const breakdown = {};
+      list.forEach(user => {
+        const role = user.role || 'cashier';
+        breakdown[role] = (breakdown[role] || 0) + 1;
+      });
+      setRoleBreakdown(breakdown);
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   const handleExport = () => {
@@ -46,13 +51,17 @@ const UserReport = () => {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
               User Report
             </h1>
-            <p className="text-muted-foreground mt-1">View user analytics</p>
+            <p className="text-muted-foreground mt-1">View user analytics (from database)</p>
           </div>
           <Button onClick={handleExport} variant="outline">
             <Download className="w-4 h-4 mr-2" />
             Export Report
           </Button>
         </div>
+
+        {loading && (
+          <p className="text-muted-foreground">Loading users…</p>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <motion.div
@@ -78,7 +87,7 @@ const UserReport = () => {
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Active Users</p>
                 <p className="text-2xl font-bold text-green-500">
-                  {users.filter(u => u.status === 'active' || !u.status).length}
+                  {users.filter(u => u.is_active !== false).length}
                 </p>
               </div>
               <CheckCircle className="w-8 h-8 text-green-500 opacity-50" />

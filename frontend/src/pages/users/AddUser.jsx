@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
 import { Save, UserPlus, X, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getStorageData, setStorageData } from '@/utils/storage';
+import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,67 +11,87 @@ import { useToast } from '@/components/ui/use-toast';
 const AddUser = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
+    username: '',
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'staff',
+    role: 'cashier',
     phone: '',
-    status: 'active',
   });
 
-  const roles = ['admin', 'manager', 'staff', 'cashier'];
+  const roles = ['admin', 'manager', 'cashier'];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.name || !formData.email || !formData.password) {
+
+    if (!formData.username?.trim() || !formData.name?.trim() || !formData.email?.trim() || !formData.password) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
+        title: 'Validation Error',
+        description: 'Please fill in all required fields (Username, Full Name, Email, Password)',
+        variant: 'destructive',
       });
       return;
     }
-
+    if (formData.username.trim().length < 3) {
+      toast({
+        title: 'Validation Error',
+        description: 'Username must be at least 3 characters',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (formData.password.length < 6) {
+      toast({
+        title: 'Validation Error',
+        description: 'Password must be at least 6 characters',
+        variant: 'destructive',
+      });
+      return;
+    }
     if (formData.password !== formData.confirmPassword) {
       toast({
-        title: "Validation Error",
-        description: "Passwords do not match",
-        variant: "destructive",
+        title: 'Validation Error',
+        description: 'Passwords do not match',
+        variant: 'destructive',
       });
       return;
     }
 
-    const users = getStorageData('users', []);
-    const newUser = {
-      id: `USR-${Date.now()}`,
-      name: formData.name,
-      email: formData.email,
-      password: formData.password, // In real app, hash this
-      role: formData.role,
-      phone: formData.phone || '',
-      status: formData.status,
-      createdAt: new Date().toISOString(),
-    };
+    setLoading(true);
+    const { ok, status, data } = await authFetch('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        username: formData.username.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+        fullName: formData.name.trim(),
+        role: formData.role,
+        branchId: null,
+      }),
+    });
+    setLoading(false);
 
-    const updatedUsers = [...users, newUser];
-    setStorageData('users', updatedUsers);
+    if (!ok) {
+      toast({
+        title: 'Could not create user',
+        description: data?.message || (status === 401 ? 'Please log in again' : 'Please try again'),
+        variant: 'destructive',
+      });
+      return;
+    }
 
     toast({
-      title: "User Added",
-      description: `${newUser.name} has been added successfully`,
+      title: 'User Added',
+      description: `${formData.name} has been added and saved to the database`,
     });
-
     navigate('/users/list');
   };
 
@@ -100,6 +119,20 @@ const AddUser = () => {
                   <h2 className="text-xl font-semibold">User Information</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="username">Username *</Label>
+                    <Input
+                      id="username"
+                      name="username"
+                      value={formData.username}
+                      onChange={handleChange}
+                      placeholder="johndoe"
+                      className="mt-1"
+                      minLength={3}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground mt-0.5">Min 3 characters, used to log in</p>
+                  </div>
                   <div>
                     <Label htmlFor="name">Full Name *</Label>
                     <Input
@@ -187,19 +220,6 @@ const AddUser = () => {
                       required
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="status">Status</Label>
-                    <select
-                      id="status"
-                      name="status"
-                      value={formData.status}
-                      onChange={handleChange}
-                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
-                    >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                    </select>
-                  </div>
                 </div>
               </div>
             </div>
@@ -210,13 +230,14 @@ const AddUser = () => {
                   type="button"
                   variant="outline"
                   onClick={() => navigate('/users/list')}
+                  disabled={loading}
                 >
                   <X className="w-4 h-4 mr-2" />
                   Cancel
                 </Button>
-                <Button type="submit">
+                <Button type="submit" disabled={loading}>
                   <Save className="w-4 h-4 mr-2" />
-                  Save User
+                  {loading ? 'Saving…' : 'Save User'}
                 </Button>
               </div>
             </div>

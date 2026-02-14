@@ -82,6 +82,10 @@ Use header: `Authorization: Bearer <accessToken>` (from login response).
 | POST | `/api/customers` | Create customer |
 | PUT | `/api/customers/:id` | Update customer |
 
+| Method | Path | Note |
+|--------|------|------|
+| GET | `/api/users` | **Admin only.** List all users in the database (no password hashes). |
+
 ---
 
 ## Quick curl examples (replace BASE)
@@ -99,6 +103,9 @@ curl -s -X POST "$BASE/api/auth/login" -H "Content-Type: application/json" -d '{
 # Profile (use token from login)
 TOKEN=<paste_access_token_here>
 curl -s "$BASE/api/auth/profile" -H "Authorization: Bearer $TOKEN"
+
+# List all users (admin only)
+curl -s "$BASE/api/users" -H "Authorization: Bearer $TOKEN"
 ```
 
 Full route details and request bodies: see `API_ROUTES.md`.
