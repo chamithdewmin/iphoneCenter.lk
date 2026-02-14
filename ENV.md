@@ -20,7 +20,7 @@ Load from `backend/.env` (copy from `backend/.env.example`).
 | `DB_NAME` | No | `pos_system` | config/database.js | Database name |
 | `JWT_SECRET` | **Yes** | — | config/env.js, middleware/auth.js, authController | Access token signing secret (32+ chars in production) |
 | `JWT_REFRESH_SECRET` | **Yes** | — | config/env.js, middleware/auth.js, authController | Refresh token signing secret (32+ chars in production) |
-| `CORS_ORIGIN` | No | (reflect request) | server.js | Allowed frontend origin, e.g. `https://iphonecenter.logozodev.com` |
+| `CORS_ORIGIN` | No | (reflect request) | server.js | Frontend origin, e.g. `https://iphonecenter.logozodev.com` |
 | `LOG_LEVEL` | No | `info` | utils/logger.js | Log level: error, warn, info, debug |
 
 \* Either `DATABASE_URL` or `DB_HOST` (and optionally other DB_* vars) must be set.
@@ -34,7 +34,7 @@ Vite exposes only variables prefixed with `VITE_`.
 
 | Variable | Required | Default | Used in | Description |
 |----------|----------|---------|---------|-------------|
-| `VITE_API_URL` | Yes (for API) | `''` | lib/api.js, AuthContext.jsx | Backend base URL (no trailing slash), e.g. `https://iphonecenter.logozodev.com` |
+| `VITE_API_URL` | Yes (for API) | `''` | lib/api.js, AuthContext.jsx | Backend base URL (no trailing slash), e.g. `https://backend.iphonecenter.logozodev.com` |
 
 ---
 
