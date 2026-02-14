@@ -100,6 +100,11 @@ const healthDbHandler = async (req, res) => {
     }
 };
 
+// Root – so https://backend.iphonecenter.logozodev.com/ returns 200
+app.get('/', (req, res) => {
+    res.json({ ok: true, service: 'iphone-center-api', timestamp: new Date().toISOString() });
+});
+
 app.get('/health', healthHandler);
 app.get('/api/health', healthHandler);
 app.get('/health/db', healthDbHandler);
@@ -119,11 +124,12 @@ app.use(notFoundHandler);
 // Error handler (must be last)
 app.use(errorHandler);
 
-// Start server
+// Start server – bind to 0.0.0.0 so Docker/proxy can reach the app
 const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0';
 
-app.listen(PORT, () => {
-    logger.info(`🚀 Server running on port ${PORT}`);
+app.listen(PORT, HOST, () => {
+    logger.info(`🚀 Server running on http://${HOST}:${PORT}`);
     logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
