@@ -26,6 +26,11 @@ const getAllBranches = async (req, res, next) => {
         // Only return active branches (is_active may be missing in old schemas)
         const list = raw.filter((b) => b.is_active !== false);
 
+        if (process.env.NODE_ENV === 'production') {
+            console.log('Get branches OK:', list.length, 'branches');
+        }
+        logger.info('Get branches OK', { count: list.length });
+
         res.json({
             success: true,
             data: list
