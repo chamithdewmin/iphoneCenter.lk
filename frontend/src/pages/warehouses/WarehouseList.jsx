@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Plus, Eye, Warehouse, MapPin, Phone, Loader2 } from 'lucide-react';
+import { Search, Plus, Eye, Pencil, Warehouse, MapPin, Phone, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
@@ -138,9 +138,18 @@ const WarehouseList = () => {
                         <p className="text-xs text-muted-foreground font-mono">{warehouse.code}</p>
                       </div>
                     </div>
-                    <Button size="sm" variant="outline">
-                      <Eye className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Link to={`/warehouses/edit/${warehouse.id}`}>
+                        <Button size="sm" variant="outline" title="View">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </Link>
+                      <Link to={`/warehouses/edit/${warehouse.id}`}>
+                        <Button size="sm" variant="outline" title="Edit">
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
 
                   <div className="space-y-2 mb-4">

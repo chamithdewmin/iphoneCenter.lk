@@ -64,6 +64,7 @@ import ShippingChargeReport from './pages/reports/ShippingChargeReport';
 
 // Warehouses
 import AddWarehouse from './pages/warehouses/AddWarehouse';
+import EditWarehouse from './pages/warehouses/EditWarehouse';
 import WarehouseList from './pages/warehouses/WarehouseList';
 
 // Settings
@@ -200,6 +201,7 @@ function App() {
 
         {/* Warehouses */}
         <Route path="warehouses/add" element={<AddWarehouse />} />
+        <Route path="warehouses/edit/:id" element={<EditWarehouse />} />
         <Route path="warehouses/list" element={<WarehouseList />} />
 
         {/* SMS */}
