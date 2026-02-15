@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Menu, Bell, User } from 'lucide-react';
+import { Search, Menu, Bell } from 'lucide-react';
 
 const Topbar = ({ onMenuClick }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,12 +35,6 @@ const Topbar = ({ onMenuClick }) => {
             <Bell className="w-5 h-5" />
             <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
           </button>
-
-          <div className="flex items-center p-2">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-white" />
-            </div>
-          </div>
         </div>
       </div>
     </header>
