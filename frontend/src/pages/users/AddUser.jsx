@@ -18,11 +18,11 @@ const AddUser = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'cashier',
+    role: 'staff',
     phone: '',
   });
 
-  const roles = ['admin', 'manager', 'cashier'];
+  const roles = ['admin', 'manager', 'staff'];
 
   const handleChange = (e) => {
     const { name, value } = e.target;

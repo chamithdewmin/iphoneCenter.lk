@@ -4,7 +4,7 @@
 -- ENUMS
 -- ============================================
 DO $$ BEGIN
-    CREATE TYPE user_role AS ENUM ('admin', 'manager', 'cashier');
+    CREATE TYPE user_role AS ENUM ('admin', 'manager', 'cashier', 'staff');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
     CREATE TYPE imei_status AS ENUM ('available', 'sold', 'reserved', 'transferred', 'returned');

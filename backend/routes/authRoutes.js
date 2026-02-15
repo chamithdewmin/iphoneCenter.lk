@@ -12,7 +12,7 @@ const registerValidation = [
     body('email').isEmail().withMessage('Invalid email'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
     body('fullName').trim().notEmpty().withMessage('Full name is required'),
-    body('role').isIn(['admin', 'manager', 'cashier']).withMessage('Invalid role')
+    body('role').isIn(['admin', 'manager', 'staff', 'cashier']).withMessage('Invalid role')
 ];
 
 const loginValidation = [
