@@ -437,7 +437,14 @@ const Sidebar = ({ isOpen, onClose }) => {
               </div>
               <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" />
             </div>
-            <p className="text-center text-xs text-muted-foreground">iphone center.lk</p>
+            <a
+              href="https://logozodev.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Powered by LogozoDev
+            </a>
           </div>
         </div>
       </aside>
