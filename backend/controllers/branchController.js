@@ -2,19 +2,22 @@ const { executeQuery, getConnection } = require('../config/database');
 const logger = require('../utils/logger');
 
 /**
- * Get all branches (Admin sees all active, others see only their branch)
+ * Get all branches (Admin sees all active, others see only their branch).
+ * Query param forTransfer=1: return all branches (so Manager/Staff can pick transfer destination).
  */
 const getAllBranches = async (req, res, next) => {
     try {
         const user = req.user || {};
         const role = user.role != null ? String(user.role).toLowerCase() : '';
         const branchId = user.branch_id;
+        const forTransfer = req.query.forTransfer === '1' || req.query.forTransfer === true;
 
         let query = 'SELECT * FROM branches WHERE 1=1';
         const params = [];
 
-        // Non-admin users can only see their branch
-        if (role !== 'admin' && branchId != null && branchId !== '') {
+        if (role === 'admin' || forTransfer) {
+            // Admin always sees all; forTransfer lets Manager/Staff see all (for transfer destination dropdown)
+        } else if (branchId != null && branchId !== '') {
             query += ' AND id = ?';
             params.push(branchId);
         }

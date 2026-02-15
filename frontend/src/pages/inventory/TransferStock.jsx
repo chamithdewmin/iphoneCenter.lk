@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
-import { Search, ArrowRightLeft, Save, Package, Warehouse } from 'lucide-react';
-import { getStorageData, setStorageData } from '@/utils/storage';
+import { ArrowRightLeft, Save, Loader2 } from 'lucide-react';
+import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -10,56 +9,74 @@ import { useToast } from '@/components/ui/use-toast';
 
 const TransferStock = () => {
   const [products, setProducts] = useState([]);
-  const [warehouses, setWarehouses] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [branches, setBranches] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    fromWarehouse: '',
-    toWarehouse: 'shop',
+    fromBranchId: '',
+    toBranchId: '',
     productId: '',
     quantity: '',
     notes: '',
   });
   const { toast } = useToast();
 
-  useEffect(() => {
-    const loadedProducts = getStorageData('products', []);
-    const loadedWarehouses = getStorageData('warehouses', []);
-    setProducts(loadedProducts);
-    setFilteredProducts(loadedProducts);
-    setWarehouses(loadedWarehouses);
+  const fetchBranchesAndProducts = useCallback(async () => {
+    setLoading(true);
+    const [branchesRes, productsRes] = await Promise.all([
+      authFetch('/api/branches?forTransfer=1'),
+      authFetch('/api/inventory/products'),
+    ]);
+    const branchList = Array.isArray(branchesRes.data?.data) ? branchesRes.data.data : [];
+    const productList = Array.isArray(productsRes.data?.data) ? productsRes.data.data : [];
+    setBranches(branchList);
+    setProducts(productList);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    if (searchQuery) {
-      const searchLower = searchQuery.toLowerCase();
-      const filtered = products.filter(product =>
-        (product.brand || product.make || '').toLowerCase().includes(searchLower) ||
-        (product.model || '').toLowerCase().includes(searchLower)
-      );
-      setFilteredProducts(filtered);
-    } else {
-      setFilteredProducts(products);
-    }
-  }, [searchQuery, products]);
+    fetchBranchesAndProducts();
+  }, [fetchBranchesAndProducts]);
 
-  const handleSubmit = (e) => {
+  const toBranchOptions = branches.filter((b) => String(b.id) !== String(formData.fromBranchId));
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.fromWarehouse || !formData.productId || !formData.quantity) {
+    if (!formData.fromBranchId || !formData.toBranchId || !formData.productId || !formData.quantity || Number(formData.quantity) < 1) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
+        title: 'Validation Error',
+        description: 'Please fill in From warehouse, To location, Product, and Quantity.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setSubmitting(true);
+    const { ok, data } = await authFetch('/api/inventory/transfers', {
+      method: 'POST',
+      body: JSON.stringify({
+        fromBranchId: formData.fromBranchId,
+        toBranchId: formData.toBranchId,
+        productId: formData.productId,
+        quantity: Number(formData.quantity),
+        notes: formData.notes || undefined,
+      }),
+    });
+    setSubmitting(false);
+    if (!ok) {
+      toast({
+        title: 'Transfer failed',
+        description: data?.message || 'Could not complete transfer.',
+        variant: 'destructive',
       });
       return;
     }
     toast({
-      title: "Stock Transferred",
-      description: `Stock transfer completed successfully`,
+      title: 'Stock transferred',
+      description: data?.message || 'Transfer completed successfully.',
     });
     setFormData({
-      fromWarehouse: '',
-      toWarehouse: 'shop',
+      fromBranchId: '',
+      toBranchId: '',
       productId: '',
       quantity: '',
       notes: '',
@@ -78,9 +95,14 @@ const TransferStock = () => {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
             Transfer Stock
           </h1>
-          <p className="text-muted-foreground mt-1">Transfer stock between warehouse and shop</p>
+          <p className="text-muted-foreground mt-1">Transfer stock between branches (warehouses)</p>
         </div>
 
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
         <form onSubmit={handleSubmit}>
           <div className="bg-card rounded-xl border border-secondary shadow-sm">
             <div className="p-6 space-y-6">
@@ -91,34 +113,34 @@ const TransferStock = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="fromWarehouse">From Warehouse *</Label>
+                    <Label htmlFor="fromBranchId">From Warehouse *</Label>
                     <select
-                      id="fromWarehouse"
-                      name="fromWarehouse"
-                      value={formData.fromWarehouse}
-                      onChange={(e) => setFormData({ ...formData, fromWarehouse: e.target.value })}
+                      id="fromBranchId"
+                      name="fromBranchId"
+                      value={formData.fromBranchId}
+                      onChange={(e) => setFormData({ ...formData, fromBranchId: e.target.value, toBranchId: '' })}
                       className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
                       required
                     >
                       <option value="">Select warehouse</option>
-                      {warehouses.map(wh => (
-                        <option key={wh.id} value={wh.id}>{wh.name}</option>
+                      {branches.map((b) => (
+                        <option key={b.id} value={b.id}>{b.name} ({b.code})</option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <Label htmlFor="toWarehouse">To Location *</Label>
+                    <Label htmlFor="toBranchId">To Location *</Label>
                     <select
-                      id="toWarehouse"
-                      name="toWarehouse"
-                      value={formData.toWarehouse}
-                      onChange={(e) => setFormData({ ...formData, toWarehouse: e.target.value })}
+                      id="toBranchId"
+                      name="toBranchId"
+                      value={formData.toBranchId}
+                      onChange={(e) => setFormData({ ...formData, toBranchId: e.target.value })}
                       className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
                       required
                     >
-                      <option value="shop">Shop</option>
-                      {warehouses.map(wh => (
-                        <option key={wh.id} value={wh.id}>{wh.name}</option>
+                      <option value="">Select destination</option>
+                      {toBranchOptions.map((b) => (
+                        <option key={b.id} value={b.id}>{b.name} ({b.code})</option>
                       ))}
                     </select>
                   </div>
@@ -139,9 +161,9 @@ const TransferStock = () => {
                       required
                     >
                       <option value="">Select product</option>
-                      {filteredProducts.map(product => (
-                        <option key={product.id} value={product.id}>
-                          {product.model || product.brand} - Stock: {product.stock || 0}
+                      {products.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name || p.sku} {p.sku ? `(${p.sku})` : ''}
                         </option>
                       ))}
                     </select>
@@ -177,13 +199,14 @@ const TransferStock = () => {
             </div>
 
             <div className="border-t border-secondary p-6 bg-secondary/30">
-              <Button type="submit" className="w-full">
-                <Save className="w-4 h-4 mr-2" />
+              <Button type="submit" className="w-full" disabled={submitting}>
+                {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                 Transfer Stock
               </Button>
             </div>
           </div>
         </form>
+        )}
       </div>
     </>
   );

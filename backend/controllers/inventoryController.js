@@ -425,14 +425,14 @@ const transferStock = async (req, res, next) => {
             });
         }
 
-        const fromBranchId = req.user.branch_id;
-        const { toBranchId, productId, quantity, imei, notes } = req.body;
+        const { toBranchId, productId, quantity, imei, notes, fromBranchId: bodyFromBranchId } = req.body;
+        const fromBranchId = isAdmin(req) && bodyFromBranchId ? bodyFromBranchId : req.user.branch_id;
 
-        if (!toBranchId || !productId || !quantity) {
+        if (!fromBranchId || !toBranchId || !productId || !quantity) {
             await connection.rollback();
             return res.status(400).json({
                 success: false,
-                message: 'To branch, product, and quantity are required'
+                message: 'From branch, to branch, product, and quantity are required'
             });
         }
 
