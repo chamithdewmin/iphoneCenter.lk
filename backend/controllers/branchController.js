@@ -7,14 +7,14 @@ const logger = require('../utils/logger');
 const getAllBranches = async (req, res, next) => {
     try {
         const user = req.user || {};
-        const role = user.role;
+        const role = user.role != null ? String(user.role).toLowerCase() : '';
         const branchId = user.branch_id;
 
         let query = 'SELECT * FROM branches WHERE 1=1';
         const params = [];
 
         // Non-admin users can only see their branch
-        if (role !== 'admin' && branchId != null) {
+        if (role !== 'admin' && branchId != null && branchId !== '') {
             query += ' AND id = ?';
             params.push(branchId);
         }

@@ -101,6 +101,15 @@ If the app shows **"Could not load warehouses"** and the network tab shows **500
 
 After fixing, the API returns **503** with a clear message instead of 500; the logs always show the exact error so you can fix the root cause.
 
+**Correct way to test GET /api/branches (e.g. in Postman):**
+1. **Login** – `POST` `https://backend.iphonecenter.logozodev.com/api/auth/login`  
+   Body (JSON): `{ "username": "admin", "password": "Admin@123" }`  
+   Copy `data.accessToken` from the response.
+2. **Get branches** – `GET` `https://backend.iphonecenter.logozodev.com/api/branches`  
+   Authorization: Type **Bearer Token**, Token: paste the `accessToken`.  
+   Send. You should get `200` with `{ "success": true, "data": [ ... ] }`.  
+   If you get `503`, check backend container logs for `Get branches error` or `Branch guard error` and the PostgreSQL code/message.
+
 ---
 
 ## 500 on checkout (POST /api/billing/sales) – “Checkout failed”

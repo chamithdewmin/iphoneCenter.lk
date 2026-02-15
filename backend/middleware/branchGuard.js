@@ -15,8 +15,11 @@ const branchGuard = async (req, res, next) => {
             });
         }
 
+        // Normalize role (PostgreSQL enum may come as string)
+        const role = req.user.role != null ? String(req.user.role).toLowerCase() : '';
+
         // Admin can access all branches
-        if (req.user.role === ROLES.ADMIN) {
+        if (role === ROLES.ADMIN) {
             // If branch_id is provided in query/params, validate it exists
             const branchId = req.params.branchId || req.query.branchId || req.body.branchId;
             if (branchId) {
@@ -35,7 +38,7 @@ const branchGuard = async (req, res, next) => {
         }
 
         // Non-admin users must have a branch_id
-        if (!req.user.branch_id) {
+        if (req.user.branch_id == null || req.user.branch_id === '') {
             return res.status(403).json({
                 success: false,
                 message: 'User must be assigned to a branch'
@@ -56,18 +59,14 @@ const branchGuard = async (req, res, next) => {
 
         next();
     } catch (error) {
-        logger.error('Branch guard error:', error);
-        const code = error.code || '';
-        const isDbError = code === '42P01' || code === '42703' || code === 'ECONNREFUSED' || code === 'ENOTFOUND' || code === 'ETIMEDOUT';
-        if (isDbError) {
-            return res.status(503).json({
-                success: false,
-                message: 'Database not ready. Ensure DATABASE_URL is set and init.pg.sql has been run. Check backend logs.'
-            });
+        logger.error('Branch guard error:', { message: error.message, code: error.code, stack: error.stack });
+        if (process.env.NODE_ENV === 'production') {
+            console.error('Branch guard error:', error.code, error.message);
         }
-        return res.status(500).json({
+        // Always return 503 (never 500) so client gets a clear, consistent response; check logs for real cause
+        return res.status(503).json({
             success: false,
-            message: 'Internal server error'
+            message: 'Service temporarily unavailable. Check backend logs for "Branch guard error" or "Get branches error".'
         });
     }
 };
