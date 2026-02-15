@@ -35,9 +35,6 @@ import CustomerList from './pages/people/customers/CustomerList';
 import AddSupplier from './pages/people/suppliers/AddSupplier';
 import SupplierList from './pages/people/suppliers/SupplierList';
 
-// People - Billers
-import AddBiller from './pages/people/billers/AddBiller';
-import BillerList from './pages/people/billers/BillerList';
 
 // Users
 import AddUser from './pages/users/AddUser';
@@ -174,10 +171,6 @@ function App() {
         {/* People - Suppliers */}
         <Route path="people/suppliers/add" element={<AddSupplier />} />
         <Route path="people/suppliers/list" element={<SupplierList />} />
-
-        {/* People - Billers */}
-        <Route path="people/billers/add" element={<AddBiller />} />
-        <Route path="people/billers/list" element={<BillerList />} />
 
         {/* Users */}
         <Route path="users/add" element={<AddUser />} />

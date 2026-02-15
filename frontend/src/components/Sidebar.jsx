@@ -49,13 +49,13 @@ import { useRolePermissionsVersion } from '@/contexts/RolePermissionsContext';
 /** Each top-level item has a permission key; sidebar shows it only if user's role has that permission. */
 const menuItems = [
   { type: 'link', to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', permission: 'dashboard' },
+  { type: 'link', to: '/pos-billing/new-sale', icon: ShoppingCart, label: 'New Sale', permission: 'orders' },
   {
     type: 'menu',
     icon: Receipt,
     label: 'Invoice',
     permission: 'orders',
     children: [
-      { to: '/pos-billing/new-sale', label: 'New Sale', icon: ShoppingCart },
       { to: '/pos-billing/print-invoice', label: 'Print Invoice', icon: Printer },
       { to: '/pos-billing/hold-invoice', label: 'Hold Invoice', icon: Pause },
       { to: '/pos-billing/return-refund', label: 'Return / Refund', icon: RotateCcw },
@@ -150,15 +150,6 @@ const menuItems = [
         children: [
           { to: '/people/suppliers/add', label: 'Add Supplier', icon: Plus },
           { to: '/people/suppliers/list', label: 'Supplier List', icon: List },
-        ],
-      },
-      {
-        type: 'submenu',
-        label: 'Billers',
-        icon: Receipt,
-        children: [
-          { to: '/people/billers/add', label: 'Add Biller', icon: Plus },
-          { to: '/people/billers/list', label: 'Biller List', icon: List },
         ],
       },
     ],

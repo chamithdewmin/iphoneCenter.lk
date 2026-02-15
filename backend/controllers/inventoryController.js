@@ -98,7 +98,7 @@ const createProduct = async (req, res, next) => {
     try {
         await connection.beginTransaction();
 
-        const { name, sku, description, category, brand, basePrice } = req.body;
+        const { name, sku, description, category, brand, basePrice, initialQuantity } = req.body;
 
         if (!name || !sku || !basePrice) {
             await connection.rollback();
@@ -128,12 +128,32 @@ const createProduct = async (req, res, next) => {
             [name, sku, description || null, category || null, brand || null, basePrice]
         );
 
+        const productId = result.insertId;
+
         // Generate barcode
-        const barcode = generateBarcode(result.insertId, sku);
+        const barcode = generateBarcode(productId, sku);
         await connection.execute(
             'INSERT INTO barcodes (product_id, barcode) VALUES (?, ?)',
-            [result.insertId, barcode]
+            [productId, barcode]
         );
+
+        // Set initial stock quantity (use first active branch if user has no branch)
+        const qty = Math.max(0, parseInt(initialQuantity, 10) || 0);
+        if (qty >= 0) {
+            let branchId = req.user?.branch_id;
+            if (!branchId) {
+                const [branches] = await connection.execute(
+                    'SELECT id FROM branches WHERE is_active = TRUE ORDER BY id LIMIT 1'
+                );
+                branchId = branches.length > 0 ? branches[0].id : null;
+            }
+            if (branchId) {
+                await connection.execute(
+                    'INSERT INTO branch_stock (branch_id, product_id, quantity) VALUES (?, ?, ?)',
+                    [branchId, productId, qty]
+                );
+            }
+        }
 
         await connection.commit();
 

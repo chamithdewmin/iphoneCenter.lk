@@ -43,6 +43,7 @@ const AddProduct = () => {
       toast({ title: 'Validation Error', description: 'Valid base price is required', variant: 'destructive' });
       return;
     }
+    const initialQuantity = Math.max(0, parseInt(formData.stock, 10) || 0);
     setLoading(true);
     const { ok, data } = await authFetch('/api/inventory/products', {
       method: 'POST',
@@ -53,6 +54,7 @@ const AddProduct = () => {
         category: formData.category || null,
         brand: formData.brand || null,
         basePrice,
+        initialQuantity,
       }),
     });
     setLoading(false);
