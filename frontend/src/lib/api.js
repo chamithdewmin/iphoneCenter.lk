@@ -31,10 +31,34 @@ export const clearTokens = () => {
 };
 
 /**
- * Authenticated fetch – adds Bearer token from localStorage.
- * Use for all API calls that need auth.
+ * Call refresh endpoint and return new access token or null.
  */
-export const authFetch = async (path, options = {}) => {
+async function refreshAccessToken() {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return null;
+  const base = getApiUrl();
+  const url = base ? `${base}/api/auth/refresh` : '/api/auth/refresh';
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data?.success && data?.data?.accessToken) {
+      setTokens(data.data.accessToken, refreshToken);
+      return data.data.accessToken;
+    }
+  } catch (_) {}
+  return null;
+}
+
+/**
+ * Authenticated fetch – adds Bearer token from localStorage.
+ * On 401, tries to refresh the access token once and retries the request.
+ * Tokens are stored in localStorage so login persists (production-style).
+ */
+export const authFetch = async (path, options = {}, retried = false) => {
   const base = getApiUrl();
   const url = path.startsWith('http') ? path : `${base}${path.startsWith('/') ? path : `/${path}`}`;
   const token = getAccessToken();
@@ -44,6 +68,12 @@ export const authFetch = async (path, options = {}) => {
     ...options.headers,
   };
   const res = await fetch(url, { ...options, headers });
+  if (res.status === 401 && !retried) {
+    const newToken = await refreshAccessToken();
+    if (newToken) return authFetch(path, options, true);
+    clearTokens();
+    return { ok: false, status: 401, data: null };
+  }
   if (res.status === 401) {
     clearTokens();
     return { ok: false, status: 401, data: null };

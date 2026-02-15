@@ -48,7 +48,7 @@ module.exports = {
     },
     
     JWT_EXPIRY: {
-        ACCESS_TOKEN: '15m',
-        REFRESH_TOKEN: '7d'
+        ACCESS_TOKEN: '1h',   // production: longer access so less refresh; refresh handles expiry
+        REFRESH_TOKEN: '7d'   // user stays logged in for 7 days unless they logout
     }
 };

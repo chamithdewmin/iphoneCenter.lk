@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authFetch, setTokens, clearTokens, getAccessToken, getApiUrl } from '@/lib/api';
+import { authFetch, setTokens, clearTokens, getAccessToken, getRefreshToken, getApiUrl } from '@/lib/api';
 
 const AuthContext = createContext(null);
 
@@ -85,9 +85,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const refreshToken = getRefreshToken();
+    const accessToken = getAccessToken();
+    if (refreshToken || accessToken) {
+      try {
+        const base = getApiUrl();
+        const url = base ? `${base}/api/auth/logout` : '/api/auth/logout';
+        await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
+          },
+          body: JSON.stringify({ refreshToken: refreshToken || undefined }),
+        });
+      } catch (_) {}
+    }
     clearTokens();
-    localStorage.removeItem('auth'); // legacy: remove old full-auth storage
+    localStorage.removeItem('auth');
     setUser(null);
     setIsAuthenticated(false);
   };
