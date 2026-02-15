@@ -1,37 +1,72 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, ScanLine, Plus, Minus, Trash2, ShoppingCart, CreditCard, Printer, User, X } from 'lucide-react';
-import { getStorageData } from '@/utils/storage';
+import { Search, ScanLine, Plus, Minus, Trash2, ShoppingCart, CreditCard, Printer, User, X, Loader2 } from 'lucide-react';
+import { authFetch } from '@/lib/api';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 
+// Normalize API product to POS shape (name, base_price, quantity/stock → model, price, stock)
+function normalizeProduct(p) {
+  return {
+    ...p,
+    model: p.name || p.model || '',
+    make: p.brand || p.make || '',
+    price: p.base_price != null ? Number(p.base_price) : (p.price != null ? Number(p.price) : 0),
+    stock: p.quantity != null ? parseInt(p.quantity, 10) : (p.stock != null ? parseInt(p.stock, 10) : 0),
+  };
+}
+
 const NewSale = () => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [customers, setCustomers] = useState([]);
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [discount, setDiscount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const { cart, addToCart, removeFromCart, updateQuantity, clearCart, getTotal, getTax, getGrandTotal } = useCart();
   const { toast } = useToast();
 
-  useEffect(() => {
-    const loadedProducts = getStorageData('products', []);
-    setProducts(loadedProducts);
-    setFilteredProducts(loadedProducts);
-  }, []);
+  const fetchProducts = useCallback(async () => {
+    setProductsLoading(true);
+    const { ok, data } = await authFetch('/api/inventory/products');
+    setProductsLoading(false);
+    if (!ok) {
+      toast({
+        title: 'Failed to load products',
+        description: data?.message || 'Check your connection and try again.',
+        variant: 'destructive',
+      });
+      setProducts([]);
+      setFilteredProducts([]);
+      return;
+    }
+    const list = Array.isArray(data?.data) ? data.data : [];
+    const normalized = list.map(normalizeProduct);
+    setProducts(normalized);
+    setFilteredProducts(normalized);
+  }, [toast]);
 
   useEffect(() => {
-    if (searchQuery) {
-      const searchLower = searchQuery.toLowerCase();
-      const filtered = products.filter(product =>
-        (product.brand || product.make || '').toLowerCase().includes(searchLower) ||
-        product.model.toLowerCase().includes(searchLower) ||
-        (product.imei || product.vin || '').toLowerCase().includes(searchLower) ||
-        (product.barcode || '').toLowerCase().includes(searchLower)
+    fetchProducts();
+  }, [fetchProducts]);
+
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const searchLower = searchQuery.toLowerCase().trim();
+      const filtered = products.filter(
+        (product) =>
+          (product.brand || product.make || '').toLowerCase().includes(searchLower) ||
+          (product.model || product.name || '').toLowerCase().includes(searchLower) ||
+          (product.sku || '').toLowerCase().includes(searchLower) ||
+          (product.imei || product.vin || '').toLowerCase().includes(searchLower) ||
+          (product.barcode || '').toLowerCase().includes(searchLower)
       );
       setFilteredProducts(filtered);
     } else {
@@ -94,27 +129,81 @@ const NewSale = () => {
     return (getTotal() * discount) / 100;
   };
 
+  const taxRatePercent = 10;
   const calculateFinalTotal = () => {
     const subtotal = getTotal();
     const discountAmount = calculateDiscountAmount();
-    const tax = (subtotal - discountAmount) * 0.1; // 10% tax on discounted amount
+    const tax = (subtotal - discountAmount) * (taxRatePercent / 100);
     return subtotal - discountAmount + tax;
   };
 
-  const handleCheckout = () => {
+  const fetchCustomers = useCallback(async () => {
+    const { ok, data } = await authFetch('/api/customers');
+    if (ok && Array.isArray(data?.data)) setCustomers(data.data);
+    else setCustomers([]);
+  }, []);
+
+  const openCustomerModal = () => {
+    if (customers.length === 0) fetchCustomers();
+    setShowCustomerModal(true);
+  };
+
+  const handleCheckout = async (holdInvoice = false) => {
     if (cart.length === 0) {
       toast({
-        title: "Cart is empty",
-        description: "Please add products to cart first",
-        variant: "destructive",
+        title: 'Cart is empty',
+        description: 'Please add products to cart first',
+        variant: 'destructive',
       });
       return;
     }
-    toast({
-      title: "Payment Processed",
-      description: `Payment of LKR ${calculateFinalTotal().toLocaleString()} received via ${paymentMethod}`,
+    const subtotal = getTotal();
+    const discountAmount = calculateDiscountAmount();
+    const afterDiscount = subtotal - discountAmount;
+    const taxAmount = afterDiscount * (taxRatePercent / 100);
+    const totalAmount = afterDiscount + taxAmount;
+    const paidAmount = holdInvoice ? 0 : totalAmount;
+
+    const items = cart.map((item) => ({
+      productId: item.id,
+      quantity: item.quantity,
+      unitPrice: item.price,
+      discount: 0,
+    }));
+
+    setCheckoutLoading(true);
+    const { ok, status, data } = await authFetch('/api/billing/sales', {
+      method: 'POST',
+      body: JSON.stringify({
+        customerId: selectedCustomer?.id || null,
+        items,
+        discountAmount,
+        taxRate: taxRatePercent,
+        paidAmount,
+        notes: selectedCustomer ? `Customer: ${selectedCustomer.name}` : null,
+      }),
     });
+    setCheckoutLoading(false);
+
+    if (!ok) {
+      toast({
+        title: 'Checkout failed',
+        description: data?.message || (status === 400 ? 'Check cart (e.g. stock)' : 'Please try again.'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const invoiceNumber = data?.data?.invoice_number || data?.invoice_number || '—';
     clearCart();
+    setDiscount(0);
+    setSelectedCustomer(null);
+    toast({
+      title: holdInvoice ? 'Invoice held' : 'Sale completed',
+      description: holdInvoice
+        ? `Invoice ${invoiceNumber} created. Amount due: LKR ${totalAmount.toLocaleString()}`
+        : `Invoice ${invoiceNumber} · LKR ${totalAmount.toLocaleString()} received via ${paymentMethod}`,
+    });
   };
 
   return (
@@ -139,11 +228,62 @@ const NewSale = () => {
             <ScanLine className="w-5 h-5 mr-2" />
             Scan Barcode
           </Button>
-          <Button variant="outline" className="h-12">
+          <Button variant="outline" className="h-12" onClick={openCustomerModal}>
             <User className="w-5 h-5 mr-2" />
             {selectedCustomer ? selectedCustomer.name : 'Select Customer'}
           </Button>
         </div>
+
+        {/* Customer selection modal */}
+        {showCustomerModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-card rounded-xl border border-secondary shadow-lg max-w-md w-full max-h-[80vh] flex flex-col"
+            >
+              <div className="p-4 border-b border-secondary flex items-center justify-between">
+                <h3 className="text-lg font-bold">Select Customer</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowCustomerModal(false)}
+                  className="p-1 hover:bg-secondary rounded"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="overflow-y-auto p-4 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCustomer(null);
+                    setShowCustomerModal(false);
+                  }}
+                  className="w-full text-left p-3 rounded-lg border border-secondary hover:bg-secondary/50 transition-colors"
+                >
+                  <span className="font-medium">Walk-in (no customer)</span>
+                </button>
+                {customers.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCustomer(c);
+                      setShowCustomerModal(false);
+                    }}
+                    className="w-full text-left p-3 rounded-lg border border-secondary hover:bg-secondary/50 transition-colors"
+                  >
+                    <span className="font-medium">{c.name}</span>
+                    {c.phone && <span className="text-muted-foreground text-sm block">{c.phone}</span>}
+                  </button>
+                ))}
+                {customers.length === 0 && !selectedCustomer && (
+                  <p className="text-sm text-muted-foreground">No customers in database. Use Walk-in.</p>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
 
         {/* Barcode Input Modal */}
         {showBarcodeInput && (
@@ -195,50 +335,62 @@ const NewSale = () => {
               <h2 className="text-lg font-bold">Products ({filteredProducts.length})</h2>
             </div>
             <div className="flex-1 overflow-y-auto p-4">
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-                {filteredProducts.map((product) => {
-                  const brand = product.brand || product.make || '';
-                  const model = product.model || '';
-                  return (
-                    <motion.div
-                      key={product.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="bg-secondary rounded-lg overflow-hidden border border-secondary hover:border-primary transition-all cursor-pointer"
-                      onClick={() => addToCart(product, 1)}
-                    >
-                      <div className="aspect-square bg-secondary relative">
-                        <img
-                          src={product.images?.[0] || product.image || '/placeholder-phone.png'}
-                          alt={`${brand} ${model}`}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                        {product.stock <= 2 && product.stock > 0 && (
-                          <span className="absolute top-1 left-1 bg-yellow-500 text-white text-xs px-2 py-0.5 rounded font-semibold">
-                            Low Stock
-                          </span>
-                        )}
-                        {product.stock === 0 && (
-                          <span className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-xs font-semibold">
-                            Out of Stock
-                          </span>
-                        )}
-                      </div>
-                      <div className="p-2">
-                        <h3 className="font-semibold text-sm truncate">{brand} {model}</h3>
-                        <p className="text-xs text-muted-foreground">Stock: {product.stock || 0}</p>
-                        <p className="text-sm font-bold text-primary mt-1">LKR {product.price?.toLocaleString() || '0'}</p>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-              {filteredProducts.length === 0 && (
-                <div className="text-center py-12">
-                  <ShoppingCart className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">No products found</p>
+              {productsLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
                 </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+                    {filteredProducts.map((product) => {
+                      const brand = product.brand || product.make || '';
+                      const model = product.model || '';
+                      const inStock = (product.stock || 0) > 0;
+                      return (
+                        <motion.div
+                          key={product.id}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className={`bg-secondary rounded-lg overflow-hidden border border-secondary transition-all ${
+                            inStock ? 'hover:border-primary cursor-pointer' : 'opacity-75 cursor-not-allowed'
+                          }`}
+                          onClick={() => inStock && addToCart(product, 1)}
+                        >
+                          <div className="aspect-square bg-secondary relative">
+                            <img
+                              src={product.images?.[0] || product.image || '/placeholder-phone.png'}
+                              alt={`${brand} ${model}`}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                            {product.stock <= 2 && product.stock > 0 && (
+                              <span className="absolute top-1 left-1 bg-yellow-500 text-white text-xs px-2 py-0.5 rounded font-semibold">
+                                Low Stock
+                              </span>
+                            )}
+                            {!inStock && (
+                              <span className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-xs font-semibold">
+                                Out of Stock
+                              </span>
+                            )}
+                          </div>
+                          <div className="p-2">
+                            <h3 className="font-semibold text-sm truncate">{brand} {model}</h3>
+                            <p className="text-xs text-muted-foreground">Stock: {product.stock ?? 0}</p>
+                            <p className="text-sm font-bold text-primary mt-1">LKR {(product.price ?? 0).toLocaleString()}</p>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                  {filteredProducts.length === 0 && (
+                    <div className="text-center py-12">
+                      <ShoppingCart className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">No products found</p>
+                      <p className="text-sm text-muted-foreground mt-1">Add products in Products → Add Product</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -394,16 +546,16 @@ const NewSale = () => {
 
                 {/* Action Buttons */}
                 <div className="grid grid-cols-2 gap-2">
-                  <Button onClick={clearCart} variant="outline" className="w-full">
+                  <Button onClick={clearCart} variant="outline" className="w-full" disabled={checkoutLoading}>
                     <X className="w-4 h-4 mr-2" />
                     Clear
                   </Button>
-                  <Button onClick={handleCheckout} className="w-full">
-                    <CreditCard className="w-4 h-4 mr-2" />
+                  <Button onClick={() => handleCheckout(false)} className="w-full" disabled={checkoutLoading}>
+                    {checkoutLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CreditCard className="w-4 h-4 mr-2" />}
                     Pay & Print
                   </Button>
                 </div>
-                <Button onClick={handleCheckout} variant="outline" className="w-full">
+                <Button onClick={() => handleCheckout(true)} variant="outline" className="w-full" disabled={checkoutLoading}>
                   <Printer className="w-4 h-4 mr-2" />
                   Hold Invoice
                 </Button>

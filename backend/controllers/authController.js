@@ -39,6 +39,29 @@ const register = async (req, res, next) => {
             });
         }
 
+        // Manager and staff must have a branch (warehouse); admin can have null
+        const roleNeedsBranch = role === 'manager' || role === 'cashier' || role === 'staff';
+        if (roleNeedsBranch) {
+            if (!branchId) {
+                await connection.rollback();
+                return res.status(400).json({
+                    success: false,
+                    message: 'Warehouse (branch) is required for Manager and Staff. Add a warehouse first in Warehouses.'
+                });
+            }
+            const [branchRows] = await connection.execute(
+                'SELECT id FROM branches WHERE id = ? AND is_active = TRUE',
+                [branchId]
+            );
+            if (!branchRows || branchRows.length === 0) {
+                await connection.rollback();
+                return res.status(400).json({
+                    success: false,
+                    message: 'Selected warehouse not found or inactive. Choose a registered warehouse.'
+                });
+            }
+        }
+
         // Check if user already exists
         const [existingUsers] = await connection.execute(
             'SELECT id FROM users WHERE username = ? OR email = ?',

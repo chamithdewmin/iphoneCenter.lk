@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
-import { Save, UserPlus, X, Shield, Warehouse } from 'lucide-react';
+import { Save, UserPlus, X, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ const AddUser = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [warehouses, setWarehouses] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [formData, setFormData] = useState({
     username: '',
     name: '',
@@ -20,21 +20,22 @@ const AddUser = () => {
     password: '',
     confirmPassword: '',
     role: 'staff',
+    branchId: '',
     phone: '',
-    warehouseId: '',
   });
 
   const roles = ['admin', 'manager', 'staff'];
+  const roleNeedsWarehouse = formData.role === 'manager' || formData.role === 'staff';
 
-  const fetchWarehouses = useCallback(async () => {
+  const fetchBranches = useCallback(async () => {
     const { ok, data } = await authFetch('/api/branches');
-    if (!ok || !data?.data) return;
-    setWarehouses(Array.isArray(data.data) ? data.data : []);
+    if (ok && Array.isArray(data?.data)) setBranches(data.data);
+    else setBranches([]);
   }, []);
 
   useEffect(() => {
-    fetchWarehouses();
-  }, [fetchWarehouses]);
+    fetchBranches();
+  }, [fetchBranches]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -77,7 +78,25 @@ const AddUser = () => {
       return;
     }
 
-    const branchId = formData.warehouseId ? parseInt(formData.warehouseId, 10) : null;
+    if (roleNeedsWarehouse) {
+      if (!formData.branchId) {
+        toast({
+          title: 'Validation Error',
+          description: 'Please select a Warehouse for Manager or Staff',
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (branches.length === 0) {
+        toast({
+          title: 'Cannot register user',
+          description: 'Add at least one warehouse (Warehouses → Add Warehouse) before adding Manager or Staff.',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
     setLoading(true);
     const { ok, status, data } = await authFetch('/api/auth/register', {
       method: 'POST',
@@ -87,7 +106,7 @@ const AddUser = () => {
         password: formData.password,
         fullName: formData.name.trim(),
         role: formData.role,
-        branchId: Number.isNaN(branchId) ? null : branchId,
+        branchId: roleNeedsWarehouse && formData.branchId ? parseInt(formData.branchId, 10) : null,
       }),
     });
     setLoading(false);
@@ -189,33 +208,41 @@ const AddUser = () => {
                       id="role"
                       name="role"
                       value={formData.role}
-                      onChange={handleChange}
+                      onChange={(e) => {
+                        handleChange(e);
+                        if (e.target.value === 'admin') setFormData((prev) => ({ ...prev, branchId: '' }));
+                      }}
                       className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
                       required
                     >
-                      {roles.map(role => (
+                      {roles.map((role) => (
                         <option key={role} value={role}>{role.charAt(0).toUpperCase() + role.slice(1)}</option>
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <Label htmlFor="warehouseId">Warehouse</Label>
-                    <select
-                      id="warehouseId"
-                      name="warehouseId"
-                      value={formData.warehouseId}
-                      onChange={handleChange}
-                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
-                    >
-                      <option value="">None</option>
-                      {warehouses.filter(w => w.is_active !== false).map((w) => (
-                        <option key={w.id} value={w.id}>
-                          {w.name} {w.code ? `(${w.code})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-muted-foreground mt-0.5">Only warehouses registered in the database are listed</p>
-                  </div>
+                  {roleNeedsWarehouse && (
+                    <div>
+                      <Label htmlFor="branchId">Warehouse *</Label>
+                      <select
+                        id="branchId"
+                        name="branchId"
+                        value={formData.branchId}
+                        onChange={handleChange}
+                        className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                        required={roleNeedsWarehouse}
+                      >
+                        <option value="">Select warehouse</option>
+                        {branches.map((b) => (
+                          <option key={b.id} value={b.id}>{b.name} {b.code ? `(${b.code})` : ''}</option>
+                        ))}
+                      </select>
+                      {branches.length === 0 && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                          No warehouse registered. Add one in Warehouses first.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -266,7 +293,10 @@ const AddUser = () => {
                   <X className="w-4 h-4 mr-2" />
                   Cancel
                 </Button>
-                <Button type="submit" disabled={loading}>
+                <Button
+                  type="submit"
+                  disabled={loading || (roleNeedsWarehouse && branches.length === 0)}
+                >
                   <Save className="w-4 h-4 mr-2" />
                   {loading ? 'Saving…' : 'Save User'}
                 </Button>
