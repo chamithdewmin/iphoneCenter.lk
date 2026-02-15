@@ -42,6 +42,8 @@ import BillerList from './pages/people/billers/BillerList';
 // Users
 import AddUser from './pages/users/AddUser';
 import UserList from './pages/users/UserList';
+import ViewUser from './pages/users/ViewUser';
+import EditUser from './pages/users/EditUser';
 import Roles from './pages/users/Roles';
 
 // Categories
@@ -180,6 +182,8 @@ function App() {
         {/* Users */}
         <Route path="users/add" element={<AddUser />} />
         <Route path="users/list" element={<UserList />} />
+        <Route path="users/view/:id" element={<ViewUser />} />
+        <Route path="users/edit/:id" element={<EditUser />} />
         <Route path="users/roles" element={<Roles />} />
 
         {/* Categories */}

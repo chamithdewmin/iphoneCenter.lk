@@ -1,18 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Plus, Eye, Mail, Phone, Shield, User, RefreshCw } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Search, Plus, Eye, Mail, Shield, User, RefreshCw, Pencil, Trash2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { authFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 const UserList = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -48,6 +52,23 @@ const UserList = () => {
       setFilteredUsers(users);
     }
   }, [searchQuery, users]);
+
+  const handleDelete = async (user) => {
+    if (!window.confirm(`Delete user "${user.full_name || user.username}"? This cannot be undone.`)) return;
+    setDeletingId(user.id);
+    const { ok, data } = await authFetch(`/api/users/${user.id}`, { method: 'DELETE' });
+    setDeletingId(null);
+    if (!ok) {
+      toast({
+        title: 'Delete failed',
+        description: data?.message || 'Could not delete user',
+        variant: 'destructive',
+      });
+      return;
+    }
+    toast({ title: 'User deleted', description: 'User has been removed from the database.' });
+    fetchUsers();
+  };
 
   const getRoleBadge = (role) => {
     const styles = {
@@ -159,9 +180,28 @@ const UserList = () => {
                         <p className="text-xs text-muted-foreground">@{user.username} · ID: {user.id}</p>
                       </div>
                     </div>
-                    <Button size="sm" variant="outline">
-                      <Eye className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center gap-1 p-1 rounded-lg border border-border bg-background">
+                      <Button size="icon" variant="ghost" className="h-8 w-8" asChild title="View">
+                        <Link to={`/users/view/${user.id}`}>
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8" asChild title="Edit">
+                        <Link to={`/users/edit/${user.id}`}>
+                          <Pencil className="w-4 h-4" />
+                        </Link>
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDelete(user)}
+                        disabled={deletingId === user.id}
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="space-y-2 mb-4">
