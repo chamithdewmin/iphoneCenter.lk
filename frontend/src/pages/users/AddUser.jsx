@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
-import { Save, UserPlus, X, Shield } from 'lucide-react';
+import { Save, UserPlus, X, Shield, Warehouse } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ const AddUser = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [warehouses, setWarehouses] = useState([]);
   const [formData, setFormData] = useState({
     username: '',
     name: '',
@@ -20,9 +21,20 @@ const AddUser = () => {
     confirmPassword: '',
     role: 'staff',
     phone: '',
+    warehouseId: '',
   });
 
   const roles = ['admin', 'manager', 'staff'];
+
+  const fetchWarehouses = useCallback(async () => {
+    const { ok, data } = await authFetch('/api/branches');
+    if (!ok || !data?.data) return;
+    setWarehouses(Array.isArray(data.data) ? data.data : []);
+  }, []);
+
+  useEffect(() => {
+    fetchWarehouses();
+  }, [fetchWarehouses]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -65,6 +77,7 @@ const AddUser = () => {
       return;
     }
 
+    const branchId = formData.warehouseId ? parseInt(formData.warehouseId, 10) : null;
     setLoading(true);
     const { ok, status, data } = await authFetch('/api/auth/register', {
       method: 'POST',
@@ -74,7 +87,7 @@ const AddUser = () => {
         password: formData.password,
         fullName: formData.name.trim(),
         role: formData.role,
-        branchId: null,
+        branchId: Number.isNaN(branchId) ? null : branchId,
       }),
     });
     setLoading(false);
@@ -184,6 +197,24 @@ const AddUser = () => {
                         <option key={role} value={role}>{role.charAt(0).toUpperCase() + role.slice(1)}</option>
                       ))}
                     </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="warehouseId">Warehouse</Label>
+                    <select
+                      id="warehouseId"
+                      name="warehouseId"
+                      value={formData.warehouseId}
+                      onChange={handleChange}
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                    >
+                      <option value="">None</option>
+                      {warehouses.filter(w => w.is_active !== false).map((w) => (
+                        <option key={w.id} value={w.id}>
+                          {w.name} {w.code ? `(${w.code})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-muted-foreground mt-0.5">Only warehouses registered in the database are listed</p>
                   </div>
                 </div>
               </div>
