@@ -4,7 +4,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { CASHIER_ALLOWED_PATHS } from '@/constants/cashierPaths';
 import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
-import CartDrawer from '@/components/CartDrawer';
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -27,7 +26,6 @@ const Layout = () => {
           <Outlet />
         </main>
       </div>
-      <CartDrawer />
     </div>
   );
 };
