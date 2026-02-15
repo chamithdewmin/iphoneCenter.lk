@@ -82,6 +82,19 @@ This helps confirm whether the problem is missing schema or database connectivit
 
 ---
 
+## 500 / "Could not load warehouses" (GET /api/branches)
+
+If the app shows **"Could not load warehouses"** and the network tab shows **500** (or **503**) for `GET .../api/branches`:
+
+1. **Backend env** – In the **backend** app, set **`DATABASE_URL`** (or `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`) to your PostgreSQL connection. Use the **Internal Connection URL** from your DB service so the backend can reach the database.
+2. **DB health** – Open **`https://backend.iphonecenter.logozodev.com/api/health/db`**. If it shows `"database": "disconnected"`, the backend cannot connect; fix `DATABASE_URL` and redeploy.
+3. **Schema** – Tables are created automatically on startup from **`backend/database/init.pg.sql`**. If the DB was empty, wait ~30 seconds after deploy and try again. If tables are still missing, run `init.pg.sql` manually (see section 2 above) and restart the backend.
+4. **Logs** – In backend container logs, look for `Get branches error:` or `Database init error:` to see the exact PostgreSQL error (e.g. relation "branches" does not exist, connection refused).
+
+After fixing, the API will return **503** with a clear message instead of 500 when the DB or schema is the problem.
+
+---
+
 ## 500 on checkout (POST /api/billing/sales) – “Checkout failed”
 
 If the frontend shows **“Checkout failed”** and the network tab shows **500** for `POST .../api/billing/sales`:

@@ -29,6 +29,13 @@ const errorHandler = (err, req, res, next) => {
             message: 'Database tables missing. The backend auto-creates them on startup. Set DATABASE_URL in the backend app, redeploy, and check backend container logs for "Database init" or errors. If it still fails, run backend/database/init.pg.sql manually (see RUN_SCHEMA.md).'
         });
     }
+    // PostgreSQL: undefined column (schema out of date)
+    if (err.code === '42703') {
+        return res.status(503).json({
+            success: false,
+            message: 'Database schema out of date. Run backend/database/init.pg.sql on your PostgreSQL database and restart the backend.'
+        });
+    }
     // PostgreSQL: connection/auth errors (e.g. DB unreachable)
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
         return res.status(503).json({

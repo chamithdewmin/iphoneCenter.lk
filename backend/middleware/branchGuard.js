@@ -57,6 +57,14 @@ const branchGuard = async (req, res, next) => {
         next();
     } catch (error) {
         logger.error('Branch guard error:', error);
+        const code = error.code || '';
+        const isDbError = code === '42P01' || code === '42703' || code === 'ECONNREFUSED' || code === 'ENOTFOUND' || code === 'ETIMEDOUT';
+        if (isDbError) {
+            return res.status(503).json({
+                success: false,
+                message: 'Database not ready. Ensure DATABASE_URL is set and init.pg.sql has been run. Check backend logs.'
+            });
+        }
         return res.status(500).json({
             success: false,
             message: 'Internal server error'

@@ -32,11 +32,16 @@ const getAllBranches = async (req, res, next) => {
         });
     } catch (error) {
         logger.error('Get branches error:', { message: error.message, code: error.code });
-        // Table missing (e.g. schema not run) → return 503 with clear message
-        if (error.code === '42P01' || (error.message && error.message.includes('does not exist'))) {
+        // Any DB/schema/connection error → 503 so frontend shows clear message instead of 500
+        const code = error.code || '';
+        const msg = (error.message || '').toLowerCase();
+        const isDbError =
+            code === '42P01' || code === '42703' || code === 'ECONNREFUSED' || code === 'ENOTFOUND' || code === 'ETIMEDOUT' ||
+            msg.includes('does not exist') || msg.includes('relation') || msg.includes('column');
+        if (isDbError) {
             return res.status(503).json({
                 success: false,
-                message: 'Database tables not ready. Run the schema (init.pg.sql) on your PostgreSQL database and restart the backend.'
+                message: 'Could not load warehouses. Ensure DATABASE_URL is set, PostgreSQL is running, and the schema (init.pg.sql) has been applied. Check backend logs for details.'
             });
         }
         next(error);
