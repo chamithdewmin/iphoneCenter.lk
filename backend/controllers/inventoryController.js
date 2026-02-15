@@ -8,32 +8,47 @@ const logger = require('../utils/logger');
 const getAllProducts = async (req, res, next) => {
     try {
         const { search, category, brand } = req.query;
-        let query = `SELECT p.*, b.barcode
-                     FROM products p
-                     LEFT JOIN barcodes b ON b.product_id = p.id AND b.is_active = TRUE
-                     WHERE 1=1`;
+
+        const query = `SELECT p.*, b.barcode,
+                       COALESCE(bs.total_quantity, 0) AS quantity
+                       FROM products p
+                       LEFT JOIN barcodes b ON b.product_id = p.id AND b.is_active = TRUE
+                       LEFT JOIN (
+                           SELECT product_id, SUM(quantity) AS total_quantity
+                           FROM branch_stock
+                           GROUP BY product_id
+                       ) bs ON bs.product_id = p.id
+                       WHERE 1=1`;
         const params = [];
 
         if (search) {
-            query += ' AND (p.name LIKE ? OR p.sku LIKE ? OR p.brand LIKE ?)';
-            const searchTerm = `%${search}%`;
-            params.push(searchTerm, searchTerm, searchTerm);
+            params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+            // query already has WHERE 1=1; add AND (p.name LIKE ? OR ...)
+        }
+        let fullQuery = query;
+        if (search) {
+            fullQuery += ' AND (p.name LIKE ? OR p.sku LIKE ? OR p.brand LIKE ?)';
         }
         if (category) {
-            query += ' AND p.category = ?';
+            fullQuery += ' AND p.category = ?';
             params.push(category);
         }
         if (brand) {
-            query += ' AND p.brand = ?';
+            fullQuery += ' AND p.brand = ?';
             params.push(brand);
         }
 
-        query += ' ORDER BY p.name ASC';
+        fullQuery += ' ORDER BY p.name ASC';
 
-        const [rows] = await executeQuery(query, params);
+        const [rows] = await executeQuery(fullQuery, params);
         const products = (rows || []).map((row) => {
-            const { barcode, ...product } = row;
-            return { ...product, barcode: barcode || null };
+            const { barcode, quantity: qty, ...rest } = row;
+            return {
+                ...rest,
+                barcode: barcode || null,
+                quantity: parseInt(qty, 10) || 0,
+                stock: parseInt(qty, 10) || 0, // alias for compatibility
+            };
         });
 
         res.json({
@@ -184,7 +199,7 @@ const updateStock = async (req, res, next) => {
     try {
         await connection.beginTransaction();
 
-        const branchId = req.branchId || req.user.branch_id;
+        let branchId = req.branchId || req.user.branch_id;
         const { productId, quantity, minStockLevel } = req.body;
 
         if (!productId || quantity === undefined) {
@@ -192,6 +207,21 @@ const updateStock = async (req, res, next) => {
             return res.status(400).json({
                 success: false,
                 message: 'Product ID and quantity are required'
+            });
+        }
+
+        // If no branch (e.g. admin/test user), use first active branch so stock can be set
+        if (!branchId && req.user && (req.user.role === 'admin' || req.user.id === 0)) {
+            const [branches] = await connection.execute(
+                'SELECT id FROM branches WHERE is_active = TRUE ORDER BY id LIMIT 1'
+            );
+            if (branches.length > 0) branchId = branches[0].id;
+        }
+        if (!branchId) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'Branch is required. Create a branch or assign one to your user.'
             });
         }
 

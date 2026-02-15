@@ -1,39 +1,56 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Package, TrendingDown, TrendingUp, AlertTriangle } from 'lucide-react';
-import { getStorageData } from '@/utils/storage';
+import { Search, Package, TrendingDown, TrendingUp, AlertTriangle, RefreshCw } from 'lucide-react';
+import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 const StockView = () => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadedProducts = getStorageData('products', []);
-    setProducts(loadedProducts);
-    setFilteredProducts(loadedProducts);
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    const { ok, data } = await authFetch('/api/inventory/products');
+    setLoading(false);
+    if (!ok) {
+      setProducts([]);
+      setFilteredProducts([]);
+      return;
+    }
+    const list = Array.isArray(data?.data) ? data.data : [];
+    setProducts(list);
+    setFilteredProducts(list);
   }, []);
 
   useEffect(() => {
-    if (searchQuery) {
-      const searchLower = searchQuery.toLowerCase();
-      const filtered = products.filter(product =>
-        (product.brand || product.make || '').toLowerCase().includes(searchLower) ||
-        (product.model || '').toLowerCase().includes(searchLower)
-      );
-      setFilteredProducts(filtered);
-    } else {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  useEffect(() => {
+    if (!searchQuery) {
       setFilteredProducts(products);
+      return;
     }
+    const q = searchQuery.toLowerCase();
+    setFilteredProducts(products.filter(p =>
+      (p.name || '').toLowerCase().includes(q) ||
+      (p.brand || '').toLowerCase().includes(q) ||
+      (p.sku || '').toLowerCase().includes(q)
+    ));
   }, [searchQuery, products]);
 
   const getStockStatus = (stock) => {
-    if (stock === 0) return { label: 'Out of Stock', color: 'bg-red-500/20 text-red-600 dark:text-red-400' };
-    if (stock < 5) return { label: 'Low Stock', color: 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' };
+    const qty = stock ?? 0;
+    if (qty === 0) return { label: 'Out of Stock', color: 'bg-red-500/20 text-red-600 dark:text-red-400' };
+    if (qty < 5) return { label: 'Low Stock', color: 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' };
     return { label: 'In Stock', color: 'bg-green-500/20 text-green-600 dark:text-green-400' };
   };
+
+  const qty = (p) => p.quantity ?? p.stock ?? 0;
 
   return (
     <>
@@ -43,11 +60,17 @@ const StockView = () => {
       </Helmet>
 
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Product Stock View
-          </h1>
-          <p className="text-muted-foreground mt-1">View and monitor product stock levels</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              Product Stock View
+            </h1>
+            <p className="text-muted-foreground mt-1">View and monitor product stock levels from database</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={fetchProducts} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
 
         {/* Summary Cards */}
@@ -75,7 +98,7 @@ const StockView = () => {
               <div>
                 <p className="text-sm text-muted-foreground mb-1">In Stock</p>
                 <p className="text-2xl font-bold text-green-500">
-                  {products.filter(p => (p.stock || 0) >= 5).length}
+                  {products.filter(p => qty(p) >= 5).length}
                 </p>
               </div>
               <TrendingUp className="w-8 h-8 text-green-500 opacity-50" />
@@ -91,7 +114,7 @@ const StockView = () => {
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Low Stock</p>
                 <p className="text-2xl font-bold text-yellow-500">
-                  {products.filter(p => (p.stock || 0) > 0 && (p.stock || 0) < 5).length}
+                  {products.filter(p => qty(p) > 0 && qty(p) < 5).length}
                 </p>
               </div>
               <AlertTriangle className="w-8 h-8 text-yellow-500 opacity-50" />
@@ -107,7 +130,7 @@ const StockView = () => {
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Out of Stock</p>
                 <p className="text-2xl font-bold text-red-500">
-                  {products.filter(p => (p.stock || 0) === 0).length}
+                  {products.filter(p => qty(p) === 0).length}
                 </p>
               </div>
               <TrendingDown className="w-8 h-8 text-red-500 opacity-50" />
@@ -129,7 +152,12 @@ const StockView = () => {
         </div>
 
         {/* Products Table */}
-        {filteredProducts.length === 0 ? (
+        {loading ? (
+          <div className="bg-card rounded-xl p-12 border border-secondary text-center">
+            <RefreshCw className="w-12 h-12 mx-auto text-muted-foreground animate-spin mb-4" />
+            <p className="text-muted-foreground">Loading stock…</p>
+          </div>
+        ) : filteredProducts.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -154,7 +182,7 @@ const StockView = () => {
                 </thead>
                 <tbody>
                   {filteredProducts.map((product, index) => {
-                    const stockStatus = getStockStatus(product.stock || 0);
+                    const stockStatus = getStockStatus(qty(product));
                     return (
                       <motion.tr
                         key={product.id}
@@ -165,13 +193,13 @@ const StockView = () => {
                       >
                         <td className="px-4 py-3">
                           <div>
-                            <p className="font-medium">{product.model || 'N/A'}</p>
-                            <p className="text-xs text-muted-foreground">{product.id}</p>
+                            <p className="font-medium">{product.name || product.sku || 'N/A'}</p>
+                            <p className="text-xs text-muted-foreground">ID: {product.id}</p>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-sm">{product.brand || product.make || 'N/A'}</td>
+                        <td className="px-4 py-3 text-sm">{product.brand || 'N/A'}</td>
                         <td className="px-4 py-3">
-                          <span className="font-semibold">{product.stock || 0}</span>
+                          <span className="font-semibold">{qty(product)}</span>
                         </td>
                         <td className="px-4 py-3">
                           <span className={`px-2 py-1 rounded-full text-xs font-semibold ${stockStatus.color}`}>
@@ -179,7 +207,7 @@ const StockView = () => {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-sm font-semibold text-primary">
-                          LKR {product.price?.toLocaleString() || '0'}
+                          LKR {(product.base_price ?? product.basePrice ?? 0).toLocaleString()}
                         </td>
                       </motion.tr>
                     );

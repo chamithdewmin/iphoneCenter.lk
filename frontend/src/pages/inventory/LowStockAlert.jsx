@@ -1,59 +1,80 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Package, TrendingDown, Plus } from 'lucide-react';
-import { getStorageData, setStorageData } from '@/utils/storage';
+import { AlertTriangle, Package, Plus, RefreshCw } from 'lucide-react';
+import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 
+const qty = (p) => p.quantity ?? p.stock ?? 0;
+
 const LowStockAlert = () => {
-  const [lowStockProducts, setLowStockProducts] = useState([]);
+  const [products, setProducts] = useState([]);
   const [restockProduct, setRestockProduct] = useState(null);
   const [restockQuantity, setRestockQuantity] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const products = getStorageData('products', []);
-    const lowStock = products.filter(p => (p.stock || 0) < 5 && (p.stock || 0) >= 0);
-    setLowStockProducts(lowStock);
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    const { ok, data } = await authFetch('/api/inventory/products');
+    setLoading(false);
+    if (!ok) {
+      setProducts([]);
+      return;
+    }
+    setProducts(Array.isArray(data?.data) ? data.data : []);
   }, []);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  const lowStockProducts = products.filter(p => {
+    const n = qty(p);
+    return n < 5 && n >= 0;
+  });
 
   const handleRestock = (product) => {
     setRestockProduct(product);
     setRestockQuantity('');
   };
 
-  const handleConfirmRestock = () => {
-    if (!restockQuantity || parseFloat(restockQuantity) <= 0) {
+  const handleConfirmRestock = async () => {
+    const add = parseInt(restockQuantity, 10);
+    if (!restockProduct || !restockQuantity || isNaN(add) || add <= 0) {
       toast({
-        title: "Validation Error",
-        description: "Please enter a valid quantity",
-        variant: "destructive",
+        title: 'Validation Error',
+        description: 'Please enter a valid quantity',
+        variant: 'destructive',
       });
       return;
     }
-
-    const products = getStorageData('products', []);
-    const updatedProducts = products.map(p => {
-      if (p.id === restockProduct.id) {
-        return { ...p, stock: (p.stock || 0) + parseFloat(restockQuantity) };
-      }
-      return p;
+    const newQty = qty(restockProduct) + add;
+    setSaving(true);
+    const { ok, data } = await authFetch('/api/inventory/stock-quantity', {
+      method: 'PUT',
+      body: JSON.stringify({ productId: restockProduct.id, quantity: newQty }),
     });
-    setStorageData('products', updatedProducts);
-    
-    const lowStock = updatedProducts.filter(p => (p.stock || 0) < 5 && (p.stock || 0) >= 0);
-    setLowStockProducts(lowStock);
-    
-    toast({
-      title: "Product Restocked",
-      description: `Added ${restockQuantity} units to ${restockProduct.model || restockProduct.brand}`,
-    });
-    
+    setSaving(false);
     setRestockProduct(null);
     setRestockQuantity('');
+    if (!ok) {
+      toast({
+        title: 'Restock failed',
+        description: data?.message || 'Could not update stock',
+        variant: 'destructive',
+      });
+      return;
+    }
+    toast({
+      title: 'Product restocked',
+      description: `Added ${add} units to ${restockProduct.name || restockProduct.brand}`,
+    });
+    fetchProducts();
   };
 
   return (
@@ -64,11 +85,17 @@ const LowStockAlert = () => {
       </Helmet>
 
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Low Stock Alert
-          </h1>
-          <p className="text-muted-foreground mt-1">Products that need restocking</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              Low Stock Alert
+            </h1>
+            <p className="text-muted-foreground mt-1">Products that need restocking (from database)</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={fetchProducts} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
 
         {/* Alert Summary */}
@@ -87,7 +114,12 @@ const LowStockAlert = () => {
         </div>
 
         {/* Low Stock Products */}
-        {lowStockProducts.length === 0 ? (
+        {loading ? (
+          <div className="bg-card rounded-xl p-12 border border-secondary text-center">
+            <RefreshCw className="w-12 h-12 mx-auto text-muted-foreground animate-spin mb-4" />
+            <p className="text-muted-foreground">Loading…</p>
+          </div>
+        ) : lowStockProducts.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -110,8 +142,8 @@ const LowStockAlert = () => {
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <h3 className="font-bold text-lg mb-1">{product.model || product.brand}</h3>
-                      <p className="text-sm text-muted-foreground">{product.brand || product.make}</p>
+                      <h3 className="font-bold text-lg mb-1">{product.name || product.sku || product.brand}</h3>
+                      <p className="text-sm text-muted-foreground">{product.brand} · {product.sku}</p>
                     </div>
                     <div className="w-12 h-12 bg-yellow-500/10 rounded-lg flex items-center justify-center">
                       <AlertTriangle className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
@@ -122,13 +154,13 @@ const LowStockAlert = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Current Stock</span>
                       <span className="font-bold text-yellow-600 dark:text-yellow-400 text-xl">
-                        {product.stock || 0}
+                        {qty(product)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Price</span>
                       <span className="font-semibold text-primary">
-                        LKR {product.price?.toLocaleString() || '0'}
+                        LKR {(product.base_price ?? product.basePrice ?? 0).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -159,8 +191,8 @@ const LowStockAlert = () => {
               <div className="space-y-4">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Product</p>
-                  <p className="font-semibold">{restockProduct.model || restockProduct.brand}</p>
-                  <p className="text-sm text-muted-foreground">Current Stock: {restockProduct.stock || 0}</p>
+                  <p className="font-semibold">{restockProduct.name || restockProduct.brand}</p>
+                  <p className="text-sm text-muted-foreground">Current Stock: {qty(restockProduct)}</p>
                 </div>
                 <div>
                   <Label htmlFor="restockQuantity">Quantity to Add *</Label>
@@ -189,9 +221,10 @@ const LowStockAlert = () => {
                   <Button
                     className="flex-1"
                     onClick={handleConfirmRestock}
+                    disabled={saving}
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Confirm Restock
+                    {saving ? 'Saving…' : 'Confirm Restock'}
                   </Button>
                 </div>
               </div>

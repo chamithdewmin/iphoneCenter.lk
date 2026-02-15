@@ -22,6 +22,8 @@ router.post('/products', authenticate, requireManager, createProductValidation, 
 // Stock
 router.get('/stock', authenticate, branchGuard, setBranchContext, inventoryController.getBranchStock);
 router.put('/stock', authenticate, branchGuard, setBranchContext, requireManager, inventoryController.updateStock);
+// Update stock without branch (admin: uses first branch) – for main Inventory page
+router.put('/stock-quantity', authenticate, requireManager, inventoryController.updateStock);
 
 // IMEI
 router.post('/imei', authenticate, branchGuard, setBranchContext, requireManager, inventoryController.addIMEI);
