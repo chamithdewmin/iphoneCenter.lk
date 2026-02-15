@@ -40,8 +40,7 @@ import {
   ArrowLeftRight,
   MessageSquare,
   Send,
-  Mail,
-  ChevronUpDown
+  Mail
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRolePermissions } from '@/constants/rolePermissions';
@@ -436,7 +435,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                   </span>
                 </p>
               </div>
-              <ChevronUpDown className="w-4 h-4 text-muted-foreground shrink-0" />
+              <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
             </div>
             <p className="text-center text-xs text-muted-foreground">iphone center.lk</p>
           </div>
