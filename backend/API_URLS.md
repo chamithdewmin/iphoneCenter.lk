@@ -3,7 +3,21 @@
 **Base URL (production):** `https://backend.iphonecenter.logozodev.com`  
 **Base URL (local):** `http://localhost:5000`
 
-**API prefix:** `/api` — so full URL = base + path below.
+**Database:** Installs on first run (tables created automatically). Use the URLs below to test the connection.
+
+---
+
+## Test database is connected
+
+Open in browser or curl:
+
+| Purpose | URL (production) |
+|---------|-------------------|
+| **Test DB connected** | https://backend.iphonecenter.logozodev.com/api/health/db |
+| Same (alias) | https://backend.iphonecenter.logozodev.com/api/test-connection |
+
+**Success:** You should see `"database": "connected"` and `"message": "Database connected. Tables ready."`  
+**Failure:** You get 503 and `"database": "disconnected"` — check `DATABASE_URL` and that PostgreSQL is running.
 
 ---
 
@@ -13,11 +27,11 @@
 |-------|--------|------------------------|
 | Root | GET | https://backend.iphonecenter.logozodev.com/ |
 | Health | GET | https://backend.iphonecenter.logozodev.com/api/health |
-| Health + DB | GET | https://backend.iphonecenter.logozodev.com/api/health/db |
-| Test connection | GET | https://backend.iphonecenter.logozodev.com/api/test-connection |
+| **Health + DB (test DB)** | GET | https://backend.iphonecenter.logozodev.com/api/health/db |
+| Test connection (same) | GET | https://backend.iphonecenter.logozodev.com/api/test-connection |
 
 **Quick test in browser:** Open the health URL. You should see JSON like `{"status":"ok", ...}`.  
-**DB test:** Open `/api/health/db` or `/api/test-connection` — if DB is connected you get `"database":"connected"`.
+**DB test:** Open the **test database** URL above — if DB is connected you get `"database":"connected"`.
 
 **If the panel shows "Database schema not applied..."** → Run the schema once on your PostgreSQL. See **RUN_SCHEMA.md** in this folder for step-by-step (Dokploy terminal, pgAdmin, or Docker).
 

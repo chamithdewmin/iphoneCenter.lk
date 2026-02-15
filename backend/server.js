@@ -99,13 +99,14 @@ const healthDbHandler = async (req, res) => {
         res.status(connected ? 200 : 503).json({
             status: connected ? 'ok' : 'error',
             database: connected ? 'connected' : 'unavailable',
+            message: connected ? 'Database connected. Tables ready.' : 'Database unavailable.',
             timestamp: new Date().toISOString()
         });
     } catch (err) {
         res.status(503).json({
             status: 'error',
             database: 'disconnected',
-            message: err.message,
+            message: err.message || 'Database connection failed.',
             timestamp: new Date().toISOString()
         });
     }
@@ -143,7 +144,8 @@ const PORT = process.env.PORT || 5000;
 const HOST = '0.0.0.0';
 
 async function start() {
-    // Auto-run schema on start: first deploy → create tables, future deploy → skip (IF NOT EXISTS)
+    // Database install on first run: connect and create all tables (IF NOT EXISTS), then start server
+    console.log('Database: installing on first run (creating tables if needed)...');
     const { applySchema } = require('./config/initDatabase');
     await applySchema();
     return new Promise((resolve, reject) => {
