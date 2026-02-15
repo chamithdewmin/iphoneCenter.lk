@@ -43,17 +43,12 @@ import {
   Mail
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useRolePermissions } from '@/contexts/RolePermissionsContext';
+import { getRolePermissions } from '@/constants/rolePermissions';
+import { useRolePermissionsVersion } from '@/contexts/RolePermissionsContext';
 
-/** Each top-level menu section is gated by one of these permissions. */
+/** Each top-level item has a permission key; sidebar shows it only if user's role has that permission. */
 const menuItems = [
-  {
-    type: 'link',
-    to: '/dashboard',
-    icon: LayoutDashboard,
-    label: 'Dashboard',
-    permission: 'dashboard',
-  },
+  { type: 'link', to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', permission: 'dashboard' },
   {
     type: 'menu',
     icon: Receipt,
@@ -117,7 +112,7 @@ const menuItems = [
     type: 'menu',
     icon: Warehouse,
     label: 'Warehouses',
-    permission: 'inventory',
+    permission: 'products',
     children: [
       { to: '/warehouses/add', label: 'Add Warehouse', icon: Plus },
       { to: '/warehouses/list', label: 'Warehouse List', icon: List },
@@ -127,7 +122,7 @@ const menuItems = [
     type: 'menu',
     icon: TrendingDown,
     label: 'Expense',
-    permission: 'reports',
+    permission: 'settings',
     children: [
       { to: '/expense/add', label: 'Add Expense', icon: Plus },
       { to: '/expense/list', label: 'Expense List', icon: List },
@@ -234,31 +229,14 @@ const menuItems = [
   },
 ];
 
-/** Filter menu items by role permissions. Admin sees all. */
-function filterMenuByPermissions(items, rolePermissions) {
-  if (!rolePermissions) return items;
-  return items.reduce((acc, item) => {
-    const permission = item.permission;
-    if (permission && !rolePermissions[permission]) return acc;
-    if (item.type === 'link') {
-      acc.push(item);
-      return acc;
-    }
-    if (item.type === 'menu' || item.type === 'submenu') {
-      const filteredChildren = (item.children || []).reduce((acc2, child) => {
-        if (child.type === 'submenu') {
-          acc2.push(child);
-          return acc2;
-        }
-        acc2.push(child);
-        return acc2;
-      }, []);
-      if (filteredChildren.length > 0) acc.push({ ...item, children: filteredChildren });
-      return acc;
-    }
-    acc.push(item);
-    return acc;
-  }, []);
+/** Filter menu by role permissions: show item only if user has the required permission (admin has all). */
+function filterMenuByPermissions(items, permissions) {
+  if (!permissions) return items;
+  return items.filter((item) => {
+    const required = item.permission;
+    if (!required) return true;
+    return permissions[required] === true;
+  });
 }
 
 const MenuItem = ({ item, onClose, level = 0, parentPath = '' }) => {
@@ -388,12 +366,11 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '' }) => {
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { user } = useAuth();
-  const { getPermissionsForRole } = useRolePermissions();
+  const permissionsVersion = useRolePermissionsVersion();
   const displayItems = useMemo(() => {
-    const role = (user?.role || '').toLowerCase();
-    const permissions = getPermissionsForRole(role);
+    const permissions = getRolePermissions(user?.role);
     return filterMenuByPermissions(menuItems, permissions);
-  }, [user?.role, getPermissionsForRole]);
+  }, [user?.role, permissionsVersion]);
 
   return (
     <>

@@ -1,10 +1,9 @@
 /**
- * Role permissions: which sidebar sections each role can see.
- * Admin always has full access (no toggles in UI).
- * Stored in localStorage; Save on Permission Setting page updates this.
+ * Role permissions for sidebar and page access.
+ * Admin is always full access (no toggles). Other roles are configurable and persisted on Save.
  */
 
-export const STORAGE_KEY = 'iphone_center_role_permissions';
+const STORAGE_KEY = 'iphone_center_role_permissions';
 
 export const PERMISSION_KEYS = [
   'dashboard',
@@ -28,104 +27,98 @@ export const PERMISSION_LABELS = {
   users: 'Users',
 };
 
-/** Default permissions per role. Admin is always full access and not editable. */
+const defaultPermissions = () => ({
+  dashboard: true,
+  products: true,
+  orders: true,
+  customers: true,
+  inventory: true,
+  reports: true,
+  settings: true,
+  users: true,
+});
+
+/** Default permissions per role (admin is always full; others are defaults before any Save) */
 export const DEFAULT_ROLE_PERMISSIONS = {
-  admin: {
-    name: 'Full system access',
-    description: 'Administrator',
-    permissions: {
-      dashboard: true,
-      products: true,
-      orders: true,
-      customers: true,
-      inventory: true,
-      reports: true,
-      settings: true,
-      users: true,
-    },
-  },
+  admin: defaultPermissions(),
   manager: {
-    name: 'Management access',
-    description: 'Manager',
-    permissions: {
-      dashboard: true,
-      products: true,
-      orders: true,
-      customers: true,
-      inventory: true,
-      reports: true,
-      settings: false,
-      users: false,
-    },
+    dashboard: true,
+    products: true,
+    orders: true,
+    customers: true,
+    inventory: true,
+    reports: true,
+    settings: false,
+    users: false,
   },
   staff: {
-    name: 'Staff',
-    description: 'Basic access',
-    permissions: {
-      dashboard: true,
-      products: true,
-      orders: false,
-      customers: true,
-      inventory: false,
-      reports: false,
-      settings: false,
-      users: false,
-    },
+    dashboard: true,
+    products: true,
+    orders: true,
+    customers: true,
+    inventory: false,
+    reports: false,
+    settings: false,
+    users: false,
   },
   cashier: {
-    name: 'Cashier',
-    description: 'POS access only',
-    permissions: {
-      dashboard: true,
-      products: true,
-      orders: true,
-      customers: true,
-      inventory: false,
-      reports: false,
-      settings: false,
-      users: false,
-    },
+    dashboard: true,
+    products: false,
+    orders: true,
+    customers: true,
+    inventory: false,
+    reports: false,
+    settings: false,
+    users: false,
   },
 };
 
-/** Path prefix to permission key (for route protection). First match wins. */
-export const PATH_TO_PERMISSION = [
-  { prefix: '/dashboard', permission: 'dashboard' },
-  { prefix: '/pos-billing', permission: 'orders' },
-  { prefix: '/per-order', permission: 'orders' },
-  { prefix: '/trading', permission: 'orders' },
-  { prefix: '/products', permission: 'products' },
-  { prefix: '/categories', permission: 'products' },
-  { prefix: '/inventory', permission: 'inventory' },
-  { prefix: '/warehouses', permission: 'inventory' },
-  { prefix: '/expense', permission: 'reports' },
-  { prefix: '/reports', permission: 'reports' },
-  { prefix: '/people', permission: 'customers' },
-  { prefix: '/sms', permission: 'customers' },
-  { prefix: '/users', permission: 'users' },
-  { prefix: '/settings', permission: 'settings' },
-];
-
-export function getPermissionForPath(pathname) {
-  const path = (pathname || '').split('?')[0];
-  for (const { prefix, permission } of PATH_TO_PERMISSION) {
-    if (path === prefix || path.startsWith(prefix + '/')) return permission;
-  }
-  return 'dashboard';
-}
-
-export function loadRolePermissions() {
+/**
+ * Get permissions for a role. Admin always gets all true; others from localStorage or defaults.
+ */
+export function getRolePermissions(roleId) {
+  if (!roleId) return defaultPermissions();
+  if (roleId === 'admin') return { ...defaultPermissions() };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === 'object') return parsed;
+    if (raw) {
+      const saved = JSON.parse(raw);
+      if (saved[roleId]) return { ...DEFAULT_ROLE_PERMISSIONS[roleId], ...saved[roleId] };
+    }
   } catch (_) {}
-  return null;
+  return { ...(DEFAULT_ROLE_PERMISSIONS[roleId] || defaultPermissions()) };
 }
 
-export function saveRolePermissions(roles) {
+/**
+ * Save permissions for non-admin roles only. Call after Save button.
+ */
+export function setRolePermissions(roles) {
+  const toSave = {};
+  roles.forEach((role) => {
+    if (role.id !== 'admin') toSave[role.id] = role.permissions;
+  });
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(roles));
-  } catch (_) {}
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+  } catch (e) {
+    console.warn('Could not save role permissions', e?.message);
+  }
+}
+
+/**
+ * Load all roles with permissions (admin from defaults, others from localStorage + defaults).
+ */
+export function loadRolesWithPermissions() {
+  return ['admin', 'manager', 'staff', 'cashier'].map((id) => ({
+    id,
+    name: id === 'admin' ? 'Administrator' : id.charAt(0).toUpperCase() + id.slice(1),
+    description:
+      id === 'admin'
+        ? 'Full system access'
+        : id === 'manager'
+          ? 'Management access'
+          : id === 'staff'
+            ? 'Basic access'
+            : 'POS access only',
+    permissions: getRolePermissions(id),
+  }));
 }
