@@ -36,6 +36,13 @@ const errorHandler = (err, req, res, next) => {
             message: 'Database schema out of date. Run backend/database/init.pg.sql on your PostgreSQL database and restart the backend.'
         });
     }
+    // PostgreSQL: permission denied (e.g. no SELECT on branches)
+    if (err.code === '42501') {
+        return res.status(503).json({
+            success: false,
+            message: 'Database permission denied. Grant SELECT on table branches to your database user, e.g. GRANT SELECT ON branches TO your_db_user;'
+        });
+    }
     // PostgreSQL: connection/auth errors (e.g. DB unreachable)
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
         return res.status(503).json({

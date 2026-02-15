@@ -327,6 +327,17 @@ VALUES ('Main Branch', 'MAIN001', 'Main Office Address', '+1234567890', 'main@po
 ON CONFLICT (code) DO NOTHING;
 
 -- ============================================
+-- OPTIONAL: Grant app user access (if schema was run as postgres/superuser)
+-- ============================================
+-- If the backend connects as a different user (e.g. user_iphone_center), uncomment and run
+-- (replace your_app_user with the DB user from DATABASE_URL):
+--
+-- GRANT USAGE ON SCHEMA public TO your_app_user;
+-- GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO your_app_user;
+-- GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO your_app_user;
+-- ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO your_app_user;
+
+-- ============================================
 -- END OF SCHEMA
 -- ============================================
 -- After first run: log in as admin / admin@pos.com (password: Admin@123), add products,

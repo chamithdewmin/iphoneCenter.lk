@@ -89,9 +89,16 @@ If the app shows **"Could not load warehouses"** and the network tab shows **500
 1. **Backend env** – In the **backend** app, set **`DATABASE_URL`** (or `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`) to your PostgreSQL connection. Use the **Internal Connection URL** from your DB service so the backend can reach the database.
 2. **DB health** – Open **`https://backend.iphonecenter.logozodev.com/api/health/db`**. If it shows `"database": "disconnected"`, the backend cannot connect; fix `DATABASE_URL` and redeploy.
 3. **Schema** – Tables are created automatically on startup from **`backend/database/init.pg.sql`**. If the DB was empty, wait ~30 seconds after deploy and try again. If tables are still missing, run `init.pg.sql` manually (see section 2 above) and restart the backend.
-4. **Logs** – In backend container logs, look for `Get branches error:` or `Database init error:` to see the exact PostgreSQL error (e.g. relation "branches" does not exist, connection refused).
+4. **Logs** – In backend container logs, look for **`Get branches error:`** and the line after it. The log shows the real PostgreSQL **code** and **message** (e.g. `42501` = permission denied, `42P01` = table missing).
+5. **Permission denied (42501)** – If the schema was run as `postgres` (or another user) but the app connects with a different user (from `DATABASE_URL`), that user may lack SELECT on `branches`. Connect to PostgreSQL as a superuser and run (replace `your_app_user` with the username from your `DATABASE_URL`):
+   ```sql
+   GRANT USAGE ON SCHEMA public TO your_app_user;
+   GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO your_app_user;
+   GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO your_app_user;
+   ```
+   Then retry loading warehouses.
 
-After fixing, the API will return **503** with a clear message instead of 500 when the DB or schema is the problem.
+After fixing, the API returns **503** with a clear message instead of 500; the logs always show the exact error so you can fix the root cause.
 
 ---
 

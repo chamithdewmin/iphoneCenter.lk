@@ -31,20 +31,16 @@ const getAllBranches = async (req, res, next) => {
             data: list
         });
     } catch (error) {
-        logger.error('Get branches error:', { message: error.message, code: error.code });
-        // Any DB/schema/connection error → 503 so frontend shows clear message instead of 500
-        const code = error.code || '';
-        const msg = (error.message || '').toLowerCase();
-        const isDbError =
-            code === '42P01' || code === '42703' || code === 'ECONNREFUSED' || code === 'ENOTFOUND' || code === 'ETIMEDOUT' ||
-            msg.includes('does not exist') || msg.includes('relation') || msg.includes('column');
-        if (isDbError) {
-            return res.status(503).json({
-                success: false,
-                message: 'Could not load warehouses. Ensure DATABASE_URL is set, PostgreSQL is running, and the schema (init.pg.sql) has been applied. Check backend logs for details.'
-            });
+        // Log full error so container logs show the real PostgreSQL/code cause
+        logger.error('Get branches error:', { message: error.message, code: error.code, stack: error.stack });
+        if (process.env.NODE_ENV === 'production') {
+            console.error('Get branches error:', error.code, error.message);
         }
-        next(error);
+        // Always return 503 for this endpoint so we never send 500; message hints at logs
+        return res.status(503).json({
+            success: false,
+            message: 'Could not load warehouses. Check backend container logs for "Get branches error" and the PostgreSQL error (e.g. permission: GRANT SELECT ON branches TO your_db_user).'
+        });
     }
 };
 
