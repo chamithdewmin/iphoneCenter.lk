@@ -6,26 +6,39 @@ const logger = require('../utils/logger');
  */
 const getAllBranches = async (req, res, next) => {
     try {
-        let query = 'SELECT id, name, code, address, phone, email, is_active, created_at, updated_at FROM branches WHERE is_active = TRUE';
+        const user = req.user || {};
+        const role = user.role;
+        const branchId = user.branch_id;
+
+        let query = 'SELECT * FROM branches WHERE 1=1';
         const params = [];
 
         // Non-admin users can only see their branch
-        if (req.user.role !== 'admin' && req.user.branch_id) {
+        if (role !== 'admin' && branchId != null) {
             query += ' AND id = ?';
-            params.push(req.user.branch_id);
+            params.push(branchId);
         }
 
         query += ' ORDER BY name ASC';
 
-        const [branches] = await executeQuery(query, params);
-        const list = Array.isArray(branches) ? branches : [];
+        const [rows] = await executeQuery(query, params);
+        const raw = Array.isArray(rows) ? rows : [];
+        // Only return active branches (is_active may be missing in old schemas)
+        const list = raw.filter((b) => b.is_active !== false);
 
         res.json({
             success: true,
             data: list
         });
     } catch (error) {
-        logger.error('Get branches error:', error);
+        logger.error('Get branches error:', { message: error.message, code: error.code });
+        // Table missing (e.g. schema not run) → return 503 with clear message
+        if (error.code === '42P01' || (error.message && error.message.includes('does not exist'))) {
+            return res.status(503).json({
+                success: false,
+                message: 'Database tables not ready. Run the schema (init.pg.sql) on your PostgreSQL database and restart the backend.'
+            });
+        }
         next(error);
     }
 };

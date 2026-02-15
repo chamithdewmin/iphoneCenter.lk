@@ -56,7 +56,6 @@ const Topbar = ({ onMenuClick }) => {
               <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                 <User className="w-4 h-4 text-white" />
               </div>
-              <span className="hidden md:block text-sm font-medium">{user?.name}</span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={handleLogout}>
