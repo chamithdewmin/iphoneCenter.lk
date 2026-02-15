@@ -1,7 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { 
   LayoutDashboard, 
   Package,
@@ -40,7 +46,8 @@ import {
   ArrowLeftRight,
   MessageSquare,
   Send,
-  Mail
+  Mail,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRolePermissions } from '@/constants/rolePermissions';
@@ -356,8 +363,15 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '' }) => {
 };
 
 const Sidebar = ({ isOpen, onClose }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const permissionsVersion = useRolePermissionsVersion();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+    onClose?.();
+  };
   const displayItems = useMemo(() => {
     const permissions = getRolePermissions(user?.role);
     return filterMenuByPermissions(menuItems, permissions);
@@ -411,32 +425,45 @@ const Sidebar = ({ isOpen, onClose }) => {
             ))}
           </nav>
 
-          {/* Logged-in user details & role at bottom */}
+          {/* Logged-in user details & role at bottom – click to show Logout */}
           <div className="mt-auto border-t border-secondary p-4 space-y-2">
-            <div className="flex items-center gap-3 rounded-lg bg-secondary/50 p-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary text-sm font-semibold">
-                {(user?.name || user?.username || user?.email || 'U').charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {user?.name || user?.username || 'Account'}
-                </p>
-                <p className="text-[11px] text-muted-foreground truncate">
-                  {user?.email || '—'}
-                </p>
-                <p className="text-[11px] mt-0.5">
-                  <span className={cn(
-                    "inline-block px-1.5 py-0.5 rounded font-medium capitalize",
-                    user?.role === 'admin' && "bg-amber-500/20 text-amber-600 dark:text-amber-400",
-                    user?.role === 'manager' && "bg-blue-500/20 text-blue-600 dark:text-blue-400",
-                    (user?.role === 'staff' || user?.role === 'cashier') && "bg-secondary text-secondary-foreground"
-                  )}>
-                    {(user?.role || '—').replace('cashier', 'Staff')}
-                  </span>
-                </p>
-              </div>
-              <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" />
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="w-full flex items-center gap-3 py-2 rounded-lg hover:bg-secondary/50 transition-colors text-left"
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary text-sm font-semibold">
+                    {(user?.name || user?.username || user?.email || 'U').charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {user?.name || user?.username || 'Account'}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {user?.email || '—'}
+                    </p>
+                    <p className="text-[11px] mt-0.5">
+                      <span className={cn(
+                        "inline-block px-1.5 py-0.5 rounded font-medium capitalize",
+                        user?.role === 'admin' && "bg-amber-500/20 text-amber-600 dark:text-amber-400",
+                        user?.role === 'manager' && "bg-blue-500/20 text-blue-600 dark:text-blue-400",
+                        (user?.role === 'staff' || user?.role === 'cashier') && "bg-secondary text-secondary-foreground"
+                      )}>
+                        {(user?.role || '—').replace('cashier', 'Staff')}
+                      </span>
+                    </p>
+                  </div>
+                  <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <a
               href="https://logozodev.com"
               target="_blank"
