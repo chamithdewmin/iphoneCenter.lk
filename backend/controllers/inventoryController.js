@@ -8,26 +8,33 @@ const logger = require('../utils/logger');
 const getAllProducts = async (req, res, next) => {
     try {
         const { search, category, brand } = req.query;
-        let query = 'SELECT * FROM products WHERE 1=1';
+        let query = `SELECT p.*, b.barcode
+                     FROM products p
+                     LEFT JOIN barcodes b ON b.product_id = p.id AND b.is_active = TRUE
+                     WHERE 1=1`;
         const params = [];
 
         if (search) {
-            query += ' AND (name LIKE ? OR sku LIKE ?)';
+            query += ' AND (p.name LIKE ? OR p.sku LIKE ? OR p.brand LIKE ?)';
             const searchTerm = `%${search}%`;
-            params.push(searchTerm, searchTerm);
+            params.push(searchTerm, searchTerm, searchTerm);
         }
         if (category) {
-            query += ' AND category = ?';
+            query += ' AND p.category = ?';
             params.push(category);
         }
         if (brand) {
-            query += ' AND brand = ?';
+            query += ' AND p.brand = ?';
             params.push(brand);
         }
 
-        query += ' ORDER BY name ASC';
+        query += ' ORDER BY p.name ASC';
 
-        const [products] = await executeQuery(query, params);
+        const [rows] = await executeQuery(query, params);
+        const products = (rows || []).map((row) => {
+            const { barcode, ...product } = row;
+            return { ...product, barcode: barcode || null };
+        });
 
         res.json({
             success: true,

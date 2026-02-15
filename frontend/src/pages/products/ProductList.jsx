@@ -162,6 +162,12 @@ const ProductList = () => {
                         <span>{product.category}</span>
                       </div>
                     )}
+                    {product.barcode && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span className="font-medium">Barcode:</span>
+                        <span className="font-mono text-xs">{product.barcode}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between pt-4 border-t border-secondary">

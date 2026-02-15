@@ -40,8 +40,9 @@ const generateRefundNumber = () => {
  * Generate barcode (simple implementation)
  */
 const generateBarcode = (productId, sku) => {
-    // In production, use a proper barcode library
-    return `BC${String(productId).padStart(8, '0')}${sku.substring(0, 4).toUpperCase()}`;
+    const idPart = String(productId).padStart(6, '0');
+    const skuPart = (sku && String(sku).replace(/\s/g, '').substring(0, 6).toUpperCase()) || 'XXXX';
+    return `BC${idPart}${skuPart}`.substring(0, 20);
 };
 
 /**

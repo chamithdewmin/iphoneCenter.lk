@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Download, Barcode, Search, Package } from 'lucide-react';
-import { getStorageData } from '@/utils/storage';
+import { Download, Barcode, Search, Package, RefreshCw } from 'lucide-react';
+import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -12,48 +12,85 @@ const GenerateBarcode = () => {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [generatedBarcode, setGeneratedBarcode] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [generatingId, setGeneratingId] = useState(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const loadedProducts = getStorageData('products', []);
-    setProducts(loadedProducts);
-    setFilteredProducts(loadedProducts);
-  }, []);
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    const { ok, data } = await authFetch('/api/inventory/products');
+    setLoading(false);
+    if (!ok) {
+      toast({
+        title: 'Failed to load products',
+        description: data?.message || 'Please log in again.',
+        variant: 'destructive',
+      });
+      setProducts([]);
+      setFilteredProducts([]);
+      return;
+    }
+    const list = Array.isArray(data?.data) ? data.data : [];
+    setProducts(list);
+    setFilteredProducts(list);
+  }, [toast]);
 
   useEffect(() => {
-    if (searchQuery) {
-      const searchLower = searchQuery.toLowerCase();
-      const filtered = products.filter(product =>
-        (product.brand || product.make || '').toLowerCase().includes(searchLower) ||
-        (product.model || '').toLowerCase().includes(searchLower) ||
-        (product.imei || product.vin || '').toLowerCase().includes(searchLower)
-      );
-      setFilteredProducts(filtered);
-    } else {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  useEffect(() => {
+    if (!searchQuery) {
       setFilteredProducts(products);
+      return;
     }
+    const q = searchQuery.toLowerCase();
+    setFilteredProducts(
+      products.filter(
+        (p) =>
+          (p.name || '').toLowerCase().includes(q) ||
+          (p.sku || '').toLowerCase().includes(q) ||
+          (p.brand || '').toLowerCase().includes(q) ||
+          (p.barcode || '').toLowerCase().includes(q)
+      )
+    );
   }, [searchQuery, products]);
 
-  const generateBarcode = (product) => {
-    // Generate a simple barcode number (in real app, use a barcode library)
-    const barcode = `BAR-${product.id}-${Date.now()}`;
-    return barcode;
-  };
-
-  const handleGenerate = (product) => {
-    const barcode = generateBarcode(product);
+  const handleGenerate = async (product) => {
+    setGeneratingId(product.id);
+    setGeneratedBarcode(null);
+    const { ok, data } = await authFetch(`/api/inventory/barcode/generate/${product.id}`);
+    setGeneratingId(null);
+    if (!ok) {
+      toast({
+        title: 'Generate failed',
+        description: data?.message || 'Could not generate barcode',
+        variant: 'destructive',
+      });
+      return;
+    }
+    const barcode = data?.data?.barcode || null;
+    setGeneratedBarcode(barcode);
     setSelectedProduct({ ...product, barcode });
     toast({
-      title: "Barcode Generated",
-      description: `Barcode generated for ${product.model || product.brand}`,
+      title: 'Barcode generated',
+      description: barcode ? `Saved to database: ${barcode}` : 'Barcode generated',
     });
+    fetchProducts();
   };
 
   const handleDownload = () => {
-    toast({
-      title: "Download Started",
-      description: "Barcode image download started",
-    });
+    if (!selectedProduct?.barcode) return;
+    const name = (selectedProduct.name || selectedProduct.sku || 'product').replace(/\s+/g, '_');
+    const blob = new Blob([selectedProduct.barcode], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `barcode_${name}_${selectedProduct.barcode}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: 'Downloaded', description: 'Barcode saved to file' });
   };
 
   return (
@@ -64,42 +101,47 @@ const GenerateBarcode = () => {
       </Helmet>
 
       <div className="space-y-6">
-        {/* Header */}
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
             Generate Barcode
           </h1>
-          <p className="text-muted-foreground mt-1">Generate barcodes for your products</p>
+          <p className="text-muted-foreground mt-1">Generate and save barcodes for products (from inventory)</p>
         </div>
 
-        {/* Search */}
         <div className="bg-card rounded-xl p-4 border border-secondary shadow-sm">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <div className="relative flex gap-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
             <Input
-              placeholder="Search products to generate barcode..."
+              placeholder="Search by name, SKU, brand, or barcode..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-11"
+              className="pl-10 h-11 flex-1"
             />
+            <Button variant="outline" size="icon" onClick={fetchProducts} disabled={loading} title="Refresh">
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Products List */}
           <div className="lg:col-span-2">
-            {filteredProducts.length === 0 ? (
+            {loading ? (
+              <div className="bg-card rounded-xl p-12 border border-secondary text-center">
+                <RefreshCw className="w-12 h-12 mx-auto text-muted-foreground mb-4 animate-spin" />
+                <p className="text-muted-foreground">Loading inventory…</p>
+              </div>
+            ) : filteredProducts.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-card rounded-xl p-12 border border-secondary text-center"
               >
                 <Barcode className="w-16 h-16 mx-auto text-muted-foreground mb-4 opacity-50" />
-                <h3 className="text-xl font-semibold mb-2">No Products Found</h3>
+                <h3 className="text-xl font-semibold mb-2">No products found</h3>
                 <p className="text-muted-foreground">
-                  {products.length === 0 
-                    ? "No products available to generate barcodes"
-                    : "No products match your search criteria"}
+                  {products.length === 0
+                    ? 'Add products in Product List first, then generate barcodes here.'
+                    : 'No products match your search.'}
                 </p>
               </motion.div>
             ) : (
@@ -109,27 +151,32 @@ const GenerateBarcode = () => {
                     key={product.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
+                    transition={{ delay: index * 0.03 }}
                     className="bg-card rounded-xl border border-secondary p-4 hover:shadow-md transition-all duration-200"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{product.model || product.brand}</h3>
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold truncate">{product.name || product.sku}</h3>
                         <p className="text-sm text-muted-foreground">
-                          {product.brand || product.make} | ID: {product.id}
+                          {product.brand && `${product.brand} · `}SKU: {product.sku} · ID: {product.id}
                         </p>
                         {product.barcode && (
-                          <p className="text-xs text-muted-foreground mt-1 font-mono">
-                            Current: {product.barcode}
-                          </p>
+                          <p className="text-xs text-muted-foreground mt-1 font-mono">Barcode: {product.barcode}</p>
                         )}
                       </div>
                       <Button
                         size="sm"
                         onClick={() => handleGenerate(product)}
+                        disabled={generatingId === product.id}
                       >
-                        <Barcode className="w-4 h-4 mr-2" />
-                        Generate
+                        {generatingId === product.id ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Barcode className="w-4 h-4 mr-2" />
+                            {product.barcode ? 'Regenerate' : 'Generate'}
+                          </>
+                        )}
                       </Button>
                     </div>
                   </motion.div>
@@ -138,50 +185,27 @@ const GenerateBarcode = () => {
             )}
           </div>
 
-          {/* Barcode Preview */}
           <div className="lg:col-span-1">
             <div className="bg-card rounded-xl border border-secondary shadow-sm sticky top-6">
               <div className="p-6">
-                <h2 className="text-lg font-semibold mb-4">Barcode Preview</h2>
-                {selectedProduct ? (
+                <h2 className="text-lg font-semibold mb-4">Barcode preview</h2>
+                {selectedProduct && generatedBarcode ? (
                   <div className="space-y-4">
                     <div className="bg-secondary/50 rounded-lg p-6 text-center">
                       <Barcode className="w-16 h-16 mx-auto mb-4 text-primary" />
-                      <p className="font-mono text-lg font-bold mb-2">{selectedProduct.barcode}</p>
-                      <p className="text-sm text-muted-foreground">{selectedProduct.model || selectedProduct.brand}</p>
+                      <p className="font-mono text-lg font-bold mb-2 break-all">{generatedBarcode}</p>
+                      <p className="text-sm text-muted-foreground">{selectedProduct.name || selectedProduct.sku}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Saved to database</p>
                     </div>
-                    <div className="space-y-2">
-                      <Button className="w-full" onClick={handleDownload}>
-                        <Download className="w-4 h-4 mr-2" />
-                        Download Barcode
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => {
-                          const products = getStorageData('products', []);
-                          const updatedProducts = products.map(p =>
-                            p.id === selectedProduct.id
-                              ? { ...p, barcode: selectedProduct.barcode }
-                              : p
-                          );
-                          // setStorageData('products', updatedProducts);
-                          toast({
-                            title: "Barcode Saved",
-                            description: "Barcode has been saved to product",
-                          });
-                        }}
-                      >
-                        Save to Product
-                      </Button>
-                    </div>
+                    <Button className="w-full" onClick={handleDownload}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Download barcode (txt)
+                    </Button>
                   </div>
                 ) : (
                   <div className="text-center py-12">
                     <Package className="w-12 h-12 mx-auto text-muted-foreground mb-4 opacity-30" />
-                    <p className="text-sm text-muted-foreground">
-                      Select a product to generate barcode
-                    </p>
+                    <p className="text-sm text-muted-foreground">Click Generate on a product to create and save its barcode</p>
                   </div>
                 )}
               </div>
