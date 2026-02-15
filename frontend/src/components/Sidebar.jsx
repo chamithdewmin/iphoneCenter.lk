@@ -40,7 +40,8 @@ import {
   ArrowLeftRight,
   MessageSquare,
   Send,
-  Mail
+  Mail,
+  ChevronUpDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRolePermissions } from '@/constants/rolePermissions';
@@ -410,6 +411,35 @@ const Sidebar = ({ isOpen, onClose }) => {
               <MenuItem key={idx} item={item} onClose={onClose} />
             ))}
           </nav>
+
+          {/* Logged-in user details & role at bottom */}
+          <div className="mt-auto border-t border-secondary p-4 space-y-2">
+            <div className="flex items-center gap-3 rounded-lg bg-secondary/50 p-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary font-semibold">
+                {(user?.name || user?.username || user?.email || 'U').charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-foreground truncate">
+                  {user?.name || user?.username || 'Account'}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {user?.email || '—'}
+                </p>
+                <p className="text-xs mt-0.5">
+                  <span className={cn(
+                    "inline-block px-2 py-0.5 rounded font-medium capitalize",
+                    user?.role === 'admin' && "bg-amber-500/20 text-amber-600 dark:text-amber-400",
+                    user?.role === 'manager' && "bg-blue-500/20 text-blue-600 dark:text-blue-400",
+                    (user?.role === 'staff' || user?.role === 'cashier') && "bg-secondary text-secondary-foreground"
+                  )}>
+                    {(user?.role || '—').replace('cashier', 'Staff')}
+                  </span>
+                </p>
+              </div>
+              <ChevronUpDown className="w-4 h-4 text-muted-foreground shrink-0" />
+            </div>
+            <p className="text-center text-xs text-muted-foreground">iphone center.lk</p>
+          </div>
         </div>
       </aside>
     </>
