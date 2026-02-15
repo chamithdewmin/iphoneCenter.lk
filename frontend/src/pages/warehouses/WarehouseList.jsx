@@ -7,9 +7,12 @@ import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { useBranchFilter } from '@/hooks/useBranchFilter';
+import { BranchFilter } from '@/components/BranchFilter';
 
 const WarehouseList = () => {
   const { toast } = useToast();
+  const { isAdmin, selectedBranchId } = useBranchFilter();
   const [warehouses, setWarehouses] = useState([]);
   const [filteredWarehouses, setFilteredWarehouses] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,19 +44,21 @@ const WarehouseList = () => {
   }, [fetchBranches]);
 
   useEffect(() => {
+    let list = warehouses;
+    if (isAdmin && selectedBranchId) {
+      list = warehouses.filter((w) => String(w.id) === String(selectedBranchId));
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      const filtered = warehouses.filter(
+      list = list.filter(
         (w) =>
           (w.name || '').toLowerCase().includes(q) ||
           (w.code || '').toLowerCase().includes(q) ||
           (w.email || '').toLowerCase().includes(q)
       );
-      setFilteredWarehouses(filtered);
-    } else {
-      setFilteredWarehouses(warehouses);
     }
-  }, [searchQuery, warehouses]);
+    setFilteredWarehouses(list);
+  }, [searchQuery, warehouses, isAdmin, selectedBranchId]);
 
   return (
     <>
@@ -70,12 +75,15 @@ const WarehouseList = () => {
             </h1>
             <p className="text-muted-foreground mt-1">View and manage all warehouses</p>
           </div>
-          <Link to="/warehouses/add">
+          <div className="flex items-center gap-3">
+            <BranchFilter id="warehouse-list-branch" />
+            <Link to="/warehouses/add">
             <Button className="w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Add Warehouse
             </Button>
           </Link>
+          </div>
         </div>
 
         <div className="bg-card rounded-xl p-4 border border-secondary shadow-sm">
