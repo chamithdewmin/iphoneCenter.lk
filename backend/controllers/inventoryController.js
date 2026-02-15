@@ -412,8 +412,9 @@ const getIMEIs = async (req, res, next) => {
  * Transfer stock between branches
  */
 const transferStock = async (req, res, next) => {
-    const connection = await getConnection();
+    let connection;
     try {
+        connection = await getConnection();
         await connection.beginTransaction();
 
         const effectiveUserId = await getEffectiveUserId(connection, req.user.id);
@@ -425,14 +426,19 @@ const transferStock = async (req, res, next) => {
             });
         }
 
-        const { toBranchId, productId, quantity, imei, notes, fromBranchId: bodyFromBranchId } = req.body;
-        const fromBranchId = isAdmin(req) && bodyFromBranchId ? bodyFromBranchId : req.user.branch_id;
+        const { toBranchId: rawTo, productId: rawProductId, quantity: rawQty, imei, notes, fromBranchId: bodyFrom } = req.body;
+        const rawFrom = isAdmin(req) && bodyFrom != null && bodyFrom !== '' ? bodyFrom : req.user.branch_id;
+        const fromBranchId = rawFrom != null && rawFrom !== '' ? parseInt(rawFrom, 10) : null;
+        const toBranchId = rawTo != null && rawTo !== '' ? parseInt(rawTo, 10) : null;
+        const productId = rawProductId != null && rawProductId !== '' ? parseInt(rawProductId, 10) : null;
+        const quantity = rawQty != null && rawQty !== '' ? parseInt(Number(rawQty), 10) : NaN;
 
-        if (!fromBranchId || !toBranchId || !productId || !quantity) {
+        if (fromBranchId == null || Number.isNaN(fromBranchId) || toBranchId == null || Number.isNaN(toBranchId) ||
+            productId == null || Number.isNaN(productId) || !Number.isInteger(quantity) || quantity < 1) {
             await connection.rollback();
             return res.status(400).json({
                 success: false,
-                message: 'From branch, to branch, product, and quantity are required'
+                message: 'From branch, to branch, product, and quantity (positive integer) are required'
             });
         }
 
@@ -450,7 +456,9 @@ const transferStock = async (req, res, next) => {
             [fromBranchId, productId]
         );
 
-        if (stock.length === 0 || stock[0].quantity - stock[0].reserved_quantity < quantity) {
+        const qty = Number(stock[0]?.quantity ?? 0);
+        const reserved = Number(stock[0]?.reserved_quantity ?? 0);
+        if (stock.length === 0 || qty - reserved < quantity) {
             await connection.rollback();
             return res.status(400).json({
                 success: false,
@@ -462,11 +470,11 @@ const transferStock = async (req, res, next) => {
         const { generateTransferNumber } = require('../utils/helpers');
         const transferNumber = generateTransferNumber();
 
-        // Create transfer record
+        // Create transfer record (RETURNING id for PostgreSQL insertId)
         const [transferResult] = await connection.execute(
             `INSERT INTO stock_transfers (transfer_number, from_branch_id, to_branch_id, 
                                          product_id, quantity, imei, notes, requested_by) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
             [transferNumber, fromBranchId, toBranchId, productId, quantity, imei || null, notes || null, effectiveUserId]
         );
 
@@ -506,11 +514,15 @@ const transferStock = async (req, res, next) => {
             }
         });
     } catch (error) {
-        await connection.rollback();
+        if (connection) {
+            try { await connection.rollback(); } catch (_) { /* ignore */ }
+        }
         logger.error('Transfer stock error:', error);
         next(error);
     } finally {
-        connection.release();
+        if (connection) {
+            try { connection.release(); } catch (_) { /* ignore */ }
+        }
     }
 };
 
