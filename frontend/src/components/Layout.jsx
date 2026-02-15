@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { CASHIER_ALLOWED_PATHS } from '@/constants/cashierPaths';
+import { useRolePermissions } from '@/contexts/RolePermissionsContext';
+import { getPermissionForPath } from '@/constants/rolePermissions';
 import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
 
@@ -10,12 +11,17 @@ const Layout = () => {
   const { user } = useAuth();
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { getPermissionsForRole } = useRolePermissions();
 
   useEffect(() => {
-    if (user?.role === 'cashier' && !CASHIER_ALLOWED_PATHS.has(pathname)) {
+    const role = (user?.role || '').toLowerCase();
+    if (role === 'admin') return;
+    const permissions = getPermissionsForRole(role);
+    const required = getPermissionForPath(pathname);
+    if (required && !permissions[required]) {
       navigate('/dashboard', { replace: true });
     }
-  }, [user?.role, pathname, navigate]);
+  }, [user?.role, pathname, navigate, getPermissionsForRole]);
 
   return (
     <div className="min-h-screen bg-background">

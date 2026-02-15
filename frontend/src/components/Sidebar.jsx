@@ -43,19 +43,22 @@ import {
   Mail
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CASHIER_ALLOWED_PATHS } from '@/constants/cashierPaths';
+import { useRolePermissions } from '@/contexts/RolePermissionsContext';
 
+/** Each top-level menu section is gated by one of these permissions. */
 const menuItems = [
   {
     type: 'link',
     to: '/dashboard',
     icon: LayoutDashboard,
     label: 'Dashboard',
+    permission: 'dashboard',
   },
   {
     type: 'menu',
     icon: Receipt,
     label: 'Invoice',
+    permission: 'orders',
     children: [
       { to: '/pos-billing/new-sale', label: 'New Sale', icon: ShoppingCart },
       { to: '/pos-billing/print-invoice', label: 'Print Invoice', icon: Printer },
@@ -68,6 +71,7 @@ const menuItems = [
     type: 'menu',
     icon: FileText,
     label: 'Orders',
+    permission: 'orders',
     children: [
       { to: '/per-order/add', label: 'Add Per Order', icon: Plus },
       { to: '/per-order/list', label: 'List Per Order', icon: List },
@@ -77,6 +81,7 @@ const menuItems = [
     type: 'menu',
     icon: ArrowRightLeft,
     label: 'Trading',
+    permission: 'orders',
     children: [
       { to: '/trading/sales', label: 'Sales', icon: ShoppingBag },
       { to: '/trading/purchase', label: 'Purchase', icon: Receipt },
@@ -86,6 +91,7 @@ const menuItems = [
     type: 'menu',
     icon: Package,
     label: 'Products',
+    permission: 'products',
     children: [
       { to: '/products/add', label: 'Add Product', icon: Plus },
       { to: '/products/list', label: 'Product List', icon: List },
@@ -98,6 +104,7 @@ const menuItems = [
     type: 'menu',
     icon: PackageSearch,
     label: 'Inventory',
+    permission: 'inventory',
     children: [
       { to: '/inventory/stock-view', label: 'Product Stock View', icon: Package },
       { to: '/inventory/low-stock-alert', label: 'Low Stock Alert', icon: AlertTriangle },
@@ -110,6 +117,7 @@ const menuItems = [
     type: 'menu',
     icon: Warehouse,
     label: 'Warehouses',
+    permission: 'inventory',
     children: [
       { to: '/warehouses/add', label: 'Add Warehouse', icon: Plus },
       { to: '/warehouses/list', label: 'Warehouse List', icon: List },
@@ -119,6 +127,7 @@ const menuItems = [
     type: 'menu',
     icon: TrendingDown,
     label: 'Expense',
+    permission: 'reports',
     children: [
       { to: '/expense/add', label: 'Add Expense', icon: Plus },
       { to: '/expense/list', label: 'Expense List', icon: List },
@@ -128,6 +137,7 @@ const menuItems = [
     type: 'menu',
     icon: Users,
     label: 'People',
+    permission: 'customers',
     children: [
       {
         type: 'submenu',
@@ -162,6 +172,7 @@ const menuItems = [
     type: 'menu',
     icon: FolderTree,
     label: 'Categories',
+    permission: 'products',
     children: [
       { to: '/categories/add', label: 'Add Category', icon: FolderPlus },
       { to: '/categories/list', label: 'Category List', icon: List },
@@ -171,6 +182,7 @@ const menuItems = [
     type: 'menu',
     icon: BarChart3,
     label: 'Reports',
+    permission: 'reports',
     children: [
       { to: '/reports/sale', label: 'Sale Report', icon: FileText },
       { to: '/reports/purchase', label: 'Purchase Report', icon: FileText },
@@ -189,6 +201,7 @@ const menuItems = [
     type: 'menu',
     icon: MessageSquare,
     label: 'SMS',
+    permission: 'customers',
     children: [
       { to: '/sms/send-customer', label: 'Send SMS to Customer', icon: Send },
       { to: '/sms/bulk', label: 'Bulk SMS', icon: Mail },
@@ -202,6 +215,7 @@ const menuItems = [
     type: 'menu',
     icon: UserCog,
     label: 'User Manage',
+    permission: 'users',
     children: [
       { to: '/users/add', label: 'Add User', icon: UserPlus },
       { to: '/users/list', label: 'User List', icon: List },
@@ -212,6 +226,7 @@ const menuItems = [
     type: 'menu',
     icon: Settings,
     label: 'Settings',
+    permission: 'settings',
     children: [
       { to: '/settings/general', label: 'General Setting', icon: Settings },
       { to: '/settings/permission', label: 'Permission Setting', icon: ShieldCheck },
@@ -219,27 +234,29 @@ const menuItems = [
   },
 ];
 
-function filterMenuForCashier(items) {
+/** Filter menu items by role permissions. Admin sees all. */
+function filterMenuByPermissions(items, rolePermissions) {
+  if (!rolePermissions) return items;
   return items.reduce((acc, item) => {
+    const permission = item.permission;
+    if (permission && !rolePermissions[permission]) return acc;
     if (item.type === 'link') {
-      if (item.to && CASHIER_ALLOWED_PATHS.has(item.to)) acc.push(item);
+      acc.push(item);
       return acc;
     }
     if (item.type === 'menu' || item.type === 'submenu') {
       const filteredChildren = (item.children || []).reduce((acc2, child) => {
         if (child.type === 'submenu') {
-          const filteredSub = (child.children || []).filter(sc => sc.to && CASHIER_ALLOWED_PATHS.has(sc.to));
-          if (filteredSub.length === 0) return acc2;
-          acc2.push({ ...child, children: filteredSub });
+          acc2.push(child);
           return acc2;
         }
-        if (child.to && CASHIER_ALLOWED_PATHS.has(child.to)) acc2.push(child);
+        acc2.push(child);
         return acc2;
       }, []);
       if (filteredChildren.length > 0) acc.push({ ...item, children: filteredChildren });
       return acc;
     }
-    if (item.to && CASHIER_ALLOWED_PATHS.has(item.to)) acc.push(item);
+    acc.push(item);
     return acc;
   }, []);
 }
@@ -371,10 +388,12 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '' }) => {
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { user } = useAuth();
-  const displayItems = useMemo(
-    () => (user?.role === 'cashier' ? filterMenuForCashier(menuItems) : menuItems),
-    [user?.role]
-  );
+  const { getPermissionsForRole } = useRolePermissions();
+  const displayItems = useMemo(() => {
+    const role = (user?.role || '').toLowerCase();
+    const permissions = getPermissionsForRole(role);
+    return filterMenuByPermissions(menuItems, permissions);
+  }, [user?.role, getPermissionsForRole]);
 
   return (
     <>
