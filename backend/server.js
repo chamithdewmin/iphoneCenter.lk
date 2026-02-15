@@ -143,11 +143,8 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 const HOST = '0.0.0.0';
 
-async function start() {
-    // Database install on first run: connect and create all tables (IF NOT EXISTS), then start server
-    console.log('Database: installing on first run (creating tables if needed)...');
-    const { applySchema } = require('./config/initDatabase');
-    await applySchema();
+function start() {
+    // Start HTTP server first so proxy gets a response (avoids 502). Then run DB init in background.
     return new Promise((resolve, reject) => {
         const server = app.listen(PORT, HOST, () => {
             const msg = `Server running on http://${HOST}:${PORT}`;
@@ -163,6 +160,15 @@ async function start() {
             } catch (e) {
                 console.log('Test login: check JWT env vars');
             }
+            // Database install on first run (background) – avoids 502 while waiting for DB
+            const { applySchema } = require('./config/initDatabase');
+            console.log('Database: installing on first run in background (creating tables if needed)...');
+            applySchema()
+                .then(() => {})
+                .catch((err) => {
+                    console.error('Database init failed (will retry on next request or restart):', err.message);
+                    logger.error('Database init failed', { message: err.message });
+                });
             resolve(server);
         });
         server.on('error', (err) => {

@@ -1,5 +1,21 @@
 # Backend deployment (Dokploy / Docker)
 
+## Fixing 502 Bad Gateway (after recreate or first deploy)
+
+If you get **502 Bad Gateway** when opening `https://backend.iphonecenter.logozodev.com`:
+
+1. **Build path** – In the backend app settings, set **Build Path** (or **Dockerfile path** / **Context**) to **`backend`**. The Dockerfile is in the `backend` folder; the build context must be `backend` so that `server.js` and `database/` end up in `/app` inside the container. If the context is the repo root, the app won’t start and the container will exit → 502.
+
+2. **Domain → Container port** – In **Domain** (or **Settings**), set **Container Port** to **`5000`**. The backend listens on port 5000.
+
+3. **Environment variables** – After recreating the backend, add all required env vars (see section 3 below): **`DATABASE_URL`**, **`JWT_SECRET`**, **`JWT_REFRESH_SECRET`**, and optionally **`CORS_ORIGIN`**, **`PORT=5000`**. If `JWT_SECRET` or `DATABASE_URL` is missing, the app exits on startup → 502.
+
+4. **Check logs** – Open the backend app → **Logs**. If you see “Startup failed”, “Missing required environment variables”, or “Database init error”, fix those and redeploy.
+
+5. **Wait for startup** – The app runs the database init before listening; that can take up to ~30 seconds. If the proxy hits the container before the app is listening, you may see 502. Wait a minute and try again, or increase the proxy health-check start period.
+
+---
+
 ## Fixing 500 on `/api/customers` (and other API routes)
 
 The backend returns **500** or **503** when the database is missing tables or unreachable.
@@ -10,9 +26,9 @@ The backend uses **PostgreSQL only** (no MySQL). In Dokploy, set the connection 
 
 - Open your **backend** app → **Environment** (or **Variables**).
 - Add **`DATABASE_URL`** and set it to your PostgreSQL connection string.
-- Easiest: copy the **Internal Connection URL** from your PostgreSQL service’s **Internal Credentials** (e.g. `postgresql://user_iphone_center:****@iphone-center-database-2r1ljm:5432/iphone-center-db`). Use the same URL in `DATABASE_URL` so the backend connects to that database.
+- Easiest: copy the **Internal Connection URL** from your PostgreSQL service’s **Internal Credentials** (e.g. `postgresql://user_iphone_center:****@iphone-center-database-ewasbn:5432/iphone-center-db`). Use that **exact** URL in `DATABASE_URL` so the backend connects to that database. If you get `ENOTFOUND iphone-center-database-xxxxx`, the backend is using an old hostname — update `DATABASE_URL` in the **backend** app Environment to match the Internal Connection URL and redeploy.
 
-If you prefer separate vars: set `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` (and optionally `DB_PORT`) instead of `DATABASE_URL`. The host must be the **internal hostname** (e.g. `iphone-center-database-2r1ljm`) so the backend container can reach the DB.
+If you prefer separate vars: set `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` (and optionally `DB_PORT`) instead of `DATABASE_URL`. The host must be the **internal hostname** from your DB’s Internal Credentials (e.g. `iphone-center-database-ewasbn`) so the backend container can reach the DB.
 
 ### 2. First run: database install (tables auto-created)
 

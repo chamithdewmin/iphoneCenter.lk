@@ -68,7 +68,7 @@ docker run --rm \
   --network dokploy_default \
   -v "$(pwd)/backend/database/schema.pg.sql:/schema.pg.sql" \
   postgres:16-alpine \
-  psql "postgresql://user_iphone_center:YOUR_PASSWORD@iphone-center-database-2r1ljm:5432/iphone-center-db" -f /schema.pg.sql
+  psql "postgresql://user_iphone_center:YOUR_PASSWORD@iphone-center-database-ewasbn:5432/iphone-center-db" -f /schema.pg.sql
 ```
 
 If your backend uses a different Docker network, replace `dokploy_default` (e.g. inspect the backend container: `docker inspect <backend_container_id>` and check `Networks`).
