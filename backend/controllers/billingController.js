@@ -1,5 +1,5 @@
 const { executeQuery, getConnection } = require('../config/database');
-const { generateInvoiceNumber } = require('../utils/helpers');
+const { generateInvoiceNumber, isAdmin } = require('../utils/helpers');
 const { PAYMENT_STATUS, SALE_STATUS, IMEI_STATUS } = require('../config/constants');
 const { getEffectiveUserId } = require('../utils/userResolution');
 const logger = require('../utils/logger');
@@ -252,7 +252,7 @@ const getSale = async (req, res, next) => {
                      WHERE (s.id = ? OR s.invoice_number = ?)`;
         const params = [id, id];
 
-        if (req.user.role !== 'admin') {
+        if (!isAdmin(req)) {
             query += ' AND s.branch_id = ?';
             params.push(branchId);
         }
@@ -345,8 +345,7 @@ const addPayment = async (req, res, next) => {
 
         const sale = sales[0];
 
-        // Check branch access
-        if (req.user.role !== 'admin' && sale.branch_id !== req.user.branch_id) {
+        if (!isAdmin(req) && sale.branch_id !== req.user.branch_id) {
             await connection.rollback();
             return res.status(403).json({
                 success: false,
@@ -430,8 +429,7 @@ const cancelSale = async (req, res, next) => {
 
         const sale = sales[0];
 
-        // Check branch access
-        if (req.user.role !== 'admin' && sale.branch_id !== req.user.branch_id) {
+        if (!isAdmin(req) && sale.branch_id !== req.user.branch_id) {
             await connection.rollback();
             return res.status(403).json({
                 success: false,
@@ -447,7 +445,6 @@ const cancelSale = async (req, res, next) => {
             });
         }
 
-        // Get sale items
         const [saleItems] = await connection.execute(
             'SELECT * FROM sale_items WHERE sale_id = ?',
             [id]
@@ -528,8 +525,7 @@ const createRefund = async (req, res, next) => {
 
         const sale = sales[0];
 
-        // Check branch access
-        if (req.user.role !== 'admin' && sale.branch_id !== req.user.branch_id) {
+        if (!isAdmin(req) && sale.branch_id !== req.user.branch_id) {
             await connection.rollback();
             return res.status(403).json({
                 success: false,
@@ -651,7 +647,14 @@ const processRefund = async (req, res, next) => {
 
         const sale = sales[0];
 
-        // Update refund status
+        if (!isAdmin(req) && sale.branch_id !== req.user.branch_id) {
+            await connection.rollback();
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied to this sale'
+            });
+        }
+
         await connection.execute(
             'UPDATE refunds SET status = ?, processed_by = ? WHERE id = ?',
             ['completed', effectiveUserId, id]
@@ -706,8 +709,7 @@ const getAllSales = async (req, res, next) => {
                      WHERE 1=1`;
         const params = [];
 
-        // Branch filter
-        if (req.user.role !== 'admin') {
+        if (!isAdmin(req)) {
             query += ' AND s.branch_id = ?';
             params.push(branchId);
         } else if (req.query.branchId) {

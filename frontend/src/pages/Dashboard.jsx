@@ -5,8 +5,11 @@ import { Users, DollarSign, Package, ShoppingBag, TrendingUp, TrendingDown, Arro
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { authFetch } from '@/lib/api';
 import KpiCard from '@/components/KpiCard';
+import { useBranchFilter } from '@/hooks/useBranchFilter';
+import { Label } from '@/components/ui/label';
 
 const Dashboard = () => {
+  const { isAdmin, branches, selectedBranchId, setSelectedBranchId } = useBranchFilter();
   const [stats, setStats] = useState({
     totalCustomers: 0,
     totalRevenue: 0,
@@ -20,11 +23,13 @@ const Dashboard = () => {
   useEffect(() => {
     (async () => {
       setLoading(true);
+      const salesUrl = selectedBranchId ? `/api/billing/sales?branchId=${selectedBranchId}` : '/api/billing/sales';
+      const dailyUrl = selectedBranchId ? `/api/reports/daily-summary?branchId=${selectedBranchId}` : '/api/reports/daily-summary';
       const [customersRes, productsRes, salesRes, dailyRes] = await Promise.all([
         authFetch('/api/customers'),
         authFetch('/api/inventory/products'),
-        authFetch('/api/billing/sales'),
-        authFetch('/api/reports/daily-summary'),
+        authFetch(salesUrl),
+        authFetch(dailyUrl),
       ]);
       const customers = Array.isArray(customersRes.data?.data) ? customersRes.data.data : [];
       const products = Array.isArray(productsRes.data?.data) ? productsRes.data.data : [];
@@ -48,7 +53,7 @@ const Dashboard = () => {
       }
       setLoading(false);
     })();
-  }, []);
+  }, [selectedBranchId]);
 
   return (
     <>
@@ -58,12 +63,30 @@ const Dashboard = () => {
       </Helmet>
 
       <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Dashboard
-          </h1>
-          <p className="text-muted-foreground mt-1">Welcome back! Here's your business overview.</p>
+        {/* Header + Branch filter (Admin only) */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              Dashboard
+            </h1>
+            <p className="text-muted-foreground mt-1">Welcome back! Here's your business overview.</p>
+          </div>
+          {isAdmin && branches.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Label htmlFor="dashboard-branch" className="text-sm text-muted-foreground whitespace-nowrap">Branch</Label>
+              <select
+                id="dashboard-branch"
+                value={selectedBranchId}
+                onChange={(e) => setSelectedBranchId(e.target.value)}
+                className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-w-[180px]"
+              >
+                <option value="">All branches</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name} ({b.code})</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* KPI Cards */}

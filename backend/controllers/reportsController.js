@@ -1,4 +1,5 @@
 const { executeQuery } = require('../config/database');
+const { isAdmin } = require('../utils/helpers');
 const logger = require('../utils/logger');
 
 /**
@@ -25,8 +26,7 @@ const getSalesReport = async (req, res, next) => {
 
         const params = [];
 
-        // Branch filter
-        if (req.user.role !== 'admin') {
+        if (!isAdmin(req)) {
             query += ' AND s.branch_id = ?';
             params.push(userBranchId);
         } else if (branchId) {
@@ -82,8 +82,7 @@ const getProfitReport = async (req, res, next) => {
 
         const params = [];
 
-        // Branch filter
-        if (req.user.role !== 'admin') {
+        if (!isAdmin(req)) {
             query += ' AND s.branch_id = ?';
             params.push(userBranchId);
         } else if (branchId) {
@@ -157,7 +156,7 @@ const getStockReport = async (req, res, next) => {
         const params = [];
 
         // Branch filter
-        if (req.user.role !== 'admin') {
+        if (!isAdmin(req)) {
             query += ' AND bs.branch_id = ?';
             params.push(userBranchId);
         } else if (branchId) {
@@ -216,7 +215,7 @@ const getDuePaymentsReport = async (req, res, next) => {
         const params = [];
 
         // Branch filter
-        if (req.user.role !== 'admin') {
+        if (!isAdmin(req)) {
             query += ' AND s.branch_id = ?';
             params.push(userBranchId);
         } else if (branchId) {
@@ -277,7 +276,7 @@ const getDailySalesSummary = async (req, res, next) => {
         const params = [targetDate];
 
         // Branch filter
-        if (req.user.role !== 'admin') {
+        if (!isAdmin(req)) {
             query += ' AND s.branch_id = ?';
             params.push(userBranchId);
         } else if (branchId) {
@@ -324,7 +323,7 @@ const getTopSellingProducts = async (req, res, next) => {
         const params = [];
 
         // Branch filter
-        if (req.user.role !== 'admin') {
+        if (!isAdmin(req)) {
             query += ' AND s.branch_id = ?';
             params.push(userBranchId);
         } else if (branchId) {

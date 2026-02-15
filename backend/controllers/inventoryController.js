@@ -1,5 +1,5 @@
 const { executeQuery, getConnection } = require('../config/database');
-const { generateBarcode, validateIMEI } = require('../utils/helpers');
+const { generateBarcode, validateIMEI, isAdmin } = require('../utils/helpers');
 const { getEffectiveUserId } = require('../utils/userResolution');
 const logger = require('../utils/logger');
 
@@ -231,8 +231,7 @@ const updateStock = async (req, res, next) => {
             });
         }
 
-        // If no branch (e.g. admin/test user), use first active branch so stock can be set
-        if (!branchId && req.user && (req.user.role === 'admin' || req.user.id === 0)) {
+        if (!branchId && req.user && (isAdmin(req) || req.user.id === 0)) {
             const [branches] = await connection.execute(
                 'SELECT id FROM branches WHERE is_active = TRUE ORDER BY id LIMIT 1'
             );

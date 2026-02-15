@@ -1,6 +1,15 @@
 const { v4: uuidv4 } = require('uuid');
 
 /**
+ * Normalized role check (PostgreSQL enum may differ in casing).
+ * Usage: isAdmin(req) → true if user is admin and can see all branches.
+ */
+const isAdmin = (req) => {
+    const role = req?.user?.role != null ? String(req.user.role).toLowerCase() : '';
+    return role === 'admin';
+};
+
+/**
  * Generate unique invoice number
  */
 const generateInvoiceNumber = (branchCode) => {

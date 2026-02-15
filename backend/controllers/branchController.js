@@ -59,8 +59,8 @@ const getBranchById = async (req, res, next) => {
         let query = 'SELECT * FROM branches WHERE id = ?';
         const params = [id];
 
-        // Non-admin users can only access their branch
-        if (req.user.role !== 'admin' && req.user.branch_id) {
+        const role = req.user?.role != null ? String(req.user.role).toLowerCase() : '';
+        if (role !== 'admin' && req.user.branch_id) {
             if (parseInt(id) !== req.user.branch_id) {
                 return res.status(403).json({
                     success: false,
