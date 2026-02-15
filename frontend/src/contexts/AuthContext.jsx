@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authFetch, setTokens, clearTokens, getAccessToken, getRefreshToken, getApiUrl } from '@/lib/api';
+import { authFetch, setTokens, clearTokens, getAccessToken, getRefreshToken, getApiUrl, setOnUnauthorized } from '@/lib/api';
 
 const AuthContext = createContext(null);
 
@@ -38,6 +38,15 @@ export const AuthProvider = ({ children }) => {
     }
     fetchUser().finally(() => setLoading(false));
   }, [fetchUser]);
+
+  // When any authFetch gets 401 and clears tokens, log out in the UI so user is sent to login
+  useEffect(() => {
+    setOnUnauthorized(() => {
+      setUser(null);
+      setIsAuthenticated(false);
+    });
+    return () => setOnUnauthorized(null);
+  }, []);
 
   const login = async (emailOrUsername, password) => {
     try {

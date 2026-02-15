@@ -29,8 +29,8 @@ router.get('/login', (req, res) => {
     });
 });
 
-// Routes
-router.post('/register', requireAdmin, registerValidation, handleValidationErrors, authController.register);
+// Routes (authenticate runs first so req.user is set for requireAdmin)
+router.post('/register', authenticate, requireAdmin, registerValidation, handleValidationErrors, authController.register);
 router.post('/login', loginValidation, handleValidationErrors, authController.login);
 router.post('/refresh', verifyRefreshToken, authController.refreshToken);
 router.post('/logout', authenticate, authController.logout);

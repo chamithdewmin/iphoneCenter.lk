@@ -71,11 +71,16 @@ export const setTokens = (accessToken, refreshToken) => {
   }
 };
 
+/** Called when session is invalid (401 and refresh failed); AuthContext sets this to redirect to login */
+let onUnauthorized = null;
+export const setOnUnauthorized = (fn) => { onUnauthorized = fn; };
+
 /** Clear tokens from localStorage (called on logout or when refresh fails) */
 export const clearTokens = () => {
   try {
     localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    if (typeof onUnauthorized === 'function') onUnauthorized();
   } catch (_) {}
 };
 
@@ -120,7 +125,7 @@ export const authFetch = async (path, options = {}, retried = false) => {
   if (res.status === 401 && !retried) {
     const newToken = await refreshAccessToken();
     if (newToken) return authFetch(path, options, true);
-    clearTokens();
+    clearTokens(); // also calls onUnauthorized so app can redirect to login
     return { ok: false, status: 401, data: null };
   }
   if (res.status === 401) {
