@@ -37,6 +37,24 @@ Open in browser or curl:
 
 ---
 
+## How to check token (correct way)
+
+**Step 1 – Get a token:** Call **POST** `/api/auth/login` with body `{"username":"test","password":"test"}`.  
+From the response, copy `data.accessToken`.
+
+**Step 2 – Check token:** Call **GET** `/api/auth/profile` and add a **header** (not body):
+- **Header name:** `Authorization`  
+- **Header value:** `Bearer <paste_accessToken_here>`
+
+Do **not** send username/password in the body of the profile request. Profile only needs the token in the header.
+
+| Check | Method | Full URL (production) |
+|-------|--------|------------------------|
+| **Login (get token)** | POST | https://backend.iphonecenter.logozodev.com/api/auth/login |
+| Profile (check token) | GET | https://backend.iphonecenter.logozodev.com/api/auth/profile |
+
+---
+
 ## Auth required (send `Authorization: Bearer <token>`)
 
 Replace `{id}` with a real ID when testing.

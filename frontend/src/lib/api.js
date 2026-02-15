@@ -12,22 +12,71 @@ export const getApiBaseUrl = () => {
   return base ? `${base}/api` : '/api';
 };
 
-/** Read access token from localStorage (only token is stored, not user data) */
-export const getAccessToken = () => localStorage.getItem('accessToken');
-
-/** Read refresh token from localStorage */
-export const getRefreshToken = () => localStorage.getItem('refreshToken');
-
-/** Save only tokens to localStorage */
-export const setTokens = (accessToken, refreshToken) => {
-  if (accessToken) localStorage.setItem('accessToken', accessToken);
-  if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+// Production-style: tokens stored in localStorage so login persists across refresh and browser close
+const STORAGE_KEYS = {
+  ACCESS_TOKEN: 'iphone_center_access_token',
+  REFRESH_TOKEN: 'iphone_center_refresh_token',
 };
 
-/** Clear tokens from localStorage */
+function migrateOldTokens() {
+  try {
+    const oldAccess = localStorage.getItem('accessToken');
+    const oldRefresh = localStorage.getItem('refreshToken');
+    if (oldAccess && !localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)) {
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, oldAccess);
+      localStorage.removeItem('accessToken');
+    }
+    if (oldRefresh && !localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)) {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, oldRefresh);
+      localStorage.removeItem('refreshToken');
+    }
+  } catch (_) {}
+}
+
+/** Read access token from localStorage */
+export const getAccessToken = () => {
+  try {
+    let token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    if (!token) {
+      migrateOldTokens();
+      token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    }
+    return token;
+  } catch (_) {
+    return null;
+  }
+};
+
+/** Read refresh token from localStorage */
+export const getRefreshToken = () => {
+  try {
+    let token = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+    if (!token) {
+      migrateOldTokens();
+      token = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+    }
+    return token;
+  } catch (_) {
+    return null;
+  }
+};
+
+/** Save tokens to localStorage (called on login – persists until logout or expiry) */
+export const setTokens = (accessToken, refreshToken) => {
+  try {
+    if (accessToken) localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+    if (refreshToken) localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+  } catch (e) {
+    console.warn('Could not save tokens to localStorage', e?.message);
+  }
+};
+
+/** Clear tokens from localStorage (called on logout or when refresh fails) */
 export const clearTokens = () => {
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
+  try {
+    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+  } catch (_) {}
 };
 
 /**
