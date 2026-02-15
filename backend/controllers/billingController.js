@@ -8,8 +8,9 @@ const logger = require('../utils/logger');
  * Create a new sale/bill (Transaction-safe)
  */
 const createSale = async (req, res, next) => {
-    const connection = await getConnection();
+    let connection;
     try {
+        connection = await getConnection();
         await connection.beginTransaction();
 
         const effectiveUserId = await getEffectiveUserId(connection, req.user.id);
@@ -150,6 +151,14 @@ const createSale = async (req, res, next) => {
         );
 
         const saleId = saleResult.insertId;
+        if (saleId == null || saleId === undefined) {
+            await connection.rollback();
+            logger.error('Create sale: INSERT did not return id', { saleResult });
+            return res.status(500).json({
+                success: false,
+                message: 'Could not create sale record. Check backend logs.'
+            });
+        }
 
         // Create sale items and update stock
         for (const item of saleItems) {
@@ -217,11 +226,11 @@ const createSale = async (req, res, next) => {
             }
         });
     } catch (error) {
-        await connection.rollback();
-        logger.error('Create sale error:', error);
+        if (connection && connection.rollback) await connection.rollback().catch(() => {});
+        logger.error('Create sale error:', { message: error.message, code: error.code, stack: error.stack });
         next(error);
     } finally {
-        connection.release();
+        if (connection && connection.release) connection.release();
     }
 };
 

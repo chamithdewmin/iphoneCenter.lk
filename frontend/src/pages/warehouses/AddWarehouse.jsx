@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Save, Warehouse, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getStorageData, setStorageData } from '@/utils/storage';
+import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/use-toast';
 const AddWarehouse = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -19,6 +20,7 @@ const AddWarehouse = () => {
     city: '',
     postalCode: '',
     phone: '',
+    email: '',
     manager: '',
     status: 'active',
   });
@@ -31,10 +33,10 @@ const AddWarehouse = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.code) {
+    if (!formData.name?.trim() || !formData.code?.trim()) {
       toast({
         title: "Validation Error",
         description: "Please fill in name and code",
@@ -43,37 +45,32 @@ const AddWarehouse = () => {
       return;
     }
 
-    const warehouses = getStorageData('warehouses', []);
-    const warehouseExists = warehouses.some(w => w.code.toLowerCase() === formData.code.toLowerCase());
-    
-    if (warehouseExists) {
+    setLoading(true);
+    const fullAddress = [formData.address, formData.city, formData.postalCode].filter(Boolean).join(', ');
+    const { ok, data } = await authFetch('/api/branches', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: formData.name.trim(),
+        code: formData.code.trim().toUpperCase(),
+        address: fullAddress || null,
+        phone: formData.phone || null,
+        email: formData.email || null,
+      }),
+    });
+    setLoading(false);
+
+    if (!ok) {
       toast({
-        title: "Warehouse Exists",
-        description: "A warehouse with this code already exists",
+        title: "Could not save warehouse",
+        description: data?.message || "Please try again.",
         variant: "destructive",
       });
       return;
     }
 
-    const newWarehouse = {
-      id: `WH-${Date.now()}`,
-      name: formData.name,
-      code: formData.code.toUpperCase(),
-      address: formData.address || '',
-      city: formData.city || '',
-      postalCode: formData.postalCode || '',
-      phone: formData.phone || '',
-      manager: formData.manager || '',
-      status: formData.status,
-      createdAt: new Date().toISOString(),
-    };
-
-    const updatedWarehouses = [...warehouses, newWarehouse];
-    setStorageData('warehouses', updatedWarehouses);
-
     toast({
       title: "Warehouse Added",
-      description: `${newWarehouse.name} has been added successfully`,
+      description: `${formData.name} has been saved to the database`,
     });
 
     navigate('/warehouses/list');
@@ -151,17 +148,16 @@ const AddWarehouse = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="status">Status</Label>
-                    <select
-                      id="status"
-                      name="status"
-                      value={formData.status}
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
                       onChange={handleChange}
-                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
-                    >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                    </select>
+                      placeholder="warehouse@example.com"
+                      className="mt-1"
+                    />
                   </div>
                 </div>
               </div>
@@ -218,9 +214,9 @@ const AddWarehouse = () => {
                   <X className="w-4 h-4 mr-2" />
                   Cancel
                 </Button>
-                <Button type="submit">
+                <Button type="submit" disabled={loading}>
                   <Save className="w-4 h-4 mr-2" />
-                  Save Warehouse
+                  {loading ? 'Saving…' : 'Save Warehouse'}
                 </Button>
               </div>
             </div>

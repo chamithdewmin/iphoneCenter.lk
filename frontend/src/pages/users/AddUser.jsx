@@ -29,9 +29,20 @@ const AddUser = () => {
 
   const fetchBranches = useCallback(async () => {
     const { ok, data } = await authFetch('/api/branches');
-    if (ok && Array.isArray(data?.data)) setBranches(data.data);
-    else setBranches([]);
-  }, []);
+    const list = Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data?.branches)
+        ? data.branches
+        : Array.isArray(data) ? data : [];
+    setBranches(list);
+    if (!ok && data?.message) {
+      toast({
+        title: 'Could not load warehouses',
+        description: data.message,
+        variant: 'destructive',
+      });
+    }
+  }, [toast]);
 
   useEffect(() => {
     fetchBranches();

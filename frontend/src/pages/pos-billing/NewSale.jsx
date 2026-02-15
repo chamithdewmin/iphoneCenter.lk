@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Search, ScanLine, Plus, Minus, Trash2, ShoppingCart, CreditCard, Printer, User, X, Loader2 } from 'lucide-react';
 import { authFetch } from '@/lib/api';
+import { PLACEHOLDER_PRODUCT_IMAGE } from '@/lib/placeholder';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -358,7 +359,7 @@ const NewSale = () => {
                         >
                           <div className="aspect-square bg-secondary relative">
                             <img
-                              src={product.images?.[0] || product.image || '/placeholder-phone.png'}
+                              src={product.images?.[0] || product.image || PLACEHOLDER_PRODUCT_IMAGE}
                               alt={`${brand} ${model}`}
                               className="w-full h-full object-cover"
                               loading="lazy"
@@ -422,7 +423,7 @@ const NewSale = () => {
                     >
                       <div className="flex gap-2">
                         <img
-                          src={item.images?.[0] || item.image || '/placeholder-phone.png'}
+                          src={item.images?.[0] || item.image || PLACEHOLDER_PRODUCT_IMAGE}
                           alt={`${brand} ${model}`}
                           className="w-16 h-16 object-cover rounded"
                           loading="lazy"

@@ -2,11 +2,11 @@ const { executeQuery, getConnection } = require('../config/database');
 const logger = require('../utils/logger');
 
 /**
- * Get all branches (Admin sees all, others see only their branch)
+ * Get all branches (Admin sees all active, others see only their branch)
  */
 const getAllBranches = async (req, res, next) => {
     try {
-        let query = 'SELECT * FROM branches WHERE 1=1';
+        let query = 'SELECT id, name, code, address, phone, email, is_active, created_at, updated_at FROM branches WHERE is_active = TRUE';
         const params = [];
 
         // Non-admin users can only see their branch
@@ -15,13 +15,14 @@ const getAllBranches = async (req, res, next) => {
             params.push(req.user.branch_id);
         }
 
-        query += ' ORDER BY created_at DESC';
+        query += ' ORDER BY name ASC';
 
         const [branches] = await executeQuery(query, params);
+        const list = Array.isArray(branches) ? branches : [];
 
         res.json({
             success: true,
-            data: branches
+            data: list
         });
     } catch (error) {
         logger.error('Get branches error:', error);

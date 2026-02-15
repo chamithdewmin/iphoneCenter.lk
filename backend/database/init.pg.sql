@@ -1,4 +1,10 @@
--- Idempotent schema: safe to run on every startup. Creates types/tables/indexes only if they don't exist.
+-- ============================================
+-- PRODUCTION DATABASE SCHEMA (PostgreSQL)
+-- ============================================
+-- Idempotent: safe to run on every startup. Creates types/tables/indexes only if they don't exist.
+-- Tables created: branches, users, refresh_tokens, products, branch_stock, product_imeis, barcodes,
+--   stock_transfers, customers, sales, sale_items, payments, refunds, audit_logs.
+-- Run: psql "postgresql://USER:PASS@HOST:5432/DB" -f init.pg.sql  (or from Docker: docker cp + docker exec)
 
 -- ============================================
 -- ENUMS
@@ -104,11 +110,17 @@ CREATE TABLE IF NOT EXISTS branch_stock (
     reserved_quantity INT NOT NULL DEFAULT 0,
     min_stock_level INT DEFAULT 0,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(branch_id, product_id)
 );
 CREATE INDEX IF NOT EXISTS idx_branch_stock_branch_id ON branch_stock(branch_id);
 CREATE INDEX IF NOT EXISTS idx_branch_stock_product_id ON branch_stock(product_id);
 CREATE INDEX IF NOT EXISTS idx_branch_stock_quantity ON branch_stock(quantity);
+
+-- Add updated_at to branch_stock if table already existed without it (existing DBs)
+DO $$ BEGIN
+    ALTER TABLE branch_stock ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
 CREATE TABLE IF NOT EXISTS product_imeis (
     id SERIAL PRIMARY KEY,
@@ -313,3 +325,9 @@ ON CONFLICT (username) DO NOTHING;
 INSERT INTO branches (name, code, address, phone, email)
 VALUES ('Main Branch', 'MAIN001', 'Main Office Address', '+1234567890', 'main@pos.com')
 ON CONFLICT (code) DO NOTHING;
+
+-- ============================================
+-- END OF SCHEMA
+-- ============================================
+-- After first run: log in as admin / admin@pos.com (password: Admin@123), add products,
+-- add stock per branch (Inventory or branch_stock), then New Sale and checkout will work.

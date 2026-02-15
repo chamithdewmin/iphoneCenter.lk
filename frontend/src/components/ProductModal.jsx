@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { PLACEHOLDER_PRODUCT_IMAGE } from '@/lib/placeholder';
 
 const ProductModal = ({ product, isOpen, onClose }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -12,7 +13,7 @@ const ProductModal = ({ product, isOpen, onClose }) => {
 
   if (!product) return null;
 
-  const images = product.images || [product.image].filter(Boolean) || ['/placeholder-phone.png'];
+  const images = product.images || [product.image].filter(Boolean) || [PLACEHOLDER_PRODUCT_IMAGE];
   const brand = product.brand || product.make || '';
   const model = product.model || '';
 

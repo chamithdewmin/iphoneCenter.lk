@@ -1,29 +1,48 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Plus, Eye, Warehouse, MapPin, Phone, User } from 'lucide-react';
+import { Search, Plus, Eye, Warehouse, MapPin, Phone, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getStorageData } from '@/utils/storage';
+import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 
 const WarehouseList = () => {
+  const { toast } = useToast();
   const [warehouses, setWarehouses] = useState([]);
   const [filteredWarehouses, setFilteredWarehouses] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  const fetchBranches = useCallback(async () => {
+    setLoading(true);
+    const { ok, data } = await authFetch('/api/branches');
+    setLoading(false);
+    const list = Array.isArray(data?.data) ? data.data : Array.isArray(data?.branches) ? data.branches : Array.isArray(data) ? data : [];
+    setWarehouses(list);
+    setFilteredWarehouses(list);
+    if (!ok && data?.message) {
+      toast({
+        title: 'Could not load warehouses',
+        description: data.message,
+        variant: 'destructive',
+      });
+    }
+  }, [toast]);
 
   useEffect(() => {
-    const loadedWarehouses = getStorageData('warehouses', []);
-    setWarehouses(loadedWarehouses);
-    setFilteredWarehouses(loadedWarehouses);
-  }, []);
+    fetchBranches();
+  }, [fetchBranches]);
 
   useEffect(() => {
-    if (searchQuery) {
-      const filtered = warehouses.filter(warehouse =>
-        warehouse.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        warehouse.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        warehouse.manager?.toLowerCase().includes(searchQuery.toLowerCase())
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const filtered = warehouses.filter(
+        (w) =>
+          (w.name || '').toLowerCase().includes(q) ||
+          (w.code || '').toLowerCase().includes(q) ||
+          (w.email || '').toLowerCase().includes(q)
       );
       setFilteredWarehouses(filtered);
     } else {
@@ -58,7 +77,7 @@ const WarehouseList = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
-              placeholder="Search by name, code, or manager..."
+              placeholder="Search by name, code, or email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-11"
@@ -66,7 +85,11 @@ const WarehouseList = () => {
           </div>
         </div>
 
-        {filteredWarehouses.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
+          </div>
+        ) : filteredWarehouses.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -116,16 +139,15 @@ const WarehouseList = () => {
                   </div>
 
                   <div className="space-y-2 mb-4">
-                    {warehouse.manager && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <User className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Manager: <span className="font-medium">{warehouse.manager}</span></span>
-                      </div>
-                    )}
                     {warehouse.phone && (
                       <div className="flex items-center gap-2 text-sm">
                         <Phone className="w-4 h-4 text-muted-foreground" />
                         <span className="text-muted-foreground">{warehouse.phone}</span>
+                      </div>
+                    )}
+                    {warehouse.email && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-muted-foreground truncate">{warehouse.email}</span>
                       </div>
                     )}
                     {warehouse.address && (
@@ -138,11 +160,11 @@ const WarehouseList = () => {
 
                   <div className="pt-4 border-t border-secondary">
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      warehouse.status === 'active' 
+                      warehouse.is_active !== false
                         ? 'bg-green-500/20 text-green-600 dark:text-green-400'
                         : 'bg-gray-500/20 text-gray-600 dark:text-gray-400'
                     }`}>
-                      {warehouse.status || 'active'}
+                      {warehouse.is_active !== false ? 'active' : 'inactive'}
                     </span>
                   </div>
                 </div>

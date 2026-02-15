@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Eye, ShoppingCart, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
+import { PLACEHOLDER_PRODUCT_IMAGE } from '@/lib/placeholder';
 
 const ProductCard = ({ product, onQuickView }) => {
   const { addToCart } = useCart();
@@ -18,7 +19,7 @@ const ProductCard = ({ product, onQuickView }) => {
     >
       <div className="relative h-48 overflow-hidden">
         <img
-          src={product.images?.[0] || product.image || '/placeholder-phone.png'}
+          src={product.images?.[0] || product.image || PLACEHOLDER_PRODUCT_IMAGE}
           alt={`${brand} ${model}`}
           className="w-full h-full object-cover"
           loading="lazy"

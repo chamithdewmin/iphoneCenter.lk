@@ -79,3 +79,64 @@ After deploying, reproduce the error (e.g. open a page that calls `/api/customer
 - `API Error: ECONNREFUSED ...` → database not reachable; check `DATABASE_URL` and network.
 
 This helps confirm whether the problem is missing schema or database connectivity.
+
+---
+
+## 500 on checkout (POST /api/billing/sales) – “Checkout failed”
+
+If the frontend shows **“Checkout failed”** and the network tab shows **500** for `POST .../api/billing/sales`:
+
+### 1. Check backend container logs (required)
+
+1. In **Dokploy**, open your **backend** application.
+2. Open **Logs** (or **Container logs**).
+3. Reproduce the error: add products to cart and click **Pay & Print**.
+4. In the logs, look for a line like:
+   - `Create sale error: ...`  
+   - or `API Error: ... POST /api/billing/sales`  
+   - and the line below it (the real PostgreSQL or Node error).
+
+The **exact message** in the logs (e.g. relation "sales" does not exist, foreign key violation, column "xyz" does not exist) tells you what to fix.
+
+### 2. Typical causes and fixes
+
+| Log message / cause | What to do |
+|---------------------|------------|
+| **relation "sales" does not exist** (or 42P01) | Database schema not applied. Run `backend/database/init.pg.sql` (or `schema.pg.sql`) on your PostgreSQL DB. See section 2 above (First run: database install). |
+| **No active user in database** | Add at least one user (e.g. Admin) in the app: **User Manage → Add User**, or run the seed in the schema (admin user). |
+| **No branch found** | Add at least one branch: **Warehouses → Add Warehouse** (or run the branch seed in the schema). |
+| **Insufficient stock for product ID X** | Ensure the product has stock at the current branch: **Inventory** or **Warehouse-wise Stock** and add stock for that product/branch. |
+| **foreign key constraint / user_id / branch_id** | Ensure `users` and `branches` tables have rows and the IDs used in the request exist. |
+
+### 3. Manual checks (run these if logs are unclear)
+
+1. **Database connected**  
+   Open: `https://backend.iphonecenter.logozodev.com/api/health/db`  
+   Expect: `"database": "connected"`.
+
+2. **Tables exist**  
+   In your PostgreSQL client (or Dokploy DB shell), run:
+   ```sql
+   SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'sales');
+   SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users');
+   SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'branch_stock');
+   ```
+   All should be true. If not, run `backend/database/init.pg.sql` (or `schema.pg.sql`).
+
+3. **At least one user and one branch**  
+   ```sql
+   SELECT id, username, full_name, role FROM users WHERE is_active = TRUE LIMIT 1;
+   SELECT id, name, code FROM branches WHERE is_active = TRUE LIMIT 1;
+   ```
+   If either is empty, add a user and a branch via the app or schema seed.
+
+4. **Stock for the product you’re selling**  
+   For the product and branch you use at checkout:
+   ```sql
+   SELECT bs.branch_id, bs.product_id, bs.quantity
+   FROM branch_stock bs
+   WHERE bs.product_id = YOUR_PRODUCT_ID AND bs.branch_id = YOUR_BRANCH_ID;
+   ```
+   Quantity must be ≥ the quantity you add to cart.
+
+After fixing the cause, redeploy the backend if you changed env or schema, then try checkout again.
