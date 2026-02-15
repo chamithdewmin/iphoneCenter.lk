@@ -121,7 +121,12 @@ export const authFetch = async (path, options = {}, retried = false) => {
     ...(token && { Authorization: `Bearer ${token}` }),
     ...options.headers,
   };
-  const res = await fetch(url, { ...options, headers });
+  // Avoid cached error responses (e.g. 503) – important when backend and frontend are on different origins
+  const fetchOptions = { ...options, headers, credentials: 'omit' };
+  if ((options.method || 'GET').toUpperCase() === 'GET') {
+    fetchOptions.cache = fetchOptions.cache ?? 'no-store';
+  }
+  const res = await fetch(url, fetchOptions);
   if (res.status === 401 && !retried) {
     const newToken = await refreshAccessToken();
     if (newToken) return authFetch(path, options, true);

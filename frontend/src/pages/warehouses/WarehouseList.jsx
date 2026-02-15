@@ -15,9 +15,14 @@ const WarehouseList = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const fetchBranches = useCallback(async () => {
+  const fetchBranches = useCallback(async (isRetry = false) => {
     setLoading(true);
-    const { ok, data } = await authFetch('/api/branches');
+    const { ok, status, data } = await authFetch('/api/branches');
+    if (!ok && status === 503 && !isRetry) {
+      setLoading(false);
+      await new Promise((r) => setTimeout(r, 1200));
+      return fetchBranches(true);
+    }
     setLoading(false);
     const list = Array.isArray(data?.data) ? data.data : Array.isArray(data?.branches) ? data.branches : Array.isArray(data) ? data : [];
     setWarehouses(list);

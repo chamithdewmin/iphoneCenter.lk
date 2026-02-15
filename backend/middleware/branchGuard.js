@@ -21,7 +21,7 @@ const branchGuard = async (req, res, next) => {
         // Admin can access all branches
         if (role === ROLES.ADMIN) {
             // If branch_id is provided in query/params, validate it exists
-            const branchId = req.params.branchId || req.query.branchId || req.body.branchId;
+            const branchId = req.params?.branchId || req.query?.branchId || req.body?.branchId;
             if (branchId) {
                 const [branches] = await executeQuery(
                     'SELECT id FROM branches WHERE id = ? AND is_active = TRUE',
@@ -49,7 +49,7 @@ const branchGuard = async (req, res, next) => {
         req.userBranchId = req.user.branch_id;
 
         // If branch_id is provided in request, verify it matches user's branch
-        const branchId = req.params.branchId || req.query.branchId || req.body.branchId;
+        const branchId = req.params?.branchId || req.query?.branchId || req.body?.branchId;
         if (branchId && parseInt(branchId) !== req.user.branch_id) {
             return res.status(403).json({
                 success: false,
