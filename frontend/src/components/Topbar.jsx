@@ -1,23 +1,8 @@
 import React, { useState } from 'react';
-import { Search, Menu, Bell, User, LogOut } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Search, Menu, Bell, User } from 'lucide-react';
 
 const Topbar = ({ onMenuClick }) => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   return (
     <header className="sticky top-0 z-30 glass-effect border-b border-secondary">
@@ -51,19 +36,11 @@ const Topbar = ({ onMenuClick }) => {
             <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
           </button>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-2 p-2 hover:bg-secondary rounded-lg transition-colors">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
-              </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={handleLogout}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center p-2">
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+              <User className="w-4 h-4 text-white" />
+            </div>
+          </div>
         </div>
       </div>
     </header>
