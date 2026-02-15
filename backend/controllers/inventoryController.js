@@ -1,5 +1,6 @@
 const { executeQuery, getConnection } = require('../config/database');
 const { generateBarcode, validateIMEI } = require('../utils/helpers');
+const { getEffectiveUserId } = require('../utils/userResolution');
 const logger = require('../utils/logger');
 
 /**
@@ -342,11 +343,11 @@ const addIMEI = async (req, res, next) => {
             [productId, branchId, imei, purchasePrice || null]
         );
 
-        // Update stock quantity
+        // Update stock quantity (PostgreSQL upsert)
         await connection.execute(
             `INSERT INTO branch_stock (branch_id, product_id, quantity) 
              VALUES (?, ?, 1)
-             ON DUPLICATE KEY UPDATE quantity = quantity + 1`,
+             ON CONFLICT (branch_id, product_id) DO UPDATE SET quantity = branch_stock.quantity + 1`,
             [branchId, productId]
         );
 
@@ -416,6 +417,15 @@ const transferStock = async (req, res, next) => {
     try {
         await connection.beginTransaction();
 
+        const effectiveUserId = await getEffectiveUserId(connection, req.user.id);
+        if (effectiveUserId == null) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'No active user in database. Add a user in Users first.'
+            });
+        }
+
         const fromBranchId = req.user.branch_id;
         const { toBranchId, productId, quantity, imei, notes } = req.body;
 
@@ -458,7 +468,7 @@ const transferStock = async (req, res, next) => {
             `INSERT INTO stock_transfers (transfer_number, from_branch_id, to_branch_id, 
                                          product_id, quantity, imei, notes, requested_by) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [transferNumber, fromBranchId, toBranchId, productId, quantity, imei || null, notes || null, req.user.id]
+            [transferNumber, fromBranchId, toBranchId, productId, quantity, imei || null, notes || null, effectiveUserId]
         );
 
         // If IMEI is specified, update IMEI status
@@ -480,8 +490,8 @@ const transferStock = async (req, res, next) => {
         await connection.execute(
             `INSERT INTO branch_stock (branch_id, product_id, quantity) 
              VALUES (?, ?, ?)
-             ON DUPLICATE KEY UPDATE quantity = quantity + ?`,
-            [toBranchId, productId, quantity, quantity]
+             ON CONFLICT (branch_id, product_id) DO UPDATE SET quantity = branch_stock.quantity + EXCLUDED.quantity`,
+            [toBranchId, productId, quantity]
         );
 
         await connection.commit();
@@ -513,6 +523,15 @@ const completeTransfer = async (req, res, next) => {
     try {
         await connection.beginTransaction();
 
+        const effectiveUserId = await getEffectiveUserId(connection, req.user.id);
+        if (effectiveUserId == null) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'No active user in database. Add a user in Users first.'
+            });
+        }
+
         const { id } = req.params;
 
         const [transfers] = await connection.execute(
@@ -533,7 +552,7 @@ const completeTransfer = async (req, res, next) => {
         // Update transfer status
         await connection.execute(
             'UPDATE stock_transfers SET status = ?, approved_by = ?, completed_at = NOW() WHERE id = ?',
-            ['completed', req.user.id, id]
+            ['completed', effectiveUserId, id]
         );
 
         await connection.commit();

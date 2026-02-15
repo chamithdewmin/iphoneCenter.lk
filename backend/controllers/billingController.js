@@ -1,6 +1,7 @@
 const { executeQuery, getConnection } = require('../config/database');
 const { generateInvoiceNumber } = require('../utils/helpers');
 const { PAYMENT_STATUS, SALE_STATUS, IMEI_STATUS } = require('../config/constants');
+const { getEffectiveUserId } = require('../utils/userResolution');
 const logger = require('../utils/logger');
 
 /**
@@ -10,6 +11,15 @@ const createSale = async (req, res, next) => {
     const connection = await getConnection();
     try {
         await connection.beginTransaction();
+
+        const effectiveUserId = await getEffectiveUserId(connection, req.user.id);
+        if (effectiveUserId == null) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'No active user in database. Add a user (e.g. Admin) in Users first.'
+            });
+        }
 
         let branchId = req.user.branch_id;
         const { customerId, items, discountAmount, taxRate, paidAmount, notes } = req.body;
@@ -135,7 +145,7 @@ const createSale = async (req, res, next) => {
             `INSERT INTO sales (invoice_number, branch_id, customer_id, user_id, total_amount, 
                                discount_amount, tax_amount, paid_amount, due_amount, payment_status, notes) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
-            [invoiceNumber, branchId, customerId || null, req.user.id, totalAmount, 
+            [invoiceNumber, branchId, customerId || null, effectiveUserId, totalAmount, 
              discount, tax, paid, due, paymentStatus, notes || null]
         );
 
@@ -170,7 +180,7 @@ const createSale = async (req, res, next) => {
             await connection.execute(
                 `INSERT INTO payments (sale_id, amount, payment_method, created_by) 
                  VALUES (?, ?, 'cash', ?)`,
-                [saleId, paid, req.user.id]
+                [saleId, paid, effectiveUserId]
             );
         }
 
@@ -290,6 +300,15 @@ const addPayment = async (req, res, next) => {
     try {
         await connection.beginTransaction();
 
+        const effectiveUserId = await getEffectiveUserId(connection, req.user.id);
+        if (effectiveUserId == null) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'No active user in database. Add a user in Users first.'
+            });
+        }
+
         const { saleId } = req.params;
         const { amount, paymentMethod, paymentReference, notes } = req.body;
 
@@ -349,7 +368,7 @@ const addPayment = async (req, res, next) => {
         await connection.execute(
             `INSERT INTO payments (sale_id, amount, payment_method, payment_reference, notes, created_by) 
              VALUES (?, ?, ?, ?, ?, ?)`,
-            [saleId, amount, paymentMethod || 'cash', paymentReference || null, notes || null, req.user.id]
+            [saleId, amount, paymentMethod || 'cash', paymentReference || null, notes || null, effectiveUserId]
         );
 
         // Update sale
@@ -565,6 +584,15 @@ const processRefund = async (req, res, next) => {
     try {
         await connection.beginTransaction();
 
+        const effectiveUserId = await getEffectiveUserId(connection, req.user.id);
+        if (effectiveUserId == null) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'No active user in database. Add a user in Users first.'
+            });
+        }
+
         const { id } = req.params;
         const { action } = req.body; // 'approve' or 'reject'
 
@@ -595,7 +623,7 @@ const processRefund = async (req, res, next) => {
         if (action === 'reject') {
             await connection.execute(
                 'UPDATE refunds SET status = ?, processed_by = ? WHERE id = ?',
-                ['rejected', req.user.id, id]
+                ['rejected', effectiveUserId, id]
             );
 
             await connection.commit();
@@ -617,7 +645,7 @@ const processRefund = async (req, res, next) => {
         // Update refund status
         await connection.execute(
             'UPDATE refunds SET status = ?, processed_by = ? WHERE id = ?',
-            ['completed', req.user.id, id]
+            ['completed', effectiveUserId, id]
         );
 
         // Update sale paid amount and status
