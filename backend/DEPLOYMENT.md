@@ -67,7 +67,7 @@ If you don’t run the schema, you will get:
 | `JWT_SECRET`          | Yes      | 32+ characters in production |
 | `JWT_REFRESH_SECRET`  | Yes      | 32+ characters in production |
 | `DATABASE_URL` or DB_* | Yes    | PostgreSQL connection |
-| `CORS_ORIGIN`         | Recommended | Your frontend origin (e.g. `https://iphonecenter.logozodev.com`) |
+| `CORS_ORIGIN`         | **Required for cloud** | Frontend origin, e.g. `https://cloud.iphonecenter.lk`. Comma-separated for multiple. If missing, browser blocks requests (CORS error). |
 | `NODE_ENV`            | Optional | Set to `production` in production |
 | `TEST_LOGIN_USERNAME` / `TEST_LOGIN_PASSWORD` | Optional | Demo login (default `test` / `test`) |
 
@@ -79,6 +79,24 @@ After deploying, reproduce the error (e.g. open a page that calls `/api/customer
 - `API Error: ECONNREFUSED ...` → database not reachable; check `DATABASE_URL` and network.
 
 This helps confirm whether the problem is missing schema or database connectivity.
+
+---
+
+## CORS / "Login blocked" or "No 'Access-Control-Allow-Origin' header"
+
+If the frontend at **https://cloud.iphonecenter.lk** shows **"Cannot connect to server"** or the browser console shows:
+
+- *Access to fetch at 'https://backend.iphonecenter.lk/api/auth/login' from origin 'https://cloud.iphonecenter.lk' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header*
+
+do this:
+
+1. **Backend env** – In your **backend** app (e.g. https://backend.iphonecenter.lk) → **Environment** (Dokploy/panel), add or set:
+   - **`CORS_ORIGIN`** = **`https://cloud.iphonecenter.lk`**  
+   (exactly the frontend origin, no trailing slash; for multiple origins use a comma: `https://cloud.iphonecenter.lk,https://other.domain.com`).
+2. **Redeploy the backend** so the new env is applied.
+3. **Frontend API URL** – The frontend must call your backend. When building the frontend, set **`VITE_API_URL`** to your backend URL (e.g. **`https://backend.iphonecenter.lk`**). In Dokploy build args for the frontend app, use: `VITE_API_URL=https://backend.iphonecenter.lk`. Rebuild and redeploy the frontend if you changed the backend domain.
+
+After this, login from https://cloud.iphonecenter.lk should work.
 
 ---
 

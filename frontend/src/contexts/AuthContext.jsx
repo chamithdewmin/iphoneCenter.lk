@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }) => {
       if (res.status === 405) {
         return {
           success: false,
-          error: 'Login request reached the wrong server (405). Set VITE_API_URL to https://backend.iphonecenter.logozodev.com when building the frontend, then redeploy.',
+          error: 'Login request reached the wrong server (405). Set VITE_API_URL to your backend URL (e.g. https://backend.iphonecenter.lk) when building the frontend, then redeploy.',
         };
       }
 

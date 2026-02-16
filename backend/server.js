@@ -40,9 +40,16 @@ app.use(helmet({
     hsts: { maxAge: 31536000, includeSubDomains: true, preload: true }
 }));
 
-// CORS configuration - set CORS_ORIGIN in production (e.g. https://your-frontend.com)
+// CORS - allow frontend origin(s). Use comma-separated list for multiple (e.g. https://cloud.iphonecenter.lk,https://old.example.com)
+const corsOriginRaw = process.env.CORS_ORIGIN || '';
+const corsOrigins = corsOriginRaw ? corsOriginRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+const corsOriginConfig = corsOrigins.length === 0
+    ? true
+    : corsOrigins.length === 1
+        ? corsOrigins[0]
+        : corsOrigins;
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || true,
+    origin: corsOriginConfig,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']

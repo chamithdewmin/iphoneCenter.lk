@@ -3,10 +3,10 @@
  * Pattern: same as Yala Wild Tusker – getApiUrl() = backend origin, getApiBaseUrl() = backend + /api.
  */
 
-/** Backend origin, no trailing slash (e.g. https://backend.iphonecenter.logozodev.com or http://localhost:5000) */
+/** Backend origin, no trailing slash (e.g. https://backend.iphonecenter.lk or http://localhost:5000) */
 export const getApiUrl = () => (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
-/** Backend API base (e.g. https://backend.iphonecenter.logozodev.com/api). Use with paths like getApiBaseUrl() + '/customers'. */
+/** Backend API base (e.g. https://backend.iphonecenter.lk/api). Use with paths like getApiBaseUrl() + '/customers'. */
 export const getApiBaseUrl = () => {
   const base = getApiUrl();
   return base ? `${base}/api` : '/api';
