@@ -11,6 +11,9 @@ const logger = require('../utils/logger');
  * - barcodes
  * - products
  * - customers
+ * - categories
+ * - brands
+ * - branches
  * - audit_logs
  * 
  * When branchId is a specific branch, this will delete:
@@ -21,10 +24,7 @@ const logger = require('../utils/logger');
  * - audit_logs (for that branch)
  * 
  * This will NOT delete:
- * - users table
- * - branches table
- * - brands table
- * - categories table
+ * - users table (user accounts remain)
  */
 const resetBranchData = async (req, res, next) => {
     const connection = await getConnection();
@@ -68,6 +68,15 @@ const resetBranchData = async (req, res, next) => {
             // Delete all customers
             await connection.execute('DELETE FROM customers');
 
+            // Delete all categories
+            await connection.execute('DELETE FROM categories');
+
+            // Delete all brands
+            await connection.execute('DELETE FROM brands');
+
+            // Delete all branches (except keep the structure)
+            await connection.execute('DELETE FROM branches');
+
             // Delete all audit logs
             await connection.execute('DELETE FROM audit_logs');
 
@@ -77,7 +86,7 @@ const resetBranchData = async (req, res, next) => {
 
             res.json({
                 success: true,
-                message: 'All data for all branches has been deleted successfully. Branches, brands, categories, and users remain intact.'
+                message: 'All data has been deleted successfully. Only users table remains intact.'
             });
         } else {
             // Verify branch exists

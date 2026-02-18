@@ -347,11 +347,14 @@ const Settings = () => {
                     <li>All products</li>
                     <li>All barcodes</li>
                     <li>All customers</li>
+                    <li>All categories</li>
+                    <li>All brands</li>
+                    <li>All branches</li>
                     <li>All audit logs</li>
                   </ul>
-                  <p className="mt-2 font-semibold">User accounts, branches, brands, and categories will NOT be deleted.</p>
+                  <p className="mt-2 font-semibold">Only user accounts will NOT be deleted.</p>
                   {selectedBranchId === 'all' && (
-                    <p className="mt-2 font-bold text-red-600 dark:text-red-400">⚠️ You have selected "All Branches" - this will delete ALL data from EVERY branch including all products and customers!</p>
+                    <p className="mt-2 font-bold text-red-600 dark:text-red-400">⚠️ You have selected "All Branches" - this will delete ALL data including all branches, brands, categories, products, and customers!</p>
                   )}
                 </div>
               </div>
