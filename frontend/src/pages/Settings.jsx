@@ -1,15 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { RefreshCw, Building2, DollarSign, Globe, Save, AlertTriangle } from 'lucide-react';
+import { RefreshCw, Building2, DollarSign, Globe, Save, AlertTriangle, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { resetDemoData } from '@/utils/storage';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { authFetch } from '@/lib/api';
 
 const Settings = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [formData, setFormData] = useState({
     companyName: 'iphone center.lk',
     taxRate: '10',
@@ -18,6 +23,11 @@ const Settings = () => {
     phone: '',
     email: '',
   });
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [branches, setBranches] = useState([]);
+  const [selectedBranchId, setSelectedBranchId] = useState('');
+  const [resetting, setResetting] = useState(false);
+  const [loadingBranches, setLoadingBranches] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -34,6 +44,27 @@ const Settings = () => {
     });
   };
 
+  const fetchBranches = useCallback(async () => {
+    if (!isAdmin) return;
+    setLoadingBranches(true);
+    try {
+      const { ok, data } = await authFetch('/api/branches');
+      if (ok && Array.isArray(data?.data)) {
+        setBranches(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching branches:', error);
+    } finally {
+      setLoadingBranches(false);
+    }
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (resetDialogOpen && isAdmin) {
+      fetchBranches();
+    }
+  }, [resetDialogOpen, isAdmin, fetchBranches]);
+
   const handleResetData = () => {
     if (window.confirm('Are you sure you want to reset all demo data? This action cannot be undone.')) {
       resetDemoData();
@@ -44,6 +75,51 @@ const Settings = () => {
       setTimeout(() => {
         window.location.reload();
       }, 1000);
+    }
+  };
+
+  const handleResetBranchData = async () => {
+    if (!selectedBranchId) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a branch",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setResetting(true);
+    try {
+      const { ok, data } = await authFetch('/api/settings/reset-branch-data', {
+        method: 'POST',
+        body: JSON.stringify({ branchId: selectedBranchId }),
+      });
+
+      if (!ok) {
+        toast({
+          title: "Error",
+          description: data?.message || "Failed to reset branch data",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: data?.message || "Branch data has been reset successfully",
+      });
+
+      setResetDialogOpen(false);
+      setSelectedBranchId('');
+    } catch (error) {
+      console.error('Error resetting branch data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reset branch data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -201,6 +277,28 @@ const Settings = () => {
                   </div>
                 </div>
               </div>
+
+              {isAdmin && (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5" />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-red-600 dark:text-red-400 mb-1">Reset Branch Data</h3>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Permanently delete all data for a selected branch. This will delete sales, stock, IMEIs, transfers, and audit logs for the branch. This action cannot be undone. User accounts will NOT be deleted.
+                      </p>
+                      <Button 
+                        onClick={() => setResetDialogOpen(true)} 
+                        variant="destructive" 
+                        size="sm"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Reset Data
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
@@ -213,6 +311,86 @@ const Settings = () => {
           </Button>
         </div>
       </div>
+
+      {/* Reset Branch Data Dialog */}
+      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Reset Branch Data</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-muted-foreground">
+                  <p className="font-semibold text-red-600 dark:text-red-400 mb-1">Warning: This action cannot be undone!</p>
+                  <p>This will permanently delete:</p>
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li>All sales and sale items</li>
+                    <li>All payments and refunds</li>
+                    <li>All stock for this branch</li>
+                    <li>All IMEIs for this branch</li>
+                    <li>All stock transfers involving this branch</li>
+                    <li>All audit logs for this branch</li>
+                  </ul>
+                  <p className="mt-2 font-semibold">User accounts will NOT be deleted.</p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="branchSelect">Select Branch</Label>
+              {loadingBranches ? (
+                <div className="mt-2 text-sm text-muted-foreground">Loading branches...</div>
+              ) : (
+                <select
+                  id="branchSelect"
+                  value={selectedBranchId}
+                  onChange={(e) => setSelectedBranchId(e.target.value)}
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                >
+                  <option value="">-- Select a branch --</option>
+                  {branches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name} {branch.code ? `(${branch.code})` : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setResetDialogOpen(false);
+                  setSelectedBranchId('');
+                }}
+                disabled={resetting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleResetBranchData}
+                disabled={resetting || !selectedBranchId || loadingBranches}
+              >
+                {resetting ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Resetting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete All Data
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

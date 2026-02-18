@@ -31,6 +31,7 @@ const billingRoutes = require('./routes/billingRoutes');
 const reportsRoutes = require('./routes/reportsRoutes');
 const customerRoutes = require('./routes/customerRoutes');
 const userRoutes = require('./routes/userRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
 
 // Initialize Express app
 const app = express();
@@ -143,6 +144,7 @@ app.use('/api/billing', billingRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
