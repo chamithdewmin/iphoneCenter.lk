@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
 import { Save, FolderPlus, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getStorageData, setStorageData } from '@/utils/storage';
+import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,8 +14,8 @@ const AddCategory = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    parentCategory: '',
   });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,7 +25,7 @@ const AddCategory = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!formData.name.trim()) {
@@ -38,35 +37,41 @@ const AddCategory = () => {
       return;
     }
 
-    const categories = getStorageData('categories', []);
-    const categoryExists = categories.some(c => c.name.toLowerCase() === formData.name.toLowerCase());
-    
-    if (categoryExists) {
+    setLoading(true);
+    try {
+      const { ok, data } = await authFetch('/api/categories', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          description: formData.description.trim() || null,
+        }),
+      });
+
+      if (!ok) {
+        toast({
+          title: "Error",
+          description: data?.message || "Failed to add category",
+          variant: "destructive",
+        });
+        return;
+      }
+
       toast({
-        title: "Category Exists",
-        description: "This category already exists",
+        title: "Category Added",
+        description: `${formData.name.trim()} has been added successfully`,
+      });
+
+      navigate('/categories/list');
+    } catch (error) {
+      console.error('Error adding category:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add category. Please try again.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    const newCategory = {
-      id: `CAT-${Date.now()}`,
-      name: formData.name,
-      description: formData.description || '',
-      parentCategory: formData.parentCategory || null,
-      createdAt: new Date().toISOString(),
-    };
-
-    const updatedCategories = [...categories, newCategory];
-    setStorageData('categories', updatedCategories);
-
-    toast({
-      title: "Category Added",
-      description: `${newCategory.name} has been added successfully`,
-    });
-
-    navigate('/categories/list');
   };
 
   return (
@@ -112,20 +117,9 @@ const AddCategory = () => {
                       name="description"
                       value={formData.description}
                       onChange={handleChange}
-                      placeholder="Category description..."
+                      placeholder="Category description (optional)..."
                       rows="4"
                       className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="parentCategory">Parent Category (Optional)</Label>
-                    <Input
-                      id="parentCategory"
-                      name="parentCategory"
-                      value={formData.parentCategory}
-                      onChange={handleChange}
-                      placeholder="Parent category name"
-                      className="mt-1"
                     />
                   </div>
                 </div>
@@ -142,9 +136,9 @@ const AddCategory = () => {
                   <X className="w-4 h-4 mr-2" />
                   Cancel
                 </Button>
-                <Button type="submit">
+                <Button type="submit" disabled={loading}>
                   <Save className="w-4 h-4 mr-2" />
-                  Save Category
+                  {loading ? 'Saving...' : 'Save Category'}
                 </Button>
               </div>
             </div>
