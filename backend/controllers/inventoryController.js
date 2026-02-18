@@ -19,7 +19,7 @@ const getAllProducts = async (req, res, next) => {
                            FROM branch_stock
                            GROUP BY product_id
                        ) bs ON bs.product_id = p.id
-                       WHERE 1=1`;
+                       WHERE p.is_active = TRUE`;
         const params = [];
 
         if (search) {
@@ -70,7 +70,7 @@ const getProductById = async (req, res, next) => {
         const { id } = req.params;
 
         const [products] = await executeQuery(
-            'SELECT * FROM products WHERE id = ?',
+            'SELECT * FROM products WHERE id = ? AND is_active = TRUE',
             [id]
         );
 
@@ -217,6 +217,7 @@ const getBranchStock = async (req, res, next) => {
                      SELECT product_id, SUM(quantity) AS total_quantity, SUM(reserved_quantity) AS total_reserved
                      FROM branch_stock GROUP BY product_id
                  ) agg ON agg.product_id = p.id
+                 WHERE p.is_active = TRUE
                  ORDER BY p.name ASC`
             );
             const normalized = (stock || []).map((row) => ({
@@ -231,7 +232,7 @@ const getBranchStock = async (req, res, next) => {
         const [stock] = await executeQuery(
             `SELECT bs.*, p.name as product_name, p.sku, p.base_price, p.category, p.brand, b.barcode
              FROM branch_stock bs
-             INNER JOIN products p ON bs.product_id = p.id
+             INNER JOIN products p ON bs.product_id = p.id AND p.is_active = TRUE
              LEFT JOIN barcodes b ON b.product_id = p.id AND b.is_active = TRUE
              WHERE bs.branch_id = ?
              ORDER BY p.name ASC`,
@@ -419,8 +420,8 @@ const getIMEIs = async (req, res, next) => {
 
         let query = `SELECT pi.*, p.name as product_name, p.sku
                      FROM product_imeis pi
-                     INNER JOIN products p ON pi.product_id = p.id
-                     WHERE pi.branch_id = ?`;
+                    INNER JOIN products p ON pi.product_id = p.id AND p.is_active = TRUE
+                    WHERE pi.branch_id = ?`;
         const params = [branchId];
 
         if (productId) {
@@ -684,8 +685,8 @@ const validateBarcode = async (req, res, next) => {
         const [barcodes] = await executeQuery(
             `SELECT b.*, p.id as product_id, p.name, p.sku, p.base_price, p.category, p.brand
              FROM barcodes b
-             INNER JOIN products p ON b.product_id = p.id
-             WHERE b.barcode = ? AND b.is_active = TRUE`,
+            INNER JOIN products p ON b.product_id = p.id AND p.is_active = TRUE
+            WHERE b.barcode = ? AND b.is_active = TRUE`,
             [barcode]
         );
 
