@@ -76,6 +76,17 @@ CREATE TABLE brands (
 CREATE INDEX idx_brands_name ON brands(name);
 CREATE INDEX idx_brands_is_active ON brands(is_active);
 
+CREATE TABLE categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_categories_name ON categories(name);
+CREATE INDEX idx_categories_is_active ON categories(is_active);
+
 CREATE TABLE products (
     id SERIAL PRIMARY KEY,
     name VARCHAR(200) NOT NULL,

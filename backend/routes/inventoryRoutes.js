@@ -18,6 +18,8 @@ const createProductValidation = [
 router.get('/products', authenticate, inventoryController.getAllProducts);
 router.get('/products/:id', authenticate, inventoryController.getProductById);
 router.post('/products', authenticate, requireManager, createProductValidation, inventoryController.createProduct);
+router.put('/products/:id', authenticate, requireManager, inventoryController.updateProduct);
+router.delete('/products/:id', authenticate, requireManager, inventoryController.deleteProduct);
 
 // Stock
 router.get('/stock', authenticate, branchGuard, setBranchContext, inventoryController.getBranchStock);

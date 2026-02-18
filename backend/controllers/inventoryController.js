@@ -706,10 +706,151 @@ const validateBarcode = async (req, res, next) => {
     }
 };
 
+/**
+ * Update product (Admin/Manager only)
+ */
+const updateProduct = async (req, res, next) => {
+    const connection = await getConnection();
+    try {
+        await connection.beginTransaction();
+
+        const { id } = req.params;
+        const { name, sku, description, category, brand, basePrice } = req.body;
+
+        if (!name || !name.trim()) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'Product name is required'
+            });
+        }
+
+        if (!sku || !sku.trim()) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'SKU is required'
+            });
+        }
+
+        if (!basePrice || parseFloat(basePrice) < 0) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'Valid base price is required'
+            });
+        }
+
+        // Check if product exists
+        const [existing] = await connection.execute(
+            'SELECT id FROM products WHERE id = ? AND is_active = TRUE',
+            [id]
+        );
+
+        if (existing.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+
+        // Check if SKU is already used by another product
+        const [duplicate] = await connection.execute(
+            'SELECT id FROM products WHERE sku = ? AND id != ? AND is_active = TRUE',
+            [sku.trim(), id]
+        );
+
+        if (duplicate.length > 0) {
+            await connection.rollback();
+            return res.status(409).json({
+                success: false,
+                message: 'SKU already exists'
+            });
+        }
+
+        await connection.execute(
+            `UPDATE products 
+             SET name = ?, sku = ?, description = ?, category = ?, brand = ?, base_price = ?, updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?`,
+            [name.trim(), sku.trim(), description?.trim() || null, category?.trim() || null, brand?.trim() || null, parseFloat(basePrice), id]
+        );
+
+        await connection.commit();
+
+        logger.info(`Product updated: ${name.trim()} (ID: ${id})`);
+
+        res.json({
+            success: true,
+            message: 'Product updated successfully',
+            data: {
+                id: parseInt(id),
+                name: name.trim(),
+                sku: sku.trim()
+            }
+        });
+    } catch (error) {
+        await connection.rollback();
+        logger.error('Update product error:', error);
+        next(error);
+    } finally {
+        connection.release();
+    }
+};
+
+/**
+ * Delete product (soft delete - Admin/Manager only)
+ */
+const deleteProduct = async (req, res, next) => {
+    const connection = await getConnection();
+    try {
+        await connection.beginTransaction();
+
+        const { id } = req.params;
+
+        // Check if product exists
+        const [existing] = await connection.execute(
+            'SELECT id, name FROM products WHERE id = ? AND is_active = TRUE',
+            [id]
+        );
+
+        if (existing.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+
+        // Soft delete
+        await connection.execute(
+            'UPDATE products SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [id]
+        );
+
+        await connection.commit();
+
+        logger.info(`Product deleted (soft): ID ${id}`);
+
+        res.json({
+            success: true,
+            message: 'Product deleted successfully'
+        });
+    } catch (error) {
+        await connection.rollback();
+        logger.error('Delete product error:', error);
+        next(error);
+    } finally {
+        connection.release();
+    }
+};
+
 module.exports = {
     getAllProducts,
     getProductById,
     createProduct,
+    updateProduct,
+    deleteProduct,
     getBranchStock,
     updateStock,
     addIMEI,

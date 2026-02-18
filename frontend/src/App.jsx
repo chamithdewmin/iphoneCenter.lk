@@ -15,7 +15,6 @@ import Layout from './components/Layout';
 import AddProduct from './pages/products/AddProduct';
 import ProductList from './pages/products/ProductList';
 import Brands from './pages/products/Brands';
-import UnitValue from './pages/products/UnitValue';
 import GenerateBarcode from './pages/products/GenerateBarcode';
 
 // Trading
@@ -143,9 +142,9 @@ function App() {
 
         {/* Products */}
         <Route path="products/add" element={<AddProduct />} />
+        <Route path="products/edit/:id" element={<AddProduct />} />
         <Route path="products/list" element={<ProductList />} />
         <Route path="products/brands" element={<Brands />} />
-        <Route path="products/unit-value" element={<UnitValue />} />
         <Route path="products/barcode" element={<GenerateBarcode />} />
 
         {/* Trading */}

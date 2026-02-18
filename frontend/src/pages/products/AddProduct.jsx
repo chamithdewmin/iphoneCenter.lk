@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { Save, Package, X, Building2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { authFetch } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -11,13 +11,18 @@ import { useToast } from '@/components/ui/use-toast';
 
 const AddProduct = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const location = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const isEditMode = !!id;
   const [branches, setBranches] = useState([]);
   const [brands, setBrands] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loadingBranches, setLoadingBranches] = useState(false);
   const [loadingBrands, setLoadingBrands] = useState(false);
+  const [loadingCategories, setLoadingCategories] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     branchId: '',
@@ -57,10 +62,61 @@ const AddProduct = () => {
     }
   }, []);
 
+  const fetchCategories = useCallback(async () => {
+    setLoadingCategories(true);
+    try {
+      const { ok, data } = await authFetch('/api/categories');
+      if (ok && Array.isArray(data?.data)) {
+        setCategories(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    } finally {
+      setLoadingCategories(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchBranches();
     fetchBrands();
-  }, [fetchBranches, fetchBrands]);
+    fetchCategories();
+  }, [fetchBranches, fetchBrands, fetchCategories]);
+
+  // Load product data if editing
+  useEffect(() => {
+    if (isEditMode) {
+      const loadProduct = async () => {
+        try {
+          const { ok, data } = await authFetch(`/api/inventory/products/${id}`);
+          if (ok && data?.data) {
+            const product = data.data;
+            setFormData({
+              branchId: '',
+              brand: product.brand || '',
+              model: '',
+              name: product.name || '',
+              sku: product.sku || '',
+              year: new Date().getFullYear(),
+              price: product.base_price || product.basePrice || '',
+              stock: '',
+              imei: '',
+              description: product.description || '',
+              category: product.category || '',
+            });
+          }
+        } catch (error) {
+          console.error('Error loading product:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load product data",
+            variant: "destructive",
+          });
+          navigate('/products/list');
+        }
+      };
+      loadProduct();
+    }
+  }, [id, isEditMode, navigate, toast]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -84,28 +140,51 @@ const AddProduct = () => {
       toast({ title: 'Validation Error', description: 'Valid base price is required', variant: 'destructive' });
       return;
     }
-    const initialQuantity = Math.max(0, parseInt(formData.stock, 10) || 0);
-    const branchId = isAdmin ? formData.branchId : (user?.branchId ?? '');
     setLoading(true);
-    const { ok, data } = await authFetch('/api/inventory/products', {
-      method: 'POST',
-      body: JSON.stringify({
-        name,
-        sku,
-        description: formData.description || null,
-        category: formData.category || null,
-        brand: formData.brand || null,
-        basePrice,
-        initialQuantity,
-        ...(branchId ? { branchId } : {}),
-      }),
-    });
-    setLoading(false);
-    if (!ok) {
-      toast({ title: 'Could not add product', description: data?.message || 'Please try again', variant: 'destructive' });
-      return;
+    
+    if (isEditMode) {
+      // Update existing product
+      const { ok, data } = await authFetch(`/api/inventory/products/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          name,
+          sku,
+          description: formData.description || null,
+          category: formData.category || null,
+          brand: formData.brand || null,
+          basePrice,
+        }),
+      });
+      setLoading(false);
+      if (!ok) {
+        toast({ title: 'Could not update product', description: data?.message || 'Please try again', variant: 'destructive' });
+        return;
+      }
+      toast({ title: 'Product Updated', description: `${name} has been updated successfully` });
+    } else {
+      // Create new product
+      const initialQuantity = Math.max(0, parseInt(formData.stock, 10) || 0);
+      const branchId = isAdmin ? formData.branchId : (user?.branchId ?? '');
+      const { ok, data } = await authFetch('/api/inventory/products', {
+        method: 'POST',
+        body: JSON.stringify({
+          name,
+          sku,
+          description: formData.description || null,
+          category: formData.category || null,
+          brand: formData.brand || null,
+          basePrice,
+          initialQuantity,
+          ...(branchId ? { branchId } : {}),
+        }),
+      });
+      setLoading(false);
+      if (!ok) {
+        toast({ title: 'Could not add product', description: data?.message || 'Please try again', variant: 'destructive' });
+        return;
+      }
+      toast({ title: 'Product Added', description: `${name} has been saved to the database` });
     }
-    toast({ title: 'Product Added', description: `${name} has been saved to the database` });
     navigate('/products/list');
   };
 
@@ -120,9 +199,11 @@ const AddProduct = () => {
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Add Product
+            {isEditMode ? 'Edit Product' : 'Add Product'}
           </h1>
-          <p className="text-muted-foreground mt-1">Add a new phone or accessory to your inventory</p>
+          <p className="text-muted-foreground mt-1">
+            {isEditMode ? 'Update product information' : 'Add a new phone or accessory to your inventory'}
+          </p>
         </div>
 
         {/* Form */}
@@ -193,6 +274,25 @@ const AddProduct = () => {
                       ))}
                     </select>
                     {loadingBrands && <p className="text-sm text-muted-foreground mt-1">Loading brands…</p>}
+                  </div>
+                  <div>
+                    <Label htmlFor="category">Category</Label>
+                    <select
+                      id="category"
+                      name="category"
+                      value={formData.category}
+                      onChange={handleChange}
+                      disabled={loadingCategories}
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                    >
+                      <option value="">-- Select category --</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.name}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                    {loadingCategories && <p className="text-sm text-muted-foreground mt-1">Loading categories…</p>}
                   </div>
                   <div>
                     <Label htmlFor="model">Model *</Label>
@@ -355,7 +455,7 @@ const AddProduct = () => {
                 </Button>
                 <Button type="submit" disabled={loading}>
                   <Save className="w-4 h-4 mr-2" />
-                  {loading ? 'Saving…' : 'Save Product'}
+                  {loading ? (isEditMode ? 'Updating…' : 'Saving…') : (isEditMode ? 'Update Product' : 'Save Product')}
                 </Button>
               </div>
             </div>

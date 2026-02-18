@@ -1,17 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Plus, Package, Eye, Filter, RefreshCw, Edit } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Search, Plus, Package, Eye, Filter, RefreshCw, Edit, Trash2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 
 const ProductList = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(null);
   const [error, setError] = useState('');
 
   const fetchProducts = useCallback(async () => {
@@ -47,6 +51,51 @@ const ProductList = () => {
       (p.category || '').toLowerCase().includes(q)
     ));
   }, [searchQuery, products]);
+
+  const handleEdit = (product) => {
+    // Navigate to edit page - you can create an EditProduct page or use AddProduct with product ID
+    navigate(`/products/edit/${product.id}`, { state: { product } });
+  };
+
+  const handleDeleteClick = (product) => {
+    if (window.confirm(`Are you sure you want to delete "${product.name}"? This action cannot be undone.`)) {
+      handleDeleteProduct(product.id);
+    }
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    setDeleting(productId);
+    try {
+      const { ok, data } = await authFetch(`/api/inventory/products/${productId}`, {
+        method: 'DELETE',
+      });
+
+      if (!ok) {
+        toast({
+          title: "Error",
+          description: data?.message || "Failed to delete product",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Product Deleted",
+        description: "The product has been deleted successfully",
+      });
+
+      await fetchProducts(); // Refresh the list
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(null);
+    }
+  };
 
   return (
     <>
@@ -178,8 +227,27 @@ const ProductList = () => {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button size="sm" variant="outline">
-                        <Eye className="w-4 h-4" />
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleEdit(product)}
+                        disabled={deleting === product.id}
+                        title="Edit product"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDeleteClick(product)}
+                        disabled={deleting === product.id}
+                        title="Delete product"
+                      >
+                        {deleting === product.id ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
                       </Button>
                     </div>
                   </div>

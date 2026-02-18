@@ -12,9 +12,12 @@ const Brands = () => {
   const [filteredBrands, setFilteredBrands] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+  const [editingBrand, setEditingBrand] = useState(null);
   const [newBrand, setNewBrand] = useState({ name: '', description: '' });
+  const [editBrand, setEditBrand] = useState({ name: '', description: '' });
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(null);
   const { toast } = useToast();
 
   const fetchBrands = useCallback(async () => {
@@ -125,6 +128,100 @@ const Brands = () => {
       });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleEditClick = (brand) => {
+    setEditingBrand(brand.id);
+    setEditBrand({ name: brand.name, description: brand.description || '' });
+  };
+
+  const handleUpdateBrand = async () => {
+    if (!editBrand.name.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a brand name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { ok, data } = await authFetch(`/api/brands/${editingBrand}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: editBrand.name.trim(),
+          description: editBrand.description.trim() || null,
+        }),
+      });
+
+      if (!ok) {
+        toast({
+          title: "Error",
+          description: data?.message || "Failed to update brand",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Brand Updated",
+        description: `${editBrand.name.trim()} has been updated successfully`,
+      });
+
+      setEditingBrand(null);
+      setEditBrand({ name: '', description: '' });
+      await fetchBrands(); // Refresh the list
+    } catch (error) {
+      console.error('Error updating brand:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update brand. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteClick = (brand) => {
+    if (window.confirm(`Are you sure you want to delete "${brand.name}"? This action cannot be undone.`)) {
+      handleDeleteBrand(brand.id);
+    }
+  };
+
+  const handleDeleteBrand = async (brandId) => {
+    setDeleting(brandId);
+    try {
+      const { ok, data } = await authFetch(`/api/brands/${brandId}`, {
+        method: 'DELETE',
+      });
+
+      if (!ok) {
+        toast({
+          title: "Error",
+          description: data?.message || "Failed to delete brand",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Brand Deleted",
+        description: "The brand has been deleted successfully",
+      });
+
+      await fetchBrands(); // Refresh the list
+    } catch (error) {
+      console.error('Error deleting brand:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete brand. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -251,15 +348,70 @@ const Brands = () => {
                       <Tag className="w-6 h-6 text-primary" />
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleEditClick(brand)}
+                        disabled={editingBrand === brand.id || deleting === brand.id}
+                      >
                         <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDeleteClick(brand)}
+                        disabled={editingBrand === brand.id || deleting === brand.id}
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
                   
-                  <h3 className="font-bold text-lg mb-2">{brand.name}</h3>
-                  {brand.description && (
-                    <p className="text-sm text-muted-foreground mb-3">{brand.description}</p>
+                  {editingBrand === brand.id ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">Brand Name *</label>
+                        <Input
+                          value={editBrand.name}
+                          onChange={(e) => setEditBrand({ ...editBrand, name: e.target.value })}
+                          placeholder="e.g., Apple, Samsung"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">Description</label>
+                        <textarea
+                          value={editBrand.description}
+                          onChange={(e) => setEditBrand({ ...editBrand, description: e.target.value })}
+                          placeholder="Brand description (optional)"
+                          rows="2"
+                          className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button size="sm" onClick={handleUpdateBrand} disabled={submitting}>
+                          Save
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => {
+                            setEditingBrand(null);
+                            setEditBrand({ name: '', description: '' });
+                          }}
+                          disabled={submitting}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h3 className="font-bold text-lg mb-2">{brand.name}</h3>
+                      {brand.description && (
+                        <p className="text-sm text-muted-foreground mb-3">{brand.description}</p>
+                      )}
+                    </>
                   )}
                   
                   <div className="space-y-3 pt-4 border-t border-secondary">
