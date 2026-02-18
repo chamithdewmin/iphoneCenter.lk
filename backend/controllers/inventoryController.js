@@ -194,7 +194,7 @@ const createProduct = async (req, res, next) => {
 };
 
 /**
- * Get stock for a branch
+ * Get stock for a branch (or all branches aggregated when branchId=all for admin)
  */
 const getBranchStock = async (req, res, next) => {
     try {
@@ -207,10 +207,30 @@ const getBranchStock = async (req, res, next) => {
             });
         }
 
+        if (branchId === 'all' && isAdmin(req)) {
+            const [stock] = await executeQuery(
+                `SELECT bs.product_id, p.name AS product_name, p.sku, p.base_price, p.category, p.brand,
+                        MAX(b.barcode) AS barcode, SUM(bs.quantity) AS quantity, SUM(bs.reserved_quantity) AS reserved_quantity
+                 FROM branch_stock bs
+                 INNER JOIN products p ON bs.product_id = p.id
+                 LEFT JOIN barcodes b ON b.product_id = p.id AND b.is_active = TRUE
+                 GROUP BY bs.product_id, p.name, p.sku, p.base_price, p.category, p.brand
+                 ORDER BY p.name ASC`
+            );
+            const normalized = (stock || []).map((row) => ({
+                ...row,
+                id: row.product_id,
+                quantity: parseInt(row.quantity, 10) || 0,
+                reserved_quantity: parseInt(row.reserved_quantity, 10) || 0,
+            }));
+            return res.json({ success: true, data: normalized });
+        }
+
         const [stock] = await executeQuery(
-            `SELECT bs.*, p.name as product_name, p.sku, p.base_price, p.category, p.brand
+            `SELECT bs.*, p.name as product_name, p.sku, p.base_price, p.category, p.brand, b.barcode
              FROM branch_stock bs
              INNER JOIN products p ON bs.product_id = p.id
+             LEFT JOIN barcodes b ON b.product_id = p.id AND b.is_active = TRUE
              WHERE bs.branch_id = ?
              ORDER BY p.name ASC`,
             [branchId]
@@ -234,7 +254,15 @@ const updateStock = async (req, res, next) => {
     try {
         await connection.beginTransaction();
 
-        let branchId = req.branchId || req.user.branch_id;
+        let branchId = (isAdmin(req) && (req.body.branchId != null && req.body.branchId !== ''))
+            ? parseInt(req.body.branchId, 10) || req.body.branchId
+            : (req.branchId || req.user.branch_id);
+        if (!branchId && isAdmin(req)) {
+            const [branches] = await connection.execute(
+                'SELECT id FROM branches WHERE is_active = TRUE ORDER BY id LIMIT 1'
+            );
+            if (branches.length > 0) branchId = branches[0].id;
+        }
         const { productId, quantity, minStockLevel } = req.body;
 
         if (!productId || quantity === undefined) {
@@ -245,12 +273,6 @@ const updateStock = async (req, res, next) => {
             });
         }
 
-        if (!branchId && req.user && (isAdmin(req) || req.user.id === 0)) {
-            const [branches] = await connection.execute(
-                'SELECT id FROM branches WHERE is_active = TRUE ORDER BY id LIMIT 1'
-            );
-            if (branches.length > 0) branchId = branches[0].id;
-        }
         if (!branchId) {
             await connection.rollback();
             return res.status(400).json({

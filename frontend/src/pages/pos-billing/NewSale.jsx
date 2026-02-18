@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, ScanLine, Plus, Minus, Trash2, ShoppingCart, CreditCard, Printer, User, X, Loader2 } from 'lucide-react';
+import { Search, ScanLine, Plus, Minus, Trash2, ShoppingCart, CreditCard, Printer, User, X, Loader2, ShieldOff } from 'lucide-react';
 import { authFetch } from '@/lib/api';
 import { PLACEHOLDER_PRODUCT_IMAGE } from '@/lib/placeholder';
+import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,8 @@ function normalizeProduct(p) {
 }
 
 const NewSale = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(true);
@@ -35,8 +38,27 @@ const NewSale = () => {
   const { toast } = useToast();
 
   const fetchProducts = useCallback(async () => {
+    if (isAdmin) {
+      setProducts([]);
+      setFilteredProducts([]);
+      setProductsLoading(false);
+      return;
+    }
+    const branchId = user?.branchId;
+    if (!branchId) {
+      toast({
+        title: 'Cannot load products',
+        description: 'Your account is not assigned to a branch. Contact admin.',
+        variant: 'destructive',
+      });
+      setProducts([]);
+      setFilteredProducts([]);
+      setProductsLoading(false);
+      return;
+    }
     setProductsLoading(true);
-    const { ok, data } = await authFetch('/api/inventory/products');
+    const url = `/api/inventory/stock?branchId=${encodeURIComponent(branchId)}`;
+    const { ok, data } = await authFetch(url);
     setProductsLoading(false);
     if (!ok) {
       toast({
@@ -49,10 +71,18 @@ const NewSale = () => {
       return;
     }
     const list = Array.isArray(data?.data) ? data.data : [];
-    const normalized = list.map(normalizeProduct);
+    const normalized = list.map((row) => normalizeProduct({
+      id: row.product_id ?? row.id,
+      name: row.product_name ?? row.name,
+      sku: row.sku,
+      brand: row.brand,
+      base_price: row.base_price,
+      quantity: row.quantity ?? 0,
+      barcode: row.barcode,
+    }));
     setProducts(normalized);
     setFilteredProducts(normalized);
-  }, [toast]);
+  }, [toast, isAdmin, user?.branchId]);
 
   useEffect(() => {
     fetchProducts();
@@ -150,6 +180,7 @@ const NewSale = () => {
   };
 
   const handleCheckout = async (holdInvoice = false) => {
+    if (isAdmin) return;
     if (cart.length === 0) {
       toast({
         title: 'Cart is empty',
@@ -214,6 +245,16 @@ const NewSale = () => {
       </Helmet>
 
       <div className="h-[calc(100vh-8rem)] flex flex-col gap-4">
+        {isAdmin && (
+          <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-700 dark:text-amber-400">
+            <ShieldOff className="w-6 h-6 shrink-0" />
+            <div>
+              <p className="font-semibold">Admin cannot make sales</p>
+              <p className="text-sm opacity-90">Only staff, manager, or cashier can make sales. Use an account assigned to a branch.</p>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center gap-4">
           <div className="relative flex-1">
@@ -387,8 +428,17 @@ const NewSale = () => {
                   {filteredProducts.length === 0 && (
                     <div className="text-center py-12">
                       <ShoppingCart className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                      <p className="text-muted-foreground">No products found</p>
-                      <p className="text-sm text-muted-foreground mt-1">Add products in Products → Add Product</p>
+                      {isAdmin ? (
+                        <>
+                          <p className="text-muted-foreground font-medium">Only staff, manager, or cashier can make sales</p>
+                          <p className="text-sm text-muted-foreground mt-1">Log in with a branch account to see products and sell.</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-muted-foreground">No products found</p>
+                          <p className="text-sm text-muted-foreground mt-1">Add products in Products → Add Product</p>
+                        </>
+                      )}
                     </div>
                   )}
                 </>
@@ -547,16 +597,16 @@ const NewSale = () => {
 
                 {/* Action Buttons */}
                 <div className="grid grid-cols-2 gap-2">
-                  <Button onClick={clearCart} variant="outline" className="w-full" disabled={checkoutLoading}>
+                  <Button onClick={clearCart} variant="outline" className="w-full" disabled={checkoutLoading || isAdmin}>
                     <X className="w-4 h-4 mr-2" />
                     Clear
                   </Button>
-                  <Button onClick={() => handleCheckout(false)} className="w-full" disabled={checkoutLoading}>
+                  <Button onClick={() => handleCheckout(false)} className="w-full" disabled={checkoutLoading || isAdmin}>
                     {checkoutLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CreditCard className="w-4 h-4 mr-2" />}
                     Pay & Print
                   </Button>
                 </div>
-                <Button onClick={() => handleCheckout(true)} variant="outline" className="w-full" disabled={checkoutLoading}>
+                <Button onClick={() => handleCheckout(true)} variant="outline" className="w-full" disabled={checkoutLoading || isAdmin}>
                   <Printer className="w-4 h-4 mr-2" />
                   Hold Invoice
                 </Button>

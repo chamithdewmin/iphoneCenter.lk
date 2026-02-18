@@ -18,11 +18,10 @@ const branchGuard = async (req, res, next) => {
         // Normalize role (PostgreSQL enum may come as string)
         const role = req.user.role != null ? String(req.user.role).toLowerCase() : '';
 
-        // Admin can access all branches
+        // Admin can access all branches (or branchId=all for aggregated view)
         if (role === ROLES.ADMIN) {
-            // If branch_id is provided in query/params, validate it exists
             const branchId = req.params?.branchId || req.query?.branchId || req.body?.branchId;
-            if (branchId) {
+            if (branchId && branchId !== 'all') {
                 const [branches] = await executeQuery(
                     'SELECT id FROM branches WHERE id = ? AND is_active = TRUE',
                     [branchId]

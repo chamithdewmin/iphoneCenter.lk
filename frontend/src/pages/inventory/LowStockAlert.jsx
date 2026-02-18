@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Package, Plus, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Package, Plus, RefreshCw, Building2 } from 'lucide-react';
 import { authFetch } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,32 +12,73 @@ import { useToast } from '@/components/ui/use-toast';
 const qty = (p) => p.quantity ?? p.stock ?? 0;
 
 const LowStockAlert = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  const [branches, setBranches] = useState([]);
+  const [selectedBranchId, setSelectedBranchId] = useState(isAdmin ? 'all' : (user?.branchId ?? ''));
   const [products, setProducts] = useState([]);
   const [restockProduct, setRestockProduct] = useState(null);
   const [restockQuantity, setRestockQuantity] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingBranches, setLoadingBranches] = useState(false);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
+  const fetchBranches = useCallback(async () => {
+    if (!isAdmin) return;
+    setLoadingBranches(true);
+    const res = await authFetch('/api/branches');
+    setBranches(Array.isArray(res.data?.data) ? res.data.data : []);
+    setLoadingBranches(false);
+  }, [isAdmin]);
+
+  useEffect(() => {
+    fetchBranches();
+  }, [fetchBranches]);
+
+  useEffect(() => {
+    if (!isAdmin && user?.branchId) setSelectedBranchId(String(user.branchId));
+  }, [isAdmin, user?.branchId]);
+
   const fetchProducts = useCallback(async () => {
+    const branchId = selectedBranchId || (isAdmin ? 'all' : user?.branchId);
+    if (!branchId && !isAdmin) {
+      setProducts([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    const { ok, data } = await authFetch('/api/inventory/products');
+    const url = `/api/inventory/stock${branchId ? `?branchId=${encodeURIComponent(branchId)}` : ''}`;
+    const { ok, data } = await authFetch(url);
     setLoading(false);
     if (!ok) {
       setProducts([]);
       return;
     }
-    setProducts(Array.isArray(data?.data) ? data.data : []);
-  }, []);
+    const list = Array.isArray(data?.data) ? data.data : [];
+    setProducts(list.map((row) => ({
+      id: row.product_id ?? row.id,
+      product_id: row.product_id ?? row.id,
+      name: row.product_name ?? row.name,
+      sku: row.sku,
+      brand: row.brand,
+      base_price: row.base_price,
+      basePrice: row.base_price,
+      quantity: row.quantity ?? 0,
+    })));
+  }, [selectedBranchId, isAdmin, user?.branchId]);
 
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
-  const lowStockProducts = products.filter(p => {
+  const lowStockProducts = products.filter((p) => {
     const n = qty(p);
     return n < 5 && n >= 0;
   });
+
+  const effectiveBranchId = isAdmin ? (selectedBranchId === 'all' ? null : selectedBranchId) : (user?.branchId ?? null);
+  const canRestock = effectiveBranchId != null && effectiveBranchId !== '';
 
   const handleRestock = (product) => {
     setRestockProduct(product);
@@ -53,11 +95,20 @@ const LowStockAlert = () => {
       });
       return;
     }
+    if (!canRestock) {
+      toast({
+        title: 'Cannot restock',
+        description: 'Select a specific branch to restock.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    const productId = restockProduct.product_id ?? restockProduct.id;
     const newQty = qty(restockProduct) + add;
     setSaving(true);
     const { ok, data } = await authFetch('/api/inventory/stock-quantity', {
       method: 'PUT',
-      body: JSON.stringify({ productId: restockProduct.id, quantity: newQty }),
+      body: JSON.stringify({ productId, quantity: newQty, branchId: effectiveBranchId }),
     });
     setSaving(false);
     setRestockProduct(null);
@@ -90,12 +141,36 @@ const LowStockAlert = () => {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
               Low Stock Alert
             </h1>
-            <p className="text-muted-foreground mt-1">Products that need restocking (from database)</p>
+            <p className="text-muted-foreground mt-1">
+              {isAdmin ? 'Products with low stock by branch' : 'Low stock at your branch'}
+            </p>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchProducts} disabled={loading}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-muted-foreground" />
+              <select
+                value={selectedBranchId}
+                onChange={(e) => setSelectedBranchId(e.target.value)}
+                disabled={!isAdmin}
+                className="h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {isAdmin && <option value="all">All Branches</option>}
+                {isAdmin && branches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name} {b.code ? `(${b.code})` : ''}</option>
+                ))}
+                {!isAdmin && (
+                  <option value={user?.branchId ?? ''}>
+                    {user?.branchName || user?.branchCode || 'Your branch'}
+                  </option>
+                )}
+              </select>
+              {loadingBranches && <span className="text-sm text-muted-foreground">Loading…</span>}
+            </div>
+            <Button variant="outline" size="sm" onClick={fetchProducts} disabled={loading}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Alert Summary */}
@@ -133,7 +208,7 @@ const LowStockAlert = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {lowStockProducts.map((product, index) => (
               <motion.div
-                key={product.id}
+                key={product.product_id ?? product.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
@@ -169,6 +244,7 @@ const LowStockAlert = () => {
                     className="w-full"
                     variant="outline"
                     onClick={() => handleRestock(product)}
+                    disabled={!canRestock}
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Restock Now

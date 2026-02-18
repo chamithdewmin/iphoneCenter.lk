@@ -8,6 +8,12 @@ const logger = require('../utils/logger');
  * Create a new sale/bill (Transaction-safe)
  */
 const createSale = async (req, res, next) => {
+    if (isAdmin(req)) {
+        return res.status(403).json({
+            success: false,
+            message: 'Admin cannot make sales. Use a staff, manager, or cashier account.'
+        });
+    }
     let connection;
     try {
         connection = await getConnection();
