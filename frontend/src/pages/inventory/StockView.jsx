@@ -1,20 +1,50 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Package, TrendingDown, TrendingUp, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Search, Package, TrendingDown, TrendingUp, AlertTriangle, RefreshCw, Building2 } from 'lucide-react';
 import { authFetch } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 const StockView = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  const [branches, setBranches] = useState([]);
+  const [selectedBranchId, setSelectedBranchId] = useState(isAdmin ? 'all' : (user?.branchId ?? ''));
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingBranches, setLoadingBranches] = useState(false);
+
+  const fetchBranches = useCallback(async () => {
+    if (!isAdmin) return;
+    setLoadingBranches(true);
+    const res = await authFetch('/api/branches');
+    setBranches(Array.isArray(res.data?.data) ? res.data.data : []);
+    setLoadingBranches(false);
+  }, [isAdmin]);
+
+  useEffect(() => {
+    fetchBranches();
+  }, [fetchBranches]);
+
+  useEffect(() => {
+    if (!isAdmin && user?.branchId) setSelectedBranchId(String(user.branchId));
+  }, [isAdmin, user?.branchId]);
 
   const fetchProducts = useCallback(async () => {
+    const branchId = selectedBranchId || (isAdmin ? 'all' : user?.branchId);
+    if (!branchId && !isAdmin) {
+      setProducts([]);
+      setFilteredProducts([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    const { ok, data } = await authFetch('/api/inventory/products');
+    const url = `/api/inventory/stock${branchId ? `?branchId=${encodeURIComponent(branchId)}` : ''}`;
+    const { ok, data } = await authFetch(url);
     setLoading(false);
     if (!ok) {
       setProducts([]);
@@ -22,9 +52,20 @@ const StockView = () => {
       return;
     }
     const list = Array.isArray(data?.data) ? data.data : [];
-    setProducts(list);
-    setFilteredProducts(list);
-  }, []);
+    const mapped = list.map((row) => ({
+      id: row.product_id ?? row.id,
+      product_id: row.product_id ?? row.id,
+      name: row.product_name ?? row.name,
+      sku: row.sku,
+      brand: row.brand,
+      base_price: row.base_price,
+      basePrice: row.base_price,
+      quantity: row.quantity ?? 0,
+      stock: row.quantity ?? 0,
+    }));
+    setProducts(mapped);
+    setFilteredProducts(mapped);
+  }, [selectedBranchId, isAdmin, user?.branchId]);
 
   useEffect(() => {
     fetchProducts();
@@ -65,12 +106,36 @@ const StockView = () => {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
               Product Stock View
             </h1>
-            <p className="text-muted-foreground mt-1">View and monitor product stock levels from database</p>
+            <p className="text-muted-foreground mt-1">
+              {isAdmin ? 'View stock by branch or all branches' : 'Stock for your branch only'}
+            </p>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchProducts} disabled={loading}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-muted-foreground shrink-0" />
+              <select
+                value={selectedBranchId}
+                onChange={(e) => setSelectedBranchId(e.target.value)}
+                disabled={!isAdmin}
+                className="h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {isAdmin && <option value="all">All Branches</option>}
+                {isAdmin && branches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name} {b.code ? `(${b.code})` : ''}</option>
+                ))}
+                {!isAdmin && (
+                  <option value={user?.branchId ?? ''}>
+                    {user?.branchName || user?.branchCode || 'Your branch'}
+                  </option>
+                )}
+              </select>
+              {loadingBranches && <span className="text-sm text-muted-foreground">Loading…</span>}
+            </div>
+            <Button variant="outline" size="sm" onClick={fetchProducts} disabled={loading}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Summary Cards */}
