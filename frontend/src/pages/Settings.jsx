@@ -14,7 +14,8 @@ import { authFetch } from '@/lib/api';
 const Settings = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const role = user?.role != null ? String(user.role).toLowerCase() : '';
+  const isAdmin = role === 'admin';
   const [formData, setFormData] = useState({
     companyName: 'iphone center.lk',
     taxRate: '10',
@@ -64,6 +65,7 @@ const Settings = () => {
       fetchBranches();
     }
   }, [resetDialogOpen, isAdmin, fetchBranches]);
+
 
   const handleResetData = () => {
     if (window.confirm('Are you sure you want to reset all demo data? This action cannot be undone.')) {
@@ -278,10 +280,11 @@ const Settings = () => {
                 </div>
               </div>
 
+              {/* Reset Branch Data - Admin Only */}
               {isAdmin && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <div className="p-4 bg-red-500/10 border-2 border-red-500/30 rounded-lg">
                   <div className="flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5" />
+                    <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
                       <h3 className="font-semibold text-red-600 dark:text-red-400 mb-1">Reset Branch Data</h3>
                       <p className="text-sm text-muted-foreground mb-3">
@@ -291,6 +294,7 @@ const Settings = () => {
                         onClick={() => setResetDialogOpen(true)} 
                         variant="destructive" 
                         size="sm"
+                        className="bg-red-600 hover:bg-red-700 text-white"
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Reset Data
