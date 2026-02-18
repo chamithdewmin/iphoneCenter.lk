@@ -15,7 +15,9 @@ const AddProduct = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const [branches, setBranches] = useState([]);
+  const [brands, setBrands] = useState([]);
   const [loadingBranches, setLoadingBranches] = useState(false);
+  const [loadingBrands, setLoadingBrands] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     branchId: '',
@@ -41,9 +43,24 @@ const AddProduct = () => {
     setLoadingBranches(false);
   }, [isAdmin]);
 
+  const fetchBrands = useCallback(async () => {
+    setLoadingBrands(true);
+    try {
+      const { ok, data } = await authFetch('/api/brands');
+      if (ok && Array.isArray(data?.data)) {
+        setBrands(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching brands:', error);
+    } finally {
+      setLoadingBrands(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchBranches();
-  }, [fetchBranches]);
+    fetchBrands();
+  }, [fetchBranches, fetchBrands]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -159,14 +176,23 @@ const AddProduct = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="brand">Brand *</Label>
-                    <Input
+                    <select
                       id="brand"
                       name="brand"
                       value={formData.brand}
                       onChange={handleChange}
-                      placeholder="e.g., Apple, Samsung"
-                      className="mt-1"
-                    />
+                      required
+                      disabled={loadingBrands}
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                    >
+                      <option value="">-- Select brand --</option>
+                      {brands.map((brand) => (
+                        <option key={brand.id} value={brand.name}>
+                          {brand.name}
+                        </option>
+                      ))}
+                    </select>
+                    {loadingBrands && <p className="text-sm text-muted-foreground mt-1">Loading brands…</p>}
                   </div>
                   <div>
                     <Label htmlFor="model">Model *</Label>

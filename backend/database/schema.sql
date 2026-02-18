@@ -69,6 +69,18 @@ ALTER TABLE users ADD FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE 
 -- PRODUCTS & INVENTORY
 -- ============================================
 
+-- Brands table
+CREATE TABLE brands (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_name (name),
+    INDEX idx_is_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Products table
 CREATE TABLE products (
     id INT PRIMARY KEY AUTO_INCREMENT,

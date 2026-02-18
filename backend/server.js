@@ -24,6 +24,7 @@ validateEnv();
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const branchRoutes = require('./routes/branchRoutes');
+const brandRoutes = require('./routes/brandRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const billingRoutes = require('./routes/billingRoutes');
 const reportsRoutes = require('./routes/reportsRoutes');
@@ -134,6 +135,7 @@ app.get('/api/test-connection', healthDbHandler);
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/branches', branchRoutes);
+app.use('/api/brands', brandRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/reports', reportsRoutes);

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Plus, Edit, Trash2, Tag, Package } from 'lucide-react';
-import { getStorageData, setStorageData } from '@/utils/storage';
+import { Search, Plus, Edit, Trash2, Tag, Package, RefreshCw } from 'lucide-react';
+import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -13,30 +13,60 @@ const Brands = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [newBrand, setNewBrand] = useState({ name: '', description: '' });
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const products = getStorageData('products', []);
-    const brandSet = new Set();
-    const brandData = {};
+  const fetchBrands = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { ok, data } = await authFetch('/api/brands');
+      if (ok && Array.isArray(data?.data)) {
+        // Fetch products to get counts per brand
+        const { ok: productsOk, data: productsData } = await authFetch('/api/inventory/products');
+        const products = productsOk && Array.isArray(productsData?.data) ? productsData.data : [];
+        
+        // Calculate product counts and total value per brand
+        const brandStats = {};
+        products.forEach(product => {
+          const brandName = product.brand;
+          if (brandName) {
+            if (!brandStats[brandName]) {
+              brandStats[brandName] = { productCount: 0, totalValue: 0 };
+            }
+            brandStats[brandName].productCount += 1;
+            brandStats[brandName].totalValue += parseFloat(product.base_price || product.basePrice || 0);
+          }
+        });
 
-    products.forEach(product => {
-      const brandName = product.brand || product.make || 'Unknown';
-      if (!brandData[brandName]) {
-        brandData[brandName] = {
-          name: brandName,
-          productCount: 0,
-          totalValue: 0,
-        };
+        // Merge brand data with stats
+        const brandsWithStats = data.data.map(brand => ({
+          ...brand,
+          productCount: brandStats[brand.name]?.productCount || 0,
+          totalValue: brandStats[brand.name]?.totalValue || 0,
+        }));
+
+        setBrands(brandsWithStats);
+        setFilteredBrands(brandsWithStats);
+      } else {
+        setBrands([]);
+        setFilteredBrands([]);
       }
-      brandData[brandName].productCount += 1;
-      brandData[brandName].totalValue += product.price || 0;
-    });
+    } catch (error) {
+      console.error('Error fetching brands:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load brands",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
 
-    const brandList = Object.values(brandData);
-    setBrands(brandList);
-    setFilteredBrands(brandList);
-  }, []);
+  useEffect(() => {
+    fetchBrands();
+  }, [fetchBrands]);
 
   useEffect(() => {
     if (searchQuery) {
@@ -49,7 +79,7 @@ const Brands = () => {
     }
   }, [searchQuery, brands]);
 
-  const handleAddBrand = () => {
+  const handleAddBrand = async () => {
     if (!newBrand.name.trim()) {
       toast({
         title: "Validation Error",
@@ -59,30 +89,43 @@ const Brands = () => {
       return;
     }
 
-    const brandExists = brands.some(b => b.name.toLowerCase() === newBrand.name.toLowerCase());
-    if (brandExists) {
+    setSubmitting(true);
+    try {
+      const { ok, data } = await authFetch('/api/brands', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: newBrand.name.trim(),
+          description: newBrand.description.trim() || null,
+        }),
+      });
+
+      if (!ok) {
+        toast({
+          title: "Error",
+          description: data?.message || "Failed to add brand",
+          variant: "destructive",
+        });
+        return;
+      }
+
       toast({
-        title: "Brand Exists",
-        description: "This brand already exists",
+        title: "Brand Added",
+        description: `${newBrand.name.trim()} has been added successfully`,
+      });
+
+      setNewBrand({ name: '', description: '' });
+      setIsAdding(false);
+      await fetchBrands(); // Refresh the list
+    } catch (error) {
+      console.error('Error adding brand:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add brand. Please try again.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setSubmitting(false);
     }
-
-    const updatedBrands = [...brands, {
-      name: newBrand.name,
-      description: newBrand.description,
-      productCount: 0,
-      totalValue: 0,
-    }];
-    setBrands(updatedBrands);
-    setFilteredBrands(updatedBrands);
-    setNewBrand({ name: '', description: '' });
-    setIsAdding(false);
-    toast({
-      title: "Brand Added",
-      description: `${newBrand.name} has been added successfully`,
-    });
   };
 
   return (
@@ -101,10 +144,16 @@ const Brands = () => {
             </h1>
             <p className="text-muted-foreground mt-1">Manage product brands in your inventory</p>
           </div>
-          <Button onClick={() => setIsAdding(!isAdding)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Brand
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={fetchBrands} disabled={loading}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button onClick={() => setIsAdding(!isAdding)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Brand
+            </Button>
+          </div>
         </div>
 
         {/* Add Brand Form */}
@@ -137,14 +186,14 @@ const Brands = () => {
                 />
               </div>
               <div className="flex items-center gap-2">
-                <Button onClick={handleAddBrand}>
+                <Button onClick={handleAddBrand} disabled={submitting}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Brand
+                  {submitting ? 'Adding...' : 'Add Brand'}
                 </Button>
                 <Button variant="outline" onClick={() => {
                   setIsAdding(false);
                   setNewBrand({ name: '', description: '' });
-                }}>
+                }} disabled={submitting}>
                   Cancel
                 </Button>
               </div>
@@ -166,7 +215,12 @@ const Brands = () => {
         </div>
 
         {/* Brands Grid */}
-        {filteredBrands.length === 0 ? (
+        {loading ? (
+          <div className="bg-card rounded-xl p-12 border border-secondary text-center">
+            <RefreshCw className="w-8 h-8 mx-auto text-muted-foreground mb-4 animate-spin" />
+            <p className="text-muted-foreground">Loading brands...</p>
+          </div>
+        ) : filteredBrands.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -176,7 +230,7 @@ const Brands = () => {
             <h3 className="text-xl font-semibold mb-2">No Brands Found</h3>
             <p className="text-muted-foreground">
               {brands.length === 0 
-                ? "No brands have been added yet. Add products to see brands automatically."
+                ? "No brands have been added yet. Click 'Add Brand' to create your first brand."
                 : "No brands match your search criteria"}
             </p>
           </motion.div>
@@ -184,7 +238,7 @@ const Brands = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredBrands.map((brand, index) => (
               <motion.div
-                key={brand.name}
+                key={brand.id || brand.name}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
@@ -204,6 +258,9 @@ const Brands = () => {
                   </div>
                   
                   <h3 className="font-bold text-lg mb-2">{brand.name}</h3>
+                  {brand.description && (
+                    <p className="text-sm text-muted-foreground mb-3">{brand.description}</p>
+                  )}
                   
                   <div className="space-y-3 pt-4 border-t border-secondary">
                     <div className="flex items-center justify-between">
