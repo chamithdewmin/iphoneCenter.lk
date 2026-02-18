@@ -209,12 +209,14 @@ const getBranchStock = async (req, res, next) => {
 
         if (branchId === 'all' && isAdmin(req)) {
             const [stock] = await executeQuery(
-                `SELECT bs.product_id, p.name AS product_name, p.sku, p.base_price, p.category, p.brand,
-                        MAX(b.barcode) AS barcode, SUM(bs.quantity) AS quantity, SUM(bs.reserved_quantity) AS reserved_quantity
-                 FROM branch_stock bs
-                 INNER JOIN products p ON bs.product_id = p.id
-                 LEFT JOIN barcodes b ON b.product_id = p.id AND b.is_active = TRUE
-                 GROUP BY bs.product_id, p.name, p.sku, p.base_price, p.category, p.brand
+                `SELECT p.id AS product_id, p.name AS product_name, p.sku, p.base_price, p.category, p.brand,
+                        (SELECT b2.barcode FROM barcodes b2 WHERE b2.product_id = p.id AND b2.is_active = TRUE LIMIT 1) AS barcode,
+                        COALESCE(agg.total_quantity, 0) AS quantity, COALESCE(agg.total_reserved, 0) AS reserved_quantity
+                 FROM products p
+                 LEFT JOIN (
+                     SELECT product_id, SUM(quantity) AS total_quantity, SUM(reserved_quantity) AS total_reserved
+                     FROM branch_stock GROUP BY product_id
+                 ) agg ON agg.product_id = p.id
                  ORDER BY p.name ASC`
             );
             const normalized = (stock || []).map((row) => ({
