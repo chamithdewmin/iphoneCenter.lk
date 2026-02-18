@@ -19,7 +19,7 @@ const getAllProducts = async (req, res, next) => {
                            FROM branch_stock
                            GROUP BY product_id
                        ) bs ON bs.product_id = p.id
-                       WHERE p.is_active = TRUE`;
+                       WHERE 1=1`;
         const params = [];
 
         if (search) {
@@ -70,7 +70,7 @@ const getProductById = async (req, res, next) => {
         const { id } = req.params;
 
         const [products] = await executeQuery(
-            'SELECT * FROM products WHERE id = ? AND is_active = TRUE',
+            'SELECT * FROM products WHERE id = ?',
             [id]
         );
 
@@ -744,7 +744,7 @@ const updateProduct = async (req, res, next) => {
 
         // Check if product exists
         const [existing] = await connection.execute(
-            'SELECT id FROM products WHERE id = ? AND is_active = TRUE',
+            'SELECT id, is_active FROM products WHERE id = ?',
             [id]
         );
 
@@ -758,7 +758,7 @@ const updateProduct = async (req, res, next) => {
 
         // Check if SKU is already used by another product
         const [duplicate] = await connection.execute(
-            'SELECT id FROM products WHERE sku = ? AND id != ? AND is_active = TRUE',
+            'SELECT id FROM products WHERE sku = ? AND id != ?',
             [sku.trim(), id]
         );
 
@@ -770,9 +770,10 @@ const updateProduct = async (req, res, next) => {
             });
         }
 
+        // Update product and restore if it was deleted
         await connection.execute(
             `UPDATE products 
-             SET name = ?, sku = ?, description = ?, category = ?, brand = ?, base_price = ?, updated_at = CURRENT_TIMESTAMP
+             SET name = ?, sku = ?, description = ?, category = ?, brand = ?, base_price = ?, is_active = TRUE, updated_at = CURRENT_TIMESTAMP
              WHERE id = ?`,
             [name.trim(), sku.trim(), description?.trim() || null, category?.trim() || null, brand?.trim() || null, parseFloat(basePrice), id]
         );
@@ -811,7 +812,7 @@ const deleteProduct = async (req, res, next) => {
 
         // Check if product exists
         const [existing] = await connection.execute(
-            'SELECT id, name FROM products WHERE id = ? AND is_active = TRUE',
+            'SELECT id, name FROM products WHERE id = ?',
             [id]
         );
 
@@ -823,7 +824,7 @@ const deleteProduct = async (req, res, next) => {
             });
         }
 
-        // Soft delete
+        // Soft delete (works even if already deleted)
         await connection.execute(
             'UPDATE products SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
             [id]

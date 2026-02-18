@@ -186,10 +186,17 @@ const ProductList = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 whileHover={{ y: -4 }}
-                className="bg-card rounded-xl border border-secondary overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 group"
+                className={`bg-card rounded-xl border overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 group ${
+                  !product.is_active ? 'opacity-60 border-destructive/30' : 'border-secondary'
+                }`}
               >
                 <div className="relative h-48 bg-gradient-to-br from-secondary/50 to-secondary/20 overflow-hidden flex items-center justify-center">
                   <Package className="w-16 h-16 text-muted-foreground opacity-30" />
+                  {!product.is_active && (
+                    <div className="absolute top-2 right-2 bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded">
+                      Deleted
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-5">
