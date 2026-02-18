@@ -195,7 +195,7 @@ const AddProduct = () => {
         <meta name="description" content="Add a new product to your inventory" />
       </Helmet>
 
-      <div className="space-y-6 max-w-4xl">
+      <div className="space-y-6 max-w-7xl mx-auto">
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
@@ -209,7 +209,7 @@ const AddProduct = () => {
         {/* Form */}
         <form onSubmit={handleSubmit}>
           <div className="bg-card rounded-xl border border-secondary shadow-sm">
-            <div className="p-6 space-y-6">
+            <div className="p-6 lg:p-8 space-y-6 lg:space-y-8">
               {/* Branch: Admin = dropdown, Manager/Staff = read-only */}
               <div className="border-b border-secondary pb-6">
                 <div className="flex items-center gap-2 mb-4">
@@ -254,7 +254,7 @@ const AddProduct = () => {
                   <Package className="w-5 h-5 text-primary" />
                   <h2 className="text-xl font-semibold">Basic Information</h2>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="brand">Brand *</Label>
                     <select
@@ -339,7 +339,7 @@ const AddProduct = () => {
               {/* Pricing & Stock */}
               <div className="border-t border-secondary pt-6">
                 <h2 className="text-xl font-semibold mb-4">Pricing & Stock</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="price">Price (LKR) *</Label>
                     <Input
@@ -374,7 +374,7 @@ const AddProduct = () => {
               {/* Identification */}
               <div className="border-t border-secondary pt-6">
                 <h2 className="text-xl font-semibold mb-4">Identification</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="imei">IMEI / Serial Number</Label>
                     <Input
@@ -403,19 +403,8 @@ const AddProduct = () => {
               {/* Additional Details */}
               <div className="border-t border-secondary pt-6">
                 <h2 className="text-xl font-semibold mb-4">Additional Details</h2>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="colors">Colors (comma-separated)</Label>
-                    <Input
-                      id="colors"
-                      name="colors"
-                      value={formData.colors}
-                      onChange={handleChange}
-                      placeholder="e.g., Black, White, Blue"
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="md:col-span-2 lg:col-span-3">
                     <Label htmlFor="description">Description</Label>
                     <textarea
                       id="description"
@@ -428,6 +417,17 @@ const AddProduct = () => {
                     />
                   </div>
                   <div>
+                    <Label htmlFor="colors">Colors (comma-separated)</Label>
+                    <Input
+                      id="colors"
+                      name="colors"
+                      value={formData.colors}
+                      onChange={handleChange}
+                      placeholder="e.g., Black, White, Blue"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
                     <Label htmlFor="images">Image URLs (comma-separated)</Label>
                     <Input
                       id="images"

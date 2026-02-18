@@ -76,7 +76,7 @@ const AddCategory = () => {
         <meta name="description" content="Add a new product category" />
       </Helmet>
 
-      <div className="space-y-6 max-w-4xl">
+      <div className="space-y-6 max-w-7xl mx-auto">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
             Add Category

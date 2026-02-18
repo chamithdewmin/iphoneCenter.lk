@@ -84,7 +84,6 @@ const menuItems = [
     label: 'Trading',
     permission: 'orders',
     children: [
-      { to: '/trading/sales', label: 'Sales', icon: ShoppingBag },
       { to: '/trading/purchase', label: 'Purchase', icon: Receipt },
     ],
   },

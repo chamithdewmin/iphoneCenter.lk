@@ -18,7 +18,6 @@ import Brands from './pages/products/Brands';
 import GenerateBarcode from './pages/products/GenerateBarcode';
 
 // Trading
-import Sales from './pages/trading/Sales';
 import Purchase from './pages/trading/Purchase';
 import AddPurchase from './pages/trading/AddPurchase';
 
@@ -148,7 +147,6 @@ function App() {
         <Route path="products/barcode" element={<GenerateBarcode />} />
 
         {/* Trading */}
-        <Route path="trading/sales" element={<Sales />} />
         <Route path="trading/purchase" element={<Purchase />} />
         <Route path="trading/purchase/add" element={<AddPurchase />} />
 

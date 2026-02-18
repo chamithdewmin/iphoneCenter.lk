@@ -90,7 +90,7 @@ const TransferStock = () => {
         <meta name="description" content="Transfer stock between warehouse and shop" />
       </Helmet>
 
-      <div className="space-y-6 max-w-4xl">
+      <div className="space-y-6 max-w-7xl mx-auto">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
             Transfer Stock

@@ -128,7 +128,7 @@ const EditUser = () => {
         <meta name="description" content="Edit user account" />
       </Helmet>
 
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-7xl mx-auto">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
             Edit User
@@ -141,7 +141,7 @@ const EditUser = () => {
             <div className="p-6 space-y-6">
               <div>
                 <h2 className="text-xl font-semibold mb-4">User information</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="username">Username *</Label>
                     <Input
@@ -207,7 +207,7 @@ const EditUser = () => {
 
               <div className="border-t border-secondary pt-6">
                 <h2 className="text-xl font-semibold mb-4">Change password (optional)</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="password">New password</Label>
                     <Input
