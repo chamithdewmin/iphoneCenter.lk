@@ -99,7 +99,7 @@ const createProduct = async (req, res, next) => {
     try {
         await connection.beginTransaction();
 
-        const { name, sku, description, category, brand, basePrice, initialQuantity } = req.body;
+        const { name, sku, description, category, brand, basePrice, initialQuantity, branchId: bodyBranchId } = req.body;
 
         if (!name || !sku || !basePrice) {
             await connection.rollback();
@@ -107,6 +107,28 @@ const createProduct = async (req, res, next) => {
                 success: false,
                 message: 'Name, SKU, and base price are required'
             });
+        }
+
+        // Branch for initial stock: admin must send branchId (dropdown); manager/staff use their branch only
+        let branchIdForStock = null;
+        if (isAdmin(req) && bodyBranchId != null && bodyBranchId !== '') {
+            branchIdForStock = parseInt(bodyBranchId, 10);
+            if (Number.isNaN(branchIdForStock)) branchIdForStock = null;
+        } else if (req.user?.branch_id != null) {
+            branchIdForStock = parseInt(req.user.branch_id, 10) || req.user.branch_id;
+        }
+        if (isAdmin(req) && !branchIdForStock) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'Please select a branch for this product'
+            });
+        }
+        if (!branchIdForStock) {
+            const [branches] = await connection.execute(
+                'SELECT id FROM branches WHERE is_active = TRUE ORDER BY id LIMIT 1'
+            );
+            branchIdForStock = branches.length > 0 ? branches[0].id : null;
         }
 
         // Check if SKU exists
@@ -138,22 +160,14 @@ const createProduct = async (req, res, next) => {
             [productId, barcode]
         );
 
-        // Set initial stock quantity (use first active branch if user has no branch)
+        // Set initial stock quantity at the chosen branch
         const qty = Math.max(0, parseInt(initialQuantity, 10) || 0);
-        if (qty >= 0) {
-            let branchId = req.user?.branch_id;
-            if (!branchId) {
-                const [branches] = await connection.execute(
-                    'SELECT id FROM branches WHERE is_active = TRUE ORDER BY id LIMIT 1'
-                );
-                branchId = branches.length > 0 ? branches[0].id : null;
-            }
-            if (branchId) {
-                await connection.execute(
-                    'INSERT INTO branch_stock (branch_id, product_id, quantity) VALUES (?, ?, ?)',
-                    [branchId, productId, qty]
-                );
-            }
+        if (qty >= 0 && branchIdForStock) {
+            await connection.execute(
+                `INSERT INTO branch_stock (branch_id, product_id, quantity) VALUES (?, ?, ?)
+                 ON CONFLICT (branch_id, product_id) DO UPDATE SET quantity = branch_stock.quantity + EXCLUDED.quantity`,
+                [branchIdForStock, productId, qty]
+            );
         }
 
         await connection.commit();

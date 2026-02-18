@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
-import { Save, Package, X } from 'lucide-react';
+import { Save, Package, X, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authFetch } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,8 +12,13 @@ import { useToast } from '@/components/ui/use-toast';
 const AddProduct = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  const [branches, setBranches] = useState([]);
+  const [loadingBranches, setLoadingBranches] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
+    branchId: '',
     brand: '',
     model: '',
     name: '',
@@ -24,6 +30,20 @@ const AddProduct = () => {
     description: '',
     category: '',
   });
+
+  const fetchBranches = useCallback(async () => {
+    if (!isAdmin) return;
+    setLoadingBranches(true);
+    const res = await authFetch('/api/branches');
+    const list = Array.isArray(res.data?.data) ? res.data.data : [];
+    setBranches(list);
+    setFormData(prev => (prev.branchId ? prev : { ...prev, branchId: list[0]?.id?.toString() ?? '' }));
+    setLoadingBranches(false);
+  }, [isAdmin]);
+
+  useEffect(() => {
+    fetchBranches();
+  }, [fetchBranches]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,6 +57,10 @@ const AddProduct = () => {
       toast({ title: 'Validation Error', description: 'Product name is required', variant: 'destructive' });
       return;
     }
+    if (isAdmin && !formData.branchId) {
+      toast({ title: 'Validation Error', description: 'Please select a branch', variant: 'destructive' });
+      return;
+    }
     const sku = formData.sku?.trim() || formData.imei?.trim() || `SKU-${Date.now()}`;
     const basePrice = parseFloat(formData.price);
     if (isNaN(basePrice) || basePrice < 0) {
@@ -44,6 +68,7 @@ const AddProduct = () => {
       return;
     }
     const initialQuantity = Math.max(0, parseInt(formData.stock, 10) || 0);
+    const branchId = isAdmin ? formData.branchId : (user?.branchId ?? '');
     setLoading(true);
     const { ok, data } = await authFetch('/api/inventory/products', {
       method: 'POST',
@@ -55,6 +80,7 @@ const AddProduct = () => {
         brand: formData.brand || null,
         basePrice,
         initialQuantity,
+        ...(branchId ? { branchId } : {}),
       }),
     });
     setLoading(false);
@@ -86,6 +112,44 @@ const AddProduct = () => {
         <form onSubmit={handleSubmit}>
           <div className="bg-card rounded-xl border border-secondary shadow-sm">
             <div className="p-6 space-y-6">
+              {/* Branch: Admin = dropdown, Manager/Staff = read-only */}
+              <div className="border-b border-secondary pb-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Building2 className="w-5 h-5 text-primary" />
+                  <h2 className="text-xl font-semibold">Branch</h2>
+                </div>
+                {isAdmin ? (
+                  <div>
+                    <Label htmlFor="branchId">Select Branch *</Label>
+                    <select
+                      id="branchId"
+                      name="branchId"
+                      value={formData.branchId}
+                      onChange={handleChange}
+                      required
+                      disabled={loadingBranches}
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                    >
+                      <option value="">-- Select branch --</option>
+                      {branches.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.name} {b.code ? `(${b.code})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    {loadingBranches && <p className="text-sm text-muted-foreground mt-1">Loading branches…</p>}
+                  </div>
+                ) : (
+                  <div>
+                    <Label>Branch</Label>
+                    <div className="mt-1 px-3 py-2 rounded-md border border-input bg-muted/50 text-sm text-muted-foreground cursor-not-allowed">
+                      {user?.branchName || user?.branchCode || 'Your branch'}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Products are added to your branch only.</p>
+                  </div>
+                )}
+              </div>
+
               {/* Basic Information */}
               <div>
                 <div className="flex items-center gap-2 mb-4">
