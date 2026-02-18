@@ -36,7 +36,6 @@ import {
   BarChart3,
   ScanLine,
   Percent,
-  ShoppingCart,
   Printer,
   Pause,
   RotateCcw,
@@ -55,7 +54,6 @@ import { useRolePermissionsVersion } from '@/contexts/RolePermissionsContext';
 /** Each top-level item has a permission key; sidebar shows it only if user's role has that permission. */
 const menuItems = [
   { type: 'link', to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', permission: 'dashboard' },
-  { type: 'link', to: '/pos-billing/new-sale', icon: ShoppingCart, label: 'New Sale', permission: 'orders' },
   {
     type: 'menu',
     icon: Receipt,

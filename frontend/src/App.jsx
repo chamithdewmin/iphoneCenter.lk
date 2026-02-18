@@ -70,7 +70,6 @@ import GeneralSetting from './pages/settings/GeneralSetting';
 import PermissionSetting from './pages/settings/PermissionSetting';
 
 // POS Billing
-import NewSale from './pages/pos-billing/NewSale';
 import ScanBarcode from './pages/pos-billing/ScanBarcode';
 import AddProductToCart from './pages/pos-billing/AddProduct';
 import ApplyDiscount from './pages/pos-billing/ApplyDiscount';
@@ -127,7 +126,6 @@ function App() {
         <Route path="settings" element={<Settings />} />
 
         {/* POS Billing */}
-        <Route path="pos-billing/new-sale" element={<NewSale />} />
         <Route path="pos-billing/scan-barcode" element={<ScanBarcode />} />
         <Route path="pos-billing/add-product" element={<AddProductToCart />} />
         <Route path="pos-billing/apply-discount" element={<ApplyDiscount />} />
