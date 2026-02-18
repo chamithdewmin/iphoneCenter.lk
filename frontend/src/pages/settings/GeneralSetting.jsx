@@ -71,9 +71,18 @@ const GeneralSetting = () => {
     if (!selectedBranchId) {
       toast({
         title: "Validation Error",
-        description: "Please select a branch",
+        description: "Please select a branch or 'All Branches'",
         variant: "destructive",
       });
+      return;
+    }
+
+    const isAllBranches = selectedBranchId === 'all';
+    const confirmMessage = isAllBranches
+      ? 'Are you absolutely sure you want to delete ALL data from ALL branches? This will permanently delete all sales, stock, IMEIs, transfers, and audit logs for every branch. This action cannot be undone!'
+      : 'Are you sure you want to delete all data for the selected branch? This action cannot be undone!';
+
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
@@ -333,12 +342,15 @@ const GeneralSetting = () => {
                   <ul className="list-disc list-inside mt-2 space-y-1">
                     <li>All sales and sale items</li>
                     <li>All payments and refunds</li>
-                    <li>All stock for this branch</li>
-                    <li>All IMEIs for this branch</li>
-                    <li>All stock transfers involving this branch</li>
-                    <li>All audit logs for this branch</li>
+                    <li>All stock</li>
+                    <li>All IMEIs</li>
+                    <li>All stock transfers</li>
+                    <li>All audit logs</li>
                   </ul>
-                  <p className="mt-2 font-semibold">User accounts will NOT be deleted.</p>
+                  <p className="mt-2 font-semibold">User accounts, branches, products, brands, and categories will NOT be deleted.</p>
+                  {selectedBranchId === 'all' && (
+                    <p className="mt-2 font-bold text-red-600 dark:text-red-400">⚠️ You have selected "All Branches" - this will delete data from EVERY branch!</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -355,6 +367,7 @@ const GeneralSetting = () => {
                   className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
                 >
                   <option value="">-- Select a branch --</option>
+                  <option value="all" className="font-semibold text-red-600">All Branches (Delete All Data)</option>
                   {branches.map((branch) => (
                     <option key={branch.id} value={branch.id}>
                       {branch.name} {branch.code ? `(${branch.code})` : ''}
