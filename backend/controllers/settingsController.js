@@ -3,17 +3,28 @@ const logger = require('../utils/logger');
 
 /**
  * Reset branch data - Delete all data for a specific branch (Admin only)
- * This will delete:
- * - branch_stock
- * - product_imeis (for that branch)
+ * When branchId = 'all', this will delete:
+ * - stock_transfers
  * - sales (and cascade delete sale_items, payments, refunds)
+ * - product_imeis
+ * - branch_stock
+ * - barcodes
+ * - products
+ * - customers
+ * - audit_logs
+ * 
+ * When branchId is a specific branch, this will delete:
+ * - branch_stock (for that branch)
+ * - product_imeis (for that branch)
+ * - sales (for that branch, and cascade delete sale_items, payments, refunds)
  * - stock_transfers (where branch is from_branch_id or to_branch_id)
+ * - audit_logs (for that branch)
  * 
  * This will NOT delete:
  * - users table
  * - branches table
- * - products table
- * - brands, categories tables
+ * - brands table
+ * - categories table
  */
 const resetBranchData = async (req, res, next) => {
     const connection = await getConnection();
@@ -34,7 +45,9 @@ const resetBranchData = async (req, res, next) => {
 
         if (isAllBranches) {
             // Delete all data for all branches
-            // Delete all stock transfers
+            // Order matters due to foreign key constraints
+            
+            // Delete all stock transfers first
             await connection.execute('DELETE FROM stock_transfers');
 
             // Delete all sales (will cascade delete sale_items, payments, refunds)
@@ -46,6 +59,15 @@ const resetBranchData = async (req, res, next) => {
             // Delete all branch stock
             await connection.execute('DELETE FROM branch_stock');
 
+            // Delete all barcodes
+            await connection.execute('DELETE FROM barcodes');
+
+            // Delete all products
+            await connection.execute('DELETE FROM products');
+
+            // Delete all customers
+            await connection.execute('DELETE FROM customers');
+
             // Delete all audit logs
             await connection.execute('DELETE FROM audit_logs');
 
@@ -55,7 +77,7 @@ const resetBranchData = async (req, res, next) => {
 
             res.json({
                 success: true,
-                message: 'All data for all branches has been deleted successfully'
+                message: 'All data for all branches has been deleted successfully. Branches, brands, categories, and users remain intact.'
             });
         } else {
             // Verify branch exists

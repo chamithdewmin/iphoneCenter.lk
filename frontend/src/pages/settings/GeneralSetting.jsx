@@ -345,11 +345,14 @@ const GeneralSetting = () => {
                     <li>All stock</li>
                     <li>All IMEIs</li>
                     <li>All stock transfers</li>
+                    <li>All products</li>
+                    <li>All barcodes</li>
+                    <li>All customers</li>
                     <li>All audit logs</li>
                   </ul>
-                  <p className="mt-2 font-semibold">User accounts, branches, products, brands, and categories will NOT be deleted.</p>
+                  <p className="mt-2 font-semibold">User accounts, branches, brands, and categories will NOT be deleted.</p>
                   {selectedBranchId === 'all' && (
-                    <p className="mt-2 font-bold text-red-600 dark:text-red-400">⚠️ You have selected "All Branches" - this will delete data from EVERY branch!</p>
+                    <p className="mt-2 font-bold text-red-600 dark:text-red-400">⚠️ You have selected "All Branches" - this will delete ALL data from EVERY branch including all products and customers!</p>
                   )}
                 </div>
               </div>
