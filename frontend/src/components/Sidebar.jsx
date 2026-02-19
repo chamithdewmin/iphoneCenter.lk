@@ -51,97 +51,127 @@ import { cn } from '@/lib/utils';
 import { getRolePermissions } from '@/constants/rolePermissions';
 import { useRolePermissionsVersion } from '@/contexts/RolePermissionsContext';
 
-/** Each top-level item has a permission key; sidebar shows it only if user's role has that permission. */
-const menuItems = [
-  { type: 'link', to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', permission: 'dashboard' },
+/** Menu structure with groups */
+const menuGroups = [
   {
-    type: 'menu',
-    icon: Receipt,
-    label: 'Invoice',
-    permission: 'orders',
-    children: [
-      { to: '/pos-billing/print-invoice', label: 'Print Invoice', icon: Printer },
-      { to: '/pos-billing/hold-invoice', label: 'Hold Invoice', icon: Pause },
-      { to: '/pos-billing/return-refund', label: 'Return / Refund', icon: RotateCcw },
-      { to: '/pos-billing/reprint-invoice', label: 'Reprint Invoice', icon: Printer },
-    ],
-  },
-  { type: 'link', to: '/orders', icon: FileText, label: 'Orders', permission: 'orders' },
-  {
-    type: 'menu',
-    icon: ArrowRightLeft,
-    label: 'Trading',
-    permission: 'orders',
-    children: [
-      { to: '/trading/sales', label: 'Sales', icon: ShoppingBag },
-      { to: '/trading/purchase', label: 'Purchase', icon: Receipt },
-    ],
-  },
-  {
-    type: 'menu',
-    icon: Package,
-    label: 'Products',
-    permission: 'products',
-    children: [
-      { to: '/products/add', label: 'Add Product', icon: Plus },
-      { to: '/products/list', label: 'Product List', icon: List },
-      { to: '/products/brands', label: 'Brands', icon: Tag },
-      { to: '/products/barcode', label: 'Generate Barcode', icon: Barcode },
+    label: 'Core Operations',
+    items: [
+      { type: 'link', to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', permission: 'dashboard' },
+      { type: 'link', to: '/orders', icon: FileText, label: 'Orders', permission: 'orders' },
+      {
+        type: 'menu',
+        icon: Receipt,
+        label: 'Invoice',
+        permission: 'orders',
+        children: [
+          { to: '/pos-billing/print-invoice', label: 'Print Invoice', icon: Printer },
+          { to: '/pos-billing/hold-invoice', label: 'Hold Invoice', icon: Pause },
+          { to: '/pos-billing/return-refund', label: 'Return / Refund', icon: RotateCcw },
+          { to: '/pos-billing/reprint-invoice', label: 'Reprint Invoice', icon: Printer },
+        ],
+      },
+      {
+        type: 'menu',
+        icon: ArrowRightLeft,
+        label: 'Trading',
+        permission: 'orders',
+        children: [
+          { to: '/trading/sales', label: 'Sales', icon: ShoppingBag },
+          { to: '/trading/purchase', label: 'Purchase', icon: Receipt },
+        ],
+      },
     ],
   },
   {
-    type: 'menu',
-    icon: PackageSearch,
-    label: 'Inventory',
-    permission: 'inventory',
-    children: [
-      { to: '/inventory/stock-view', label: 'Product Stock View', icon: Package },
-      { to: '/inventory/low-stock-alert', label: 'Low Stock Alert', icon: AlertTriangle },
-      { to: '/inventory/stock-adjustment', label: 'Stock Adjustment', icon: Settings },
-      { to: '/inventory/warehouse-stock', label: 'Warehouse-wise Stock', icon: Warehouse },
-      { to: '/inventory/transfer-stock', label: 'Transfer Stock (Warehouse → Shop)', icon: ArrowLeftRight },
-    ],
-  },
-  { type: 'link', to: '/warehouses', icon: Warehouse, label: 'Warehouses', permission: 'products' },
-  { type: 'link', to: '/expenses', icon: TrendingDown, label: 'Expenses', permission: 'settings' },
-  { type: 'link', to: '/people/customers', icon: Users, label: 'Customers', permission: 'customers' },
-  { type: 'link', to: '/people/suppliers', icon: Building2, label: 'Suppliers', permission: 'customers' },
-  { type: 'link', to: '/categories', icon: FolderTree, label: 'Categories', permission: 'products' },
-  {
-    type: 'menu',
-    icon: BarChart3,
-    label: 'Reports',
-    permission: 'reports',
-    children: [
-      { to: '/reports/sale', label: 'Sale Report', icon: FileText },
-      { to: '/reports/purchase', label: 'Purchase Report', icon: FileText },
-      { to: '/reports/payment', label: 'Payment Report', icon: FileText },
-      { to: '/reports/product', label: 'Product Report', icon: FileText },
-      { to: '/reports/stock', label: 'Stock Report', icon: FileText },
-      { to: '/reports/expense', label: 'Expense Report', icon: FileText },
-      { to: '/reports/user', label: 'User Report', icon: FileText },
-      { to: '/reports/customer', label: 'Customer Report', icon: FileText },
-      { to: '/reports/warehouse', label: 'Warehouse Report', icon: FileText },
-      { to: '/reports/supplier', label: 'Supplier Report', icon: FileText },
-      { to: '/reports/discount', label: 'Discount Report', icon: FileText },
+    label: 'Inventory Management',
+    items: [
+      {
+        type: 'menu',
+        icon: Package,
+        label: 'Products',
+        permission: 'products',
+        children: [
+          { to: '/products/add', label: 'Add Product', icon: Plus },
+          { to: '/products/list', label: 'Product List', icon: List },
+          { to: '/products/brands', label: 'Brands', icon: Tag },
+          { to: '/products/barcode', label: 'Generate Barcode', icon: Barcode },
+        ],
+      },
+      { type: 'link', to: '/categories', icon: FolderTree, label: 'Categories', permission: 'products' },
+      {
+        type: 'menu',
+        icon: PackageSearch,
+        label: 'Inventory',
+        permission: 'inventory',
+        children: [
+          { to: '/inventory/stock-view', label: 'Product Stock View', icon: Package },
+          { to: '/inventory/low-stock-alert', label: 'Low Stock Alert', icon: AlertTriangle },
+          { to: '/inventory/stock-adjustment', label: 'Stock Adjustment', icon: Settings },
+          { to: '/inventory/warehouse-stock', label: 'Warehouse-wise Stock', icon: Warehouse },
+          { to: '/inventory/transfer-stock', label: 'Transfer Stock (Warehouse → Shop)', icon: ArrowLeftRight },
+        ],
+      },
+      { type: 'link', to: '/warehouses', icon: Warehouse, label: 'Warehouses', permission: 'products' },
     ],
   },
   {
-    type: 'menu',
-    icon: MessageSquare,
-    label: 'SMS',
-    permission: 'customers',
-    children: [
-      { to: '/sms/send-customer', label: 'Send SMS to Customer', icon: Send },
-      { to: '/sms/bulk', label: 'Bulk SMS', icon: Mail },
-      { to: '/sms/invoice', label: 'Invoice SMS', icon: Receipt },
-      { to: '/sms/promotion', label: 'Promotion SMS', icon: Tag },
-      { to: '/sms/due-payment-reminder', label: 'Due Payment Reminder', icon: AlertTriangle },
-      { to: '/sms/custom-message', label: 'Custom Message', icon: MessageSquare },
+    label: 'People & Partners',
+    items: [
+      { type: 'link', to: '/people/customers', icon: Users, label: 'Customers', permission: 'customers' },
+      { type: 'link', to: '/people/suppliers', icon: Building2, label: 'Suppliers', permission: 'customers' },
+      { type: 'link', to: '/users', icon: UserCog, label: 'Users', permission: 'users' },
     ],
   },
-  { type: 'link', to: '/users', icon: UserCog, label: 'Users', permission: 'users' },
-  { type: 'link', to: '/settings/general', icon: Settings, label: 'Settings', permission: 'settings' },
+  {
+    label: 'Finance',
+    items: [
+      { type: 'link', to: '/expenses', icon: TrendingDown, label: 'Expenses', permission: 'settings' },
+      {
+        type: 'menu',
+        icon: BarChart3,
+        label: 'Reports',
+        permission: 'reports',
+        children: [
+          { to: '/reports/sale', label: 'Sale Report', icon: FileText },
+          { to: '/reports/purchase', label: 'Purchase Report', icon: FileText },
+          { to: '/reports/payment', label: 'Payment Report', icon: FileText },
+          { to: '/reports/product', label: 'Product Report', icon: FileText },
+          { to: '/reports/stock', label: 'Stock Report', icon: FileText },
+          { to: '/reports/expense', label: 'Expense Report', icon: FileText },
+          { to: '/reports/user', label: 'User Report', icon: FileText },
+          { to: '/reports/customer', label: 'Customer Report', icon: FileText },
+          { to: '/reports/warehouse', label: 'Warehouse Report', icon: FileText },
+          { to: '/reports/supplier', label: 'Supplier Report', icon: FileText },
+          { to: '/reports/discount', label: 'Discount Report', icon: FileText },
+        ],
+      },
+    ],
+  },
+  {
+    label: 'Tools',
+    items: [
+      {
+        type: 'menu',
+        icon: MessageSquare,
+        label: 'SMS',
+        permission: 'customers',
+        children: [
+          { to: '/sms/send-customer', label: 'Send SMS to Customer', icon: Send },
+          { to: '/sms/bulk', label: 'Bulk SMS', icon: Mail },
+          { to: '/sms/invoice', label: 'Invoice SMS', icon: Receipt },
+          { to: '/sms/promotion', label: 'Promotion SMS', icon: Tag },
+          { to: '/sms/due-payment-reminder', label: 'Due Payment Reminder', icon: AlertTriangle },
+          { to: '/sms/custom-message', label: 'Custom Message', icon: MessageSquare },
+        ],
+      },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { type: 'link', to: '/settings/general', icon: Settings, label: 'Settings', permission: 'settings' },
+    ],
+  },
 ];
 
 /** Filter menu by role permissions: show item only if user has the required permission (admin has all). */
@@ -152,6 +182,16 @@ function filterMenuByPermissions(items, permissions) {
     if (!required) return true;
     return permissions[required] === true;
   });
+}
+
+/** Filter menu groups: show group only if it has at least one visible item */
+function filterMenuGroups(groups, permissions) {
+  return groups
+    .map((group) => ({
+      ...group,
+      items: filterMenuByPermissions(group.items, permissions),
+    }))
+    .filter((group) => group.items.length > 0);
 }
 
 const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = false }) => {
@@ -329,9 +369,9 @@ const Sidebar = ({ isOpen, onClose }) => {
     onClose?.();
   };
   
-  const displayItems = useMemo(() => {
+  const displayGroups = useMemo(() => {
     const permissions = getRolePermissions(user?.role);
-    return filterMenuByPermissions(menuItems, permissions);
+    return filterMenuGroups(menuGroups, permissions);
   }, [user?.role, permissionsVersion]);
 
   const sidebarWidth = collapsed ? 56 : 240;
@@ -410,9 +450,22 @@ const Sidebar = ({ isOpen, onClose }) => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-2 py-2 overflow-y-auto sidebar-scroll space-y-1">
-            {displayItems.map((item, idx) => (
-              <MenuItem key={idx} item={item} onClose={onClose} isCollapsed={collapsed} />
+          <nav className="flex-1 px-2 py-2 overflow-y-auto sidebar-scroll">
+            {displayGroups.map((group, groupIdx) => (
+              <div key={groupIdx} className="mb-4">
+                {!collapsed && (
+                  <div className="px-2 py-1.5 mb-1">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      {group.label}
+                    </span>
+                  </div>
+                )}
+                <div className="space-y-1">
+                  {group.items.map((item, idx) => (
+                    <MenuItem key={idx} item={item} onClose={onClose} isCollapsed={collapsed} />
+                  ))}
+                </div>
+              </div>
             ))}
           </nav>
 
