@@ -214,11 +214,11 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const normalizedPhone = phone.replace(/[\s\-\(\)]/g, '').trim();
+      const normalizedEmail = (forgotEmail || '').trim().toLowerCase();
       const { ok, data } = await publicFetch('/api/auth/reset-password', {
         method: 'POST',
         body: JSON.stringify({
-          phone: normalizedPhone,
+          username: normalizedEmail,
           otp: otp.join(''),
           newPassword: newPassword,
           confirmPassword: confirmPassword,
@@ -249,15 +249,13 @@ export default function LoginPage() {
     setOtpError("");
     setOtpSuccess("");
     const normalizedEmail = (forgotEmail || '').trim().toLowerCase();
-    const normalizedPhone = phone.replace(/[\s\-\(\)]/g, '').trim();
     
     setLoading(true);
     try {
       const { ok, data } = await publicFetch('/api/auth/forgot-password', {
         method: 'POST',
         body: JSON.stringify({ 
-          email: normalizedEmail,
-          phone: normalizedPhone 
+          username: normalizedEmail
         }),
       });
 
