@@ -183,7 +183,7 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
         onClick={() => onClose()}
         className={({ isActive }) =>
           cn(
-            "flex items-center gap-2.5 px-2 py-1.5 rounded-md transition-all duration-150 text-sm font-medium",
+            "flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-150 text-base font-medium",
             "hover:bg-secondary",
             isActive
               ? "bg-primary text-primary-foreground"
@@ -192,7 +192,7 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
         }
         title={isCollapsed ? item.label : undefined}
       >
-        <item.icon className="w-4 h-4 flex-shrink-0 opacity-85" />
+        <item.icon className="w-5 h-5 flex-shrink-0 opacity-85" />
         {!isCollapsed && <span className="truncate">{item.label}</span>}
       </NavLink>
     );
@@ -214,7 +214,7 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
           <DropdownMenuTrigger asChild>
             <button
               className={cn(
-                "w-full flex items-center justify-center px-2 py-1.5 rounded-md transition-all duration-150",
+                "w-full flex items-center justify-center px-3 py-2.5 rounded-md transition-all duration-150",
                 "hover:bg-secondary",
                 hasActiveChild
                   ? "bg-primary/10 text-primary"
@@ -222,7 +222,7 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
               )}
               title={item.label}
             >
-              <item.icon className="w-4 h-4 opacity-85" />
+              <item.icon className="w-5 h-5 opacity-85" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="right" align="start" className="w-56">
@@ -248,22 +248,22 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
-            "w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded-md transition-all duration-150 text-sm font-medium",
+            "w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md transition-all duration-150 text-base font-medium",
             "hover:bg-secondary",
             hasActiveChild
               ? "bg-primary/10 text-primary"
               : "text-secondary-foreground"
           )}
         >
-          <div className="flex items-center gap-2.5">
-            <item.icon className="w-4 h-4 flex-shrink-0 opacity-85" />
+          <div className="flex items-center gap-3">
+            <item.icon className="w-5 h-5 flex-shrink-0 opacity-85" />
             <span className="truncate">{item.label}</span>
           </div>
           <motion.div
             animate={{ rotate: isOpen ? 90 : 0 }}
             transition={{ duration: 0.15 }}
           >
-            <ChevronRight className="w-3.5 h-3.5" />
+            <ChevronRight className="w-4 h-4" />
           </motion.div>
         </button>
         <AnimatePresence>
@@ -302,7 +302,7 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
       onClick={() => onClose()}
       className={({ isActive }) =>
         cn(
-          "flex items-center gap-2 px-2 py-1.5 rounded-md transition-all duration-150 text-xs",
+          "flex items-center gap-2.5 px-3 py-2 rounded-md transition-all duration-150 text-sm",
           "hover:bg-secondary",
           isActive
             ? "bg-primary text-primary-foreground"
@@ -311,7 +311,7 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
       }
       title={isCollapsed ? item.label : undefined}
     >
-      {item.icon && <item.icon className="w-3.5 h-3.5 flex-shrink-0" />}
+      {item.icon && <item.icon className="w-4 h-4 flex-shrink-0" />}
       {!isCollapsed && <span className="truncate">{item.label}</span>}
     </NavLink>
   );
@@ -410,7 +410,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-2 py-2 overflow-y-auto sidebar-scroll space-y-0.5">
+          <nav className="flex-1 px-2 py-2 overflow-y-auto sidebar-scroll space-y-1">
             {displayItems.map((item, idx) => (
               <MenuItem key={idx} item={item} onClose={onClose} isCollapsed={collapsed} />
             ))}
@@ -422,16 +422,16 @@ const Sidebar = ({ isOpen, onClose }) => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className="w-full flex items-center justify-center p-1.5 rounded-md hover:bg-secondary transition-colors"
+                    className="w-full flex items-center justify-center p-2 rounded-md hover:bg-secondary transition-colors"
                     title={user?.name || user?.username || 'User'}
                   >
                     <div className="relative">
-                      <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center">
-                        <span className="text-foreground text-xs font-semibold">
+                      <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center">
+                        <span className="text-foreground text-sm font-semibold">
                           {(user?.name || user?.username || 'U').charAt(0).toUpperCase()}
                         </span>
                       </div>
-                      <span className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 border-2 border-card rounded-full" />
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-card rounded-full" />
                     </div>
                   </button>
                 </DropdownMenuTrigger>
@@ -455,21 +455,21 @@ const Sidebar = ({ isOpen, onClose }) => {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
-                      className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-secondary transition-colors"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-secondary transition-colors"
                     >
                       <div className="relative flex-shrink-0">
-                        <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center">
-                          <span className="text-foreground text-xs font-semibold">
+                        <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center">
+                          <span className="text-foreground text-sm font-semibold">
                             {(user?.name || user?.username || 'U').charAt(0).toUpperCase()}
                           </span>
                         </div>
-                        <span className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 border-2 border-card rounded-full" />
+                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-card rounded-full" />
                       </div>
                       <div className="flex-1 min-w-0 text-left overflow-hidden">
-                        <p className="text-xs font-semibold text-foreground truncate">
+                        <p className="text-sm font-semibold text-foreground truncate">
                           {user?.name || user?.username || 'User'}
                         </p>
-                        <p className="text-[10px] text-muted-foreground truncate">
+                        <p className="text-xs text-muted-foreground truncate">
                           {user?.email || '—'}
                         </p>
                       </div>
