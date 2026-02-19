@@ -824,24 +824,58 @@ const resetPasswordWithOTP = async (req, res, next) => {
         const identifierTrimmed = String(identifier).trim();
         const identifierLower = identifierTrimmed.toLowerCase();
         const identifierDigits = identifierTrimmed.replace(/\D/g, '');
-        const normalizedPhoneForLookup = identifierDigits.length >= 9 ? normalizePhoneForLookup(identifierTrimmed) : null;
+        const isPhoneLike = identifierDigits.length >= 9;
+        
+        // Normalize phone for lookup: try multiple formats
+        const phoneVariants = [];
+        if (isPhoneLike) {
+            const digitsOnly = identifierDigits;
+            phoneVariants.push(digitsOnly); // e.g., "741525537"
+            phoneVariants.push('0' + digitsOnly); // e.g., "0741525537"
+            phoneVariants.push('94' + digitsOnly); // e.g., "94741525537"
+            phoneVariants.push('+94' + digitsOnly); // e.g., "+94741525537"
+            // Also try with leading 0/94 stripped
+            const normalized = normalizePhoneForLookup(identifierTrimmed);
+            if (normalized && normalized !== digitsOnly) {
+                phoneVariants.push(normalized);
+                phoneVariants.push('0' + normalized);
+                phoneVariants.push('94' + normalized);
+            }
+        }
 
-        // --- User lookup: username OR email OR phone (phone normalized for 0/94 prefix) ---
+        // --- User lookup: username OR email OR phone (try multiple phone formats) ---
         let users;
         try {
-            const phoneParam = normalizedPhoneForLookup || '';
-            [users] = await executeQuery(
-                `SELECT id, username, email, phone, is_active FROM users
+            // Build phone conditions
+            const phoneConditions = phoneVariants.length > 0 
+                ? phoneVariants.map(() => 'phone = ?').join(' OR ')
+                : 'FALSE';
+            const phoneParams = phoneVariants;
+            
+            const query = `SELECT id, username, email, phone, is_active FROM users
                  WHERE is_active = TRUE
                  AND (
                    username = ?
                    OR LOWER(TRIM(COALESCE(email, ''))) = ?
-                   OR (? <> '' AND REGEXP_REPLACE(REGEXP_REPLACE(COALESCE(phone, ''), '[^0-9]', '', 'g'), '^(94|0)+', '') = ?)
-                 )`,
-                [identifierTrimmed, identifierLower, phoneParam, phoneParam]
-            );
+                   ${phoneVariants.length > 0 ? `OR (${phoneConditions})` : ''}
+                 )`;
+            
+            const params = [identifierTrimmed, identifierLower, ...phoneParams];
+            
+            logger.debug('Reset password user lookup query', { 
+                ...logCtx, 
+                query: query.substring(0, 200), 
+                paramCount: params.length,
+                phoneVariants: phoneVariants.slice(0, 3)
+            });
+            
+            [users] = await executeQuery(query, params);
         } catch (dbErr) {
-            logger.error('Reset password user lookup error', { ...logCtx, message: dbErr?.message });
+            logger.error('Reset password user lookup error', { 
+                ...logCtx, 
+                message: dbErr?.message,
+                stack: dbErr?.stack 
+            });
             return res.status(500).json({
                 success: false,
                 message: 'Database error. Please try again later.'
@@ -849,7 +883,12 @@ const resetPasswordWithOTP = async (req, res, next) => {
         }
 
         if (!Array.isArray(users) || users.length === 0) {
-            logger.warn('Reset password: user not found', { ...logCtx, identifier: identifierTrimmed });
+            logger.warn('Reset password: user not found', { 
+                ...logCtx, 
+                identifier: identifierTrimmed,
+                triedPhoneVariants: phoneVariants.length,
+                isPhoneLike 
+            });
             return res.status(404).json({
                 success: false,
                 message: 'User not found'
@@ -857,14 +896,40 @@ const resetPasswordWithOTP = async (req, res, next) => {
         }
 
         const user = users[0];
-        logger.info('Reset password: user found', { ...logCtx, userId: user.id, username: user.username });
+        logger.info('Reset password: user found', { 
+            ...logCtx, 
+            userId: user.id, 
+            username: user.username,
+            userEmail: user.email,
+            userPhone: user.phone
+        });
 
-        // OTP store keys: DB phone (as stored in forgot-password), request phone, digits-only variants
+        // OTP store keys: try all possible phone formats that might have been used when storing OTP
         const dbPhoneRaw = (user.phone || '').replace(/[\s\-\(\)]/g, '').trim();
-        const requestPhoneKey = identifierDigits.length >= 9 ? identifierTrimmed.replace(/[\s\-\(\)]/g, '').trim() : null;
-        const keysToTry = [dbPhoneRaw, requestPhoneKey, normalizedPhoneForLookup, identifierDigits].filter(Boolean);
-        const uniqKeys = [...new Set(keysToTry)];
+        const requestPhoneKey = isPhoneLike ? identifierTrimmed.replace(/[\s\-\(\)]/g, '').trim() : null;
+        // Collect all possible keys: DB phone variants, request phone variants, normalized variants
+        const allKeys = [
+            dbPhoneRaw,
+            requestPhoneKey,
+            ...phoneVariants,
+            identifierDigits,
+            normalizePhoneForLookup(dbPhoneRaw),
+            normalizePhoneForLookup(requestPhoneKey || '')
+        ].filter(Boolean);
+        const uniqKeys = [...new Set(allKeys)];
+        
+        logger.debug('Reset password: trying OTP keys', { 
+            ...logCtx, 
+            userId: user.id,
+            keysCount: uniqKeys.length,
+            sampleKeys: uniqKeys.slice(0, 5)
+        });
+        
         const { stored: storedOTP, usedKey: otpKey } = getStoredOTP(otpStore, ...uniqKeys);
+        
+        if (otpKey) {
+            logger.info('Reset password: OTP found', { ...logCtx, userId: user.id, otpKey });
+        }
 
         if (!storedOTP) {
             logger.warn('Reset password: OTP not found or expired', { ...logCtx, userId: user.id });
