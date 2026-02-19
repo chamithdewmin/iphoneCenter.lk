@@ -117,8 +117,7 @@ const menuItems = [
     label: 'Warehouses',
     permission: 'products',
     children: [
-      { to: '/warehouses/add', label: 'Add Warehouse', icon: Plus },
-      { to: '/warehouses/list', label: 'Warehouse List', icon: List },
+      { to: '/warehouses', label: 'Warehouses', icon: Warehouse },
     ],
   },
   {
@@ -127,8 +126,7 @@ const menuItems = [
     label: 'Expense',
     permission: 'settings',
     children: [
-      { to: '/expense/add', label: 'Add Expense', icon: Plus },
-      { to: '/expense/list', label: 'Expense List', icon: List },
+      { to: '/expenses', label: 'Expenses', icon: TrendingDown },
     ],
   },
   {
@@ -142,8 +140,7 @@ const menuItems = [
         label: 'Customers',
         icon: Users,
         children: [
-          { to: '/people/customers/add', label: 'Add Customer', icon: Plus },
-          { to: '/people/customers/list', label: 'Customer List', icon: List },
+          { to: '/people/customers', label: 'Customers', icon: Users },
         ],
       },
       {
@@ -151,8 +148,7 @@ const menuItems = [
         label: 'Suppliers',
         icon: Building2,
         children: [
-          { to: '/people/suppliers/add', label: 'Add Supplier', icon: Plus },
-          { to: '/people/suppliers/list', label: 'Supplier List', icon: List },
+          { to: '/people/suppliers', label: 'Suppliers', icon: Building2 },
         ],
       },
     ],
@@ -163,8 +159,7 @@ const menuItems = [
     label: 'Categories',
     permission: 'products',
     children: [
-      { to: '/categories/add', label: 'Add Category', icon: FolderPlus },
-      { to: '/categories/list', label: 'Category List', icon: List },
+      { to: '/categories', label: 'Categories', icon: FolderTree },
     ],
   },
   {
@@ -206,8 +201,7 @@ const menuItems = [
     label: 'User Manage',
     permission: 'users',
     children: [
-      { to: '/users/add', label: 'Add User', icon: UserPlus },
-      { to: '/users/list', label: 'User List', icon: List },
+      { to: '/users', label: 'Users', icon: UserCog },
       { to: '/users/roles', label: 'Roles', icon: ShieldCheck },
     ],
   },

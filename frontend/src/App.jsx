@@ -6,7 +6,7 @@ import Dashboard from './pages/Dashboard';
 import POS from './pages/POS';
 import Inventory from './pages/Inventory';
 import Orders from './pages/Orders';
-import Customers from './pages/Customers';
+import CustomersPage from './pages/Customers';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Layout from './components/Layout';
@@ -25,15 +25,17 @@ import AddPurchase from './pages/trading/AddPurchase';
 // Expense
 import AddExpense from './pages/expense/AddExpense';
 import ExpenseList from './pages/expense/ExpenseList';
+import Expenses from './pages/expense/Expenses';
 
 // People - Customers
 import AddCustomer from './pages/people/customers/AddCustomer';
 import CustomerList from './pages/people/customers/CustomerList';
+import Customers from './pages/people/customers/Customers';
 
 // People - Suppliers
 import AddSupplier from './pages/people/suppliers/AddSupplier';
 import SupplierList from './pages/people/suppliers/SupplierList';
-
+import Suppliers from './pages/people/suppliers/Suppliers';
 
 // Users
 import AddUser from './pages/users/AddUser';
@@ -41,10 +43,12 @@ import UserList from './pages/users/UserList';
 import ViewUser from './pages/users/ViewUser';
 import EditUser from './pages/users/EditUser';
 import Roles from './pages/users/Roles';
+import Users from './pages/users/Users';
 
 // Categories
 import AddCategory from './pages/categories/AddCategory';
 import CategoryList from './pages/categories/CategoryList';
+import Categories from './pages/categories/Categories';
 
 // Reports
 import SaleReport from './pages/reports/SaleReport';
@@ -65,6 +69,7 @@ import ShippingChargeReport from './pages/reports/ShippingChargeReport';
 import AddWarehouse from './pages/warehouses/AddWarehouse';
 import EditWarehouse from './pages/warehouses/EditWarehouse';
 import WarehouseList from './pages/warehouses/WarehouseList';
+import Warehouses from './pages/warehouses/Warehouses';
 
 // Settings
 import GeneralSetting from './pages/settings/GeneralSetting';
@@ -122,7 +127,7 @@ function App() {
         <Route path="pos" element={<POS />} />
         <Route path="inventory" element={<Inventory />} />
         <Route path="orders" element={<Orders />} />
-        <Route path="customers" element={<Customers />} />
+        <Route path="customers" element={<CustomersPage />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
 
@@ -161,14 +166,17 @@ function App() {
         {/* Expense */}
         <Route path="expense/add" element={<AddExpense />} />
         <Route path="expense/list" element={<ExpenseList />} />
+        <Route path="expenses" element={<Expenses />} />
 
         {/* People - Customers */}
         <Route path="people/customers/add" element={<AddCustomer />} />
         <Route path="people/customers/list" element={<CustomerList />} />
+        <Route path="people/customers" element={<Customers />} />
 
         {/* People - Suppliers */}
         <Route path="people/suppliers/add" element={<AddSupplier />} />
         <Route path="people/suppliers/list" element={<SupplierList />} />
+        <Route path="people/suppliers" element={<Suppliers />} />
 
         {/* Users */}
         <Route path="users/add" element={<AddUser />} />
@@ -176,10 +184,12 @@ function App() {
         <Route path="users/view/:id" element={<ViewUser />} />
         <Route path="users/edit/:id" element={<EditUser />} />
         <Route path="users/roles" element={<Roles />} />
+        <Route path="users" element={<Users />} />
 
         {/* Categories */}
         <Route path="categories/add" element={<AddCategory />} />
         <Route path="categories/list" element={<CategoryList />} />
+        <Route path="categories" element={<Categories />} />
 
         {/* Reports */}
         <Route path="reports/sale" element={<SaleReport />} />
@@ -200,6 +210,7 @@ function App() {
         <Route path="warehouses/add" element={<AddWarehouse />} />
         <Route path="warehouses/edit/:id" element={<EditWarehouse />} />
         <Route path="warehouses/list" element={<WarehouseList />} />
+        <Route path="warehouses" element={<Warehouses />} />
 
         {/* SMS */}
         <Route path="sms/send-customer" element={<SendCustomer />} />
