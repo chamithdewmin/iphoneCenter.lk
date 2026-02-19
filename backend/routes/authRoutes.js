@@ -41,7 +41,7 @@ router.get('/profile', authenticate, authController.getProfile);
 // This avoids field name confusion (e.g., "username" vs "email")
 router.post('/forgot-password', authController.requestPasswordResetOTP);
 router.post('/reset-password', [
-    body('phone').trim().notEmpty().withMessage('Phone number is required'),
+    body('username').trim().notEmpty().withMessage('Username, email, or phone is required'),
     body('otp').trim().notEmpty().withMessage('OTP is required'),
     body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
 ], handleValidationErrors, authController.resetPasswordWithOTP);
