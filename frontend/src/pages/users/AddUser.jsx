@@ -24,8 +24,8 @@ const AddUser = () => {
     phone: '',
   });
 
-  const roles = ['admin', 'manager', 'staff'];
-  const roleNeedsWarehouse = formData.role === 'manager' || formData.role === 'staff';
+  const roles = ['admin', 'manager', 'staff', 'cashier'];
+  const roleNeedsWarehouse = formData.role === 'manager' || formData.role === 'staff' || formData.role === 'cashier';
 
   const fetchBranches = useCallback(async () => {
     const { ok, data } = await authFetch('/api/branches');

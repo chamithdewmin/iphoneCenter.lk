@@ -79,6 +79,16 @@ const register = async (req, res, next) => {
         // Hash password
         const passwordHash = await bcrypt.hash(password, 10);
 
+        // Validate role is valid enum value
+        const validRoles = ['admin', 'manager', 'cashier', 'staff'];
+        if (!validRoles.includes(role)) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: `Invalid role. Must be one of: ${validRoles.join(', ')}`
+            });
+        }
+
         // Insert user
         const [result] = await connection.execute(
             `INSERT INTO users (username, email, password_hash, full_name, role, branch_id) 
@@ -103,6 +113,23 @@ const register = async (req, res, next) => {
     } catch (error) {
         await connection.rollback();
         logger.error('Registration error:', error);
+        
+        // Check if it's an enum value error
+        if (error.message && error.message.includes('invalid input value for enum')) {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid role "${role}". The 'staff' role may not be available in your database. Please run the migration to add it, or use 'cashier' instead.`
+            });
+        }
+        
+        // Check for other common errors
+        if (error.code === '23505') { // PostgreSQL unique constraint violation
+            return res.status(409).json({
+                success: false,
+                message: 'Username or email already exists'
+            });
+        }
+        
         next(error);
     } finally {
         connection.release();

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Send, MessageSquare, Users, CheckSquare } from 'lucide-react';
-import { getStorageData } from '@/utils/storage';
+import { Send, MessageSquare, Users, CheckSquare, RefreshCw, Search } from 'lucide-react';
+import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,12 +13,30 @@ const CustomMessage = () => {
   const [selectedCustomers, setSelectedCustomers] = useState([]);
   const [message, setMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const { toast } = useToast();
 
+  const fetchCustomers = useCallback(async () => {
+    setLoading(true);
+    const { ok, data } = await authFetch('/api/customers');
+    setLoading(false);
+    if (!ok) {
+      toast({
+        title: 'Failed to load customers',
+        description: data?.message || 'Please try again',
+        variant: 'destructive',
+      });
+      setCustomers([]);
+      return;
+    }
+    const list = Array.isArray(data?.data) ? data.data : [];
+    setCustomers(list);
+  }, [toast]);
+
   useEffect(() => {
-    const loadedCustomers = getStorageData('customers', []);
-    setCustomers(loadedCustomers);
-  }, []);
+    fetchCustomers();
+  }, [fetchCustomers]);
 
   const toggleCustomer = (customerId) => {
     setSelectedCustomers(prev =>
@@ -28,7 +46,7 @@ const CustomMessage = () => {
     );
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (selectedCustomers.length === 0) {
       toast({
         title: "Validation Error",
@@ -45,18 +63,63 @@ const CustomMessage = () => {
       });
       return;
     }
-    toast({
-      title: "SMS Sent",
-      description: `Custom message sent to ${selectedCustomers.length} customer(s)`,
-    });
-    setMessage('');
-    setSelectedCustomers([]);
+
+    const selectedCustomersData = customers.filter(c => selectedCustomers.includes(c.id) && c.phone);
+    if (selectedCustomersData.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Selected customers do not have phone numbers",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to send this message to ${selectedCustomersData.length} customer(s)?`)) {
+      return;
+    }
+
+    setSending(true);
+    try {
+      const phoneNumbers = selectedCustomersData.map(c => c.phone);
+      const { ok, data } = await authFetch('/api/sms/bulk', {
+        method: 'POST',
+        body: JSON.stringify({
+          phoneNumbers,
+          message: message.trim(),
+        }),
+      });
+
+      if (!ok) {
+        toast({
+          title: "Failed to send SMS",
+          description: data?.message || "Please try again",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "SMS Sent",
+        description: data?.message || `Custom message sent to ${data?.data?.success || 0} customer(s)`,
+      });
+      setMessage('');
+      setSelectedCustomers([]);
+    } catch (error) {
+      console.error('Error sending SMS:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send SMS. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   const filteredCustomers = customers.filter(customer =>
-    customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    customer.phone.includes(searchQuery) ||
-    customer.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    (customer.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (customer.phone || '').includes(searchQuery) ||
+    (customer.email || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -78,16 +141,37 @@ const CustomMessage = () => {
           {/* Customer Selection */}
           <div className="bg-card rounded-xl border border-secondary shadow-sm">
             <div className="p-6">
-              <h2 className="text-lg font-semibold mb-4">Select Customers</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Select Customers</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={fetchCustomers}
+                  disabled={loading}
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
               <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Search customers..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
                 />
               </div>
-              <div className="max-h-96 overflow-y-auto space-y-2">
-                {filteredCustomers.map(customer => (
+              {loading ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Loading customers...
+                </div>
+              ) : filteredCustomers.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  {searchQuery ? 'No customers found' : 'No customers available'}
+                </div>
+              ) : (
+                <div className="max-h-96 overflow-y-auto space-y-2">
+                  {filteredCustomers.map(customer => (
                   <div
                     key={customer.id}
                     onClick={() => toggleCustomer(customer.id)}
@@ -107,11 +191,17 @@ const CustomMessage = () => {
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
               <div className="mt-4 pt-4 border-t border-secondary">
                 <p className="text-sm text-muted-foreground">
                   {selectedCustomers.length} of {customers.length} selected
+                  {selectedCustomers.length > 0 && (
+                    <span className="ml-2">
+                      ({customers.filter(c => selectedCustomers.includes(c.id) && c.phone).length} with phone numbers)
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
@@ -135,9 +225,18 @@ const CustomMessage = () => {
                   {message.length} characters
                 </p>
               </div>
-              <Button onClick={handleSend} className="w-full" size="lg">
-                <Send className="w-4 h-4 mr-2" />
-                Send to {selectedCustomers.length} Customer(s)
+              <Button onClick={handleSend} className="w-full" size="lg" disabled={sending || selectedCustomers.length === 0 || customers.filter(c => selectedCustomers.includes(c.id) && c.phone).length === 0}>
+                {sending ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Send to {customers.filter(c => selectedCustomers.includes(c.id) && c.phone).length} Customer(s)
+                  </>
+                )}
               </Button>
             </div>
           </div>

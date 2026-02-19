@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Send, User, Phone, MessageSquare } from 'lucide-react';
-import { getStorageData } from '@/utils/storage';
+import { Search, Send, User, Phone, MessageSquare, RefreshCw } from 'lucide-react';
+import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -14,13 +14,32 @@ const SendCustomer = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const { toast } = useToast();
 
+  const fetchCustomers = useCallback(async () => {
+    setLoading(true);
+    const { ok, data } = await authFetch('/api/customers');
+    setLoading(false);
+    if (!ok) {
+      toast({
+        title: 'Failed to load customers',
+        description: data?.message || 'Please try again',
+        variant: 'destructive',
+      });
+      setCustomers([]);
+      setFilteredCustomers([]);
+      return;
+    }
+    const list = Array.isArray(data?.data) ? data.data : [];
+    setCustomers(list);
+    setFilteredCustomers(list);
+  }, [toast]);
+
   useEffect(() => {
-    const loadedCustomers = getStorageData('customers', []);
-    setCustomers(loadedCustomers);
-    setFilteredCustomers(loadedCustomers);
-  }, []);
+    fetchCustomers();
+  }, [fetchCustomers]);
 
   useEffect(() => {
     if (searchQuery) {
@@ -35,7 +54,7 @@ const SendCustomer = () => {
     }
   }, [searchQuery, customers]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!selectedCustomer) {
       toast({
         title: "Validation Error",
@@ -52,12 +71,50 @@ const SendCustomer = () => {
       });
       return;
     }
-    toast({
-      title: "SMS Sent",
-      description: `SMS sent to ${selectedCustomer.name} (${selectedCustomer.phone})`,
-    });
-    setMessage('');
-    setSelectedCustomer(null);
+    if (!selectedCustomer.phone) {
+      toast({
+        title: "Validation Error",
+        description: "Customer does not have a phone number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSending(true);
+    try {
+      const { ok, data } = await authFetch('/api/sms/send', {
+        method: 'POST',
+        body: JSON.stringify({
+          phoneNumber: selectedCustomer.phone,
+          message: message.trim(),
+        }),
+      });
+
+      if (!ok) {
+        toast({
+          title: "Failed to send SMS",
+          description: data?.message || "Please try again",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "SMS Sent",
+        description: `SMS sent successfully to ${selectedCustomer.name} (${selectedCustomer.phone})`,
+      });
+      setMessage('');
+      setSelectedCustomer(null);
+    } catch (error) {
+      console.error('Error sending SMS:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send SMS. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -80,17 +137,36 @@ const SendCustomer = () => {
           <div className="bg-card rounded-xl border border-secondary shadow-sm">
             <div className="p-6">
               <h2 className="text-lg font-semibold mb-4">Select Customer</h2>
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  placeholder="Search customers..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+              <div className="flex items-center gap-2 mb-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    placeholder="Search customers..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchCustomers}
+                  disabled={loading}
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                </Button>
               </div>
-              <div className="max-h-96 overflow-y-auto space-y-2">
-                {filteredCustomers.map(customer => (
+              {loading ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Loading customers...
+                </div>
+              ) : filteredCustomers.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  {searchQuery ? 'No customers found' : 'No customers available'}
+                </div>
+              ) : (
+                <div className="max-h-96 overflow-y-auto space-y-2">
+                  {filteredCustomers.map(customer => (
                   <div
                     key={customer.id}
                     onClick={() => setSelectedCustomer(customer)}
@@ -110,8 +186,9 @@ const SendCustomer = () => {
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -145,9 +222,18 @@ const SendCustomer = () => {
                       {message.length} characters
                     </p>
                   </div>
-                  <Button onClick={handleSend} className="w-full">
-                    <Send className="w-4 h-4 mr-2" />
-                    Send SMS
+                  <Button onClick={handleSend} className="w-full" disabled={sending}>
+                    {sending ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Send SMS
+                      </>
+                    )}
                   </Button>
                 </>
               ) : (

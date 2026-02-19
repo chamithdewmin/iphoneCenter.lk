@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Send, Mail, Users, MessageSquare } from 'lucide-react';
-import { getStorageData } from '@/utils/storage';
+import { Send, Mail, Users, MessageSquare, RefreshCw } from 'lucide-react';
+import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,15 +11,32 @@ import { useToast } from '@/components/ui/use-toast';
 const Bulk = () => {
   const [customers, setCustomers] = useState([]);
   const [message, setMessage] = useState('');
-  const [selectedGroups, setSelectedGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const loadedCustomers = getStorageData('customers', []);
-    setCustomers(loadedCustomers);
-  }, []);
+  const fetchCustomers = useCallback(async () => {
+    setLoading(true);
+    const { ok, data } = await authFetch('/api/customers');
+    setLoading(false);
+    if (!ok) {
+      toast({
+        title: 'Failed to load customers',
+        description: data?.message || 'Please try again',
+        variant: 'destructive',
+      });
+      setCustomers([]);
+      return;
+    }
+    const list = Array.isArray(data?.data) ? data.data : [];
+    setCustomers(list);
+  }, [toast]);
 
-  const handleSend = () => {
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
+
+  const handleSend = async () => {
     if (!message.trim()) {
       toast({
         title: "Validation Error",
@@ -28,11 +45,56 @@ const Bulk = () => {
       });
       return;
     }
-    toast({
-      title: "Bulk SMS Sent",
-      description: `SMS sent to ${customers.length} customers`,
-    });
-    setMessage('');
+
+    const customersWithPhone = customers.filter(c => c.phone && c.phone.trim());
+    if (customersWithPhone.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "No customers with phone numbers found",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to send this message to ${customersWithPhone.length} customer(s)?`)) {
+      return;
+    }
+
+    setSending(true);
+    try {
+      const phoneNumbers = customersWithPhone.map(c => c.phone);
+      const { ok, data } = await authFetch('/api/sms/bulk', {
+        method: 'POST',
+        body: JSON.stringify({
+          phoneNumbers,
+          message: message.trim(),
+        }),
+      });
+
+      if (!ok) {
+        toast({
+          title: "Failed to send bulk SMS",
+          description: data?.message || "Please try again",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Bulk SMS Sent",
+        description: data?.message || `SMS sent to ${data?.data?.success || 0} customer(s)`,
+      });
+      setMessage('');
+    } catch (error) {
+      console.error('Error sending bulk SMS:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send bulk SMS. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -60,10 +122,20 @@ const Bulk = () => {
               <div className="bg-secondary/50 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-muted-foreground">Total Customers</span>
-                  <span className="font-semibold">{customers.length}</span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={fetchCustomers}
+                      disabled={loading}
+                    >
+                      <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                    </Button>
+                    <span className="font-semibold">{customers.length}</span>
+                  </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Message will be sent to all customers in the database
+                  Message will be sent to all customers with phone numbers ({customers.filter(c => c.phone).length} customers)
                 </p>
               </div>
             </div>
@@ -91,9 +163,18 @@ const Bulk = () => {
           </div>
 
           <div className="border-t border-secondary p-6 bg-secondary/30">
-            <Button onClick={handleSend} className="w-full" size="lg">
-              <Send className="w-4 h-4 mr-2" />
-              Send Bulk SMS ({customers.length} recipients)
+            <Button onClick={handleSend} className="w-full" size="lg" disabled={sending || loading || customers.filter(c => c.phone).length === 0}>
+              {sending ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Send Bulk SMS ({customers.filter(c => c.phone).length} recipients)
+                </>
+              )}
             </Button>
           </div>
         </div>

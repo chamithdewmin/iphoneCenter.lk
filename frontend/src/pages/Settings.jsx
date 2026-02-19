@@ -5,7 +5,7 @@ import { RefreshCw, Building2, DollarSign, Globe, Save, AlertTriangle, Trash2 } 
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { resetDemoData } from '@/utils/storage';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -330,6 +330,9 @@ const Settings = () => {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Reset Branch Data</DialogTitle>
+            <DialogDescription>
+              Select a branch to delete all its data, or select "All Branches" to delete everything.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
