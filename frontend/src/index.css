@@ -5,6 +5,7 @@
 @layer base {
   :root,
   .dark {
+    --sidebar-width: 240px;
     /* Background Colors */
     --background: #0c0e14;               /* Page background */
     --card: #13161e;                     /* Card background */

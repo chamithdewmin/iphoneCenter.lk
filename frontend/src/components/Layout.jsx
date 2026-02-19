@@ -19,7 +19,7 @@ const Layout = () => {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="lg:pl-64">
+      <div className="lg:pl-[var(--sidebar-width,240px)] transition-all duration-200">
         <main className="p-4 lg:p-6">
           <Outlet />
         </main>
