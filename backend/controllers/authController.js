@@ -433,33 +433,42 @@ const requestPasswordResetOTP = async (req, res, next) => {
     logger.info('Password reset OTP request received', { 
         email: req.body?.email,
         phone: req.body?.phone,
+        bodyKeys: Object.keys(req.body || {}),
         hasBody: !!req.body,
         method: req.method,
-        path: req.path
+        path: req.path,
+        contentType: req.headers['content-type']
     });
     
     try {
-        const { email, phone } = req.body;
+        const { email, phone } = req.body || {};
 
         // Validate both email and phone are provided
         if (!email || !phone) {
-            logger.warn('Password reset request missing required fields', { hasEmail: !!email, hasPhone: !!phone });
+            logger.warn('Password reset request missing required fields', { 
+                hasEmail: !!email, 
+                hasPhone: !!phone,
+                emailValue: email,
+                phoneValue: phone,
+                body: req.body
+            });
             return res.status(400).json({
                 success: false,
                 message: 'Email and phone number are both required'
             });
         }
 
-        // Normalize email (trim and lowercase)
+        // Normalize email (trim and lowercase) - allow username or email
         const normalizedEmail = (email || '').trim().toLowerCase();
         
         // Normalize phone number (remove spaces, dashes, etc.)
         const normalizedPhone = phone.replace(/[\s\-\(\)]/g, '').trim();
         
-        if (!normalizedEmail || !normalizedEmail.includes('@')) {
+        // Email can be username or email format - don't require @ symbol
+        if (!normalizedEmail || normalizedEmail.length < 3) {
             return res.status(400).json({
                 success: false,
-                message: 'Invalid email format'
+                message: 'Email or username must be at least 3 characters'
             });
         }
         

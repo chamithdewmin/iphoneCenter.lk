@@ -103,10 +103,10 @@ export default function LoginPage() {
     setOtpError("");
     setOtpSuccess("");
     
-    // Validate email
+    // Validate email/username (allow both)
     const normalizedEmail = (forgotEmail || '').trim().toLowerCase();
-    if (!normalizedEmail || !normalizedEmail.includes('@')) {
-      setOtpError('Please enter a valid email address');
+    if (!normalizedEmail || normalizedEmail.length < 3) {
+      setOtpError('Please enter your email or username (at least 3 characters)');
       return;
     }
     
@@ -137,7 +137,11 @@ export default function LoginPage() {
           setCountdown(c => { if(c<=1){clearInterval(t);return 0;} return c-1; });
         }, 1000);
       } else {
-        setOtpError(data?.message || 'Failed to send OTP. Please verify your email and phone number are correct.');
+        // Show validation errors if available, otherwise show general message
+        const errorMsg = data?.errors && data.errors.length > 0 
+          ? data.errors.map(e => e.message || e.msg).join('. ')
+          : data?.message || 'Failed to send OTP. Please verify your email and phone number are correct.';
+        setOtpError(errorMsg);
       }
     } catch (err) {
       setOtpError('An error occurred. Please try again.');
@@ -333,127 +337,8 @@ export default function LoginPage() {
             <span style={{fontSize:20,fontWeight:600,letterSpacing:"0.05em"}}>iPhone Center</span>
           </div>
 
-          {/* Center Hero Text - POS System */}
-          <div style={{
-            flex:1, display:"flex", flexDirection:"column",
-            alignItems:"center", justifyContent:"center",
-            zIndex:1, textAlign:"center", padding:"0 24px",
-          }}>
-            {/* Eyebrow badge */}
-            <div style={{
-              display:"inline-flex", alignItems:"center", gap:8,
-              background:"rgba(255,120,40,0.1)",
-              border:"1px solid rgba(255,120,40,0.25)",
-              borderRadius:20, padding:"6px 16px", marginBottom:28,
-            }}>
-              <div style={{width:6,height:6,borderRadius:"50%",background:"#ff6a1a",boxShadow:"0 0 8px #ff6a1a"}}/>
-              <span style={{color:"#ff9a50",fontSize:11,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase"}}>
-                Point of Sale System
-              </span>
-            </div>
-
-            {/* Main headline */}
-            <h2 style={{
-              color:"#fff", fontSize:38, fontWeight:700,
-              lineHeight:1.18, letterSpacing:"-0.03em", marginBottom:10,
-            }}>
-              Manage Sales,
-            </h2>
-            <h2 style={{
-              fontSize:38, fontWeight:700, lineHeight:1.18,
-              letterSpacing:"-0.03em", marginBottom:24,
-              background:"linear-gradient(135deg,#ff8c42 0%,#ffb347 50%,#ff6a1a 100%)",
-              WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text",
-            }}>
-              Smarter & Faster.
-            </h2>
-
-            {/* Subtitle */}
-            <p style={{
-              color:"rgba(255,255,255,0.48)", fontSize:14,
-              lineHeight:1.8, maxWidth:310, marginBottom:34,
-            }}>
-              Your all-in-one retail dashboard for processing sales, tracking inventory, managing staff, and generating instant reports — built for iPhone Center.
-            </p>
-
-            {/* POS Feature pills */}
-            <div style={{display:"flex", flexWrap:"wrap", gap:9, justifyContent:"center", marginBottom:34}}>
-              {[
-                {icon:"receipt",  label:"Sales Processing"},
-                {icon:"box",      label:"Stock Control"},
-                {icon:"users",    label:"Staff Management"},
-                {icon:"chart",    label:"Live Reports"},
-                {icon:"refresh",  label:"Returns & Refunds"},
-                {icon:"shield",   label:"Role-Based Access"},
-              ].map(({icon,label}) => (
-                <div key={label} style={{
-                  display:"flex", alignItems:"center", gap:7,
-                  background:"rgba(255,255,255,0.04)",
-                  border:"1px solid rgba(255,255,255,0.09)",
-                  borderRadius:30, padding:"7px 13px",
-                }}>
-                  <Icon name={icon} size={13} color="rgba(255,150,60,0.9)"/>
-                  <span style={{color:"rgba(255,255,255,0.65)",fontSize:11,fontWeight:500}}>{label}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Divider */}
-            <div style={{
-              width:48, height:2,
-              background:"linear-gradient(90deg,transparent,rgba(255,120,40,0.55),transparent)",
-              borderRadius:2, marginBottom:28,
-            }}/>
-
-            {/* POS Stats */}
-            <div style={{display:"flex", gap:28}}>
-              {[
-                {icon:"sync",    num:"Real-Time", label:"Inventory Sync"},
-                {icon:"staff",   num:"Multi",     label:"Staff Accounts"},
-                {icon:"printer", num:"Instant",   label:"Receipt Print"},
-              ].map(({icon,num,label}) => (
-                <div key={label} style={{textAlign:"center"}}>
-                  <div style={{display:"flex",justifyContent:"center",marginBottom:6}}>
-                    <div style={{
-                      width:34,height:34,borderRadius:10,
-                      background:"rgba(255,120,40,0.1)",
-                      border:"1px solid rgba(255,120,40,0.2)",
-                      display:"flex",alignItems:"center",justifyContent:"center",
-                    }}>
-                      <Icon name={icon} size={16} color="#ff8c42"/>
-                    </div>
-                  </div>
-                  <div style={{
-                    fontSize:13, fontWeight:700,
-                    background:"linear-gradient(135deg,#ff8c42,#ffb347)",
-                    WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text",
-                  }}>{num}</div>
-                  <div style={{color:"rgba(255,255,255,0.32)",fontSize:10,marginTop:2,letterSpacing:"0.02em"}}>{label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Bottom warning note */}
-            <div style={{
-              marginTop:28, display:"flex", alignItems:"center", gap:10,
-              background:"rgba(255,100,30,0.07)",
-              border:"1px solid rgba(255,100,30,0.18)",
-              borderRadius:12, padding:"11px 16px",
-            }}>
-              <div style={{
-                width:30,height:30,borderRadius:8,flexShrink:0,
-                background:"rgba(255,100,30,0.12)",
-                border:"1px solid rgba(255,100,30,0.2)",
-                display:"flex",alignItems:"center",justifyContent:"center",
-              }}>
-                <Icon name="lock" size={14} color="#ff8040"/>
-              </div>
-              <span style={{color:"rgba(255,255,255,0.4)",fontSize:11,lineHeight:1.6}}>
-                Authorized staff only. All sessions are<br/>logged and monitored for security.
-              </span>
-            </div>
-          </div>
-
+          {/* Empty space */}
+          <div style={{flex:1}}></div>
 
           {/* Tagline */}
           <div style={{zIndex:1}}>

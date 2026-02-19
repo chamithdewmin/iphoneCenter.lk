@@ -38,8 +38,18 @@ router.get('/profile', authenticate, authController.getProfile);
 
 // Password reset routes (no authentication required)
 router.post('/forgot-password', [
-    body('email').trim().notEmpty().withMessage('Email or username is required'),
-    body('phone').trim().notEmpty().withMessage('Phone number is required')
+    body('email')
+        .trim()
+        .notEmpty()
+        .withMessage('Email or username is required')
+        .isLength({ min: 3 })
+        .withMessage('Email or username must be at least 3 characters'),
+    body('phone')
+        .trim()
+        .notEmpty()
+        .withMessage('Phone number is required')
+        .isLength({ min: 9 })
+        .withMessage('Phone number must be at least 9 digits')
 ], handleValidationErrors, authController.requestPasswordResetOTP);
 router.post('/reset-password', [
     body('phone').trim().notEmpty().withMessage('Phone number is required'),
