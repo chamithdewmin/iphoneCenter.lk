@@ -39,8 +39,6 @@ import Suppliers from './pages/people/suppliers/Suppliers';
 // Users
 import AddUser from './pages/users/AddUser';
 import UserList from './pages/users/UserList';
-import ViewUser from './pages/users/ViewUser';
-import EditUser from './pages/users/EditUser';
 import Users from './pages/users/Users';
 
 // Categories
@@ -65,7 +63,6 @@ import ShippingChargeReport from './pages/reports/ShippingChargeReport';
 
 // Warehouses
 import AddWarehouse from './pages/warehouses/AddWarehouse';
-import EditWarehouse from './pages/warehouses/EditWarehouse';
 import WarehouseList from './pages/warehouses/WarehouseList';
 import Warehouses from './pages/warehouses/Warehouses';
 
@@ -179,8 +176,6 @@ function App() {
         {/* Users */}
         <Route path="users/add" element={<AddUser />} />
         <Route path="users/list" element={<UserList />} />
-        <Route path="users/view/:id" element={<ViewUser />} />
-        <Route path="users/edit/:id" element={<EditUser />} />
         <Route path="users" element={<Users />} />
 
         {/* Categories */}
@@ -205,7 +200,6 @@ function App() {
 
         {/* Warehouses */}
         <Route path="warehouses/add" element={<AddWarehouse />} />
-        <Route path="warehouses/edit/:id" element={<EditWarehouse />} />
         <Route path="warehouses/list" element={<WarehouseList />} />
         <Route path="warehouses" element={<Warehouses />} />
 

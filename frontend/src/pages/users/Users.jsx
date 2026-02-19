@@ -15,9 +15,10 @@ import {
   Loader2,
   UserPlus,
   Trash2,
-  Pencil
+  Pencil,
+  Calendar,
+  User
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
 import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -34,13 +35,16 @@ import {
 
 const Users = () => {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loadingUser, setLoadingUser] = useState(false);
   const [selected, setSelected] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -270,12 +274,47 @@ const Users = () => {
     }
   };
 
-  const handleEdit = (user) => {
-    navigate(`/users/edit/${user.id}`);
+  const handleEdit = async (user) => {
+    setLoadingUser(true);
+    const { ok, data } = await authFetch(`/api/users/${user.id}`);
+    setLoadingUser(false);
+    if (ok && data?.data) {
+      const u = data.data;
+      setFormData({
+        username: u.username || '',
+        name: u.full_name || '',
+        email: u.email || '',
+        password: '',
+        confirmPassword: '',
+        role: u.role || 'staff',
+        branchId: u.branch_id || '',
+        phone: u.phone || '',
+      });
+      setSelectedUser(u);
+      setIsEditModalOpen(true);
+    } else {
+      toast({
+        title: 'Error',
+        description: data?.message || 'Failed to load user',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const handleView = (user) => {
-    navigate(`/users/view/${user.id}`);
+  const handleView = async (user) => {
+    setLoadingUser(true);
+    const { ok, data } = await authFetch(`/api/users/${user.id}`);
+    setLoadingUser(false);
+    if (ok && data?.data) {
+      setSelectedUser(data.data);
+      setIsViewModalOpen(true);
+    } else {
+      toast({
+        title: 'Error',
+        description: data?.message || 'Failed to load user',
+        variant: 'destructive',
+      });
+    }
   };
 
   const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -550,6 +589,320 @@ const Users = () => {
                 </Button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* View User Modal */}
+        <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>View User</DialogTitle>
+              <DialogDescription>
+                User details
+              </DialogDescription>
+            </DialogHeader>
+            {loadingUser ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : selectedUser ? (
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/70 rounded-full flex items-center justify-center text-white font-bold text-2xl">
+                    {(selectedUser.full_name || selectedUser.username || 'U').charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">{selectedUser.full_name || selectedUser.username || 'Unknown'}</h2>
+                    <p className="text-muted-foreground">@{selectedUser.username} · ID: {selectedUser.id}</p>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                    <Mail className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Email</p>
+                      <p className="font-medium">{selectedUser.email || '—'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                    <Shield className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Role</p>
+                      {getRoleBadge(selectedUser.role)}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                    <User className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Status</p>
+                      <p className="font-medium">{selectedUser.is_active !== false ? 'Active' : 'Inactive'}</p>
+                    </div>
+                  </div>
+                  {selectedUser.last_login && (
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                      <Calendar className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Last login</p>
+                        <p className="font-medium">{new Date(selectedUser.last_login).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <Button variant="outline" onClick={() => setIsViewModalOpen(false)}>
+                    Close
+                  </Button>
+                  <Button onClick={() => {
+                    setIsViewModalOpen(false);
+                    handleEdit(selectedUser);
+                  }}>
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Edit User
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-destructive">User not found</p>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit User Modal */}
+        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+              <DialogDescription>
+                Update user account details
+              </DialogDescription>
+            </DialogHeader>
+            {loadingUser ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (!formData.username?.trim() || !formData.name?.trim() || !formData.email?.trim()) {
+                  toast({
+                    title: 'Validation Error',
+                    description: 'Username, Full Name, and Email are required',
+                    variant: 'destructive',
+                  });
+                  return;
+                }
+                if (formData.password && formData.password.length < 6) {
+                  toast({
+                    title: 'Validation Error',
+                    description: 'Password must be at least 6 characters',
+                    variant: 'destructive',
+                  });
+                  return;
+                }
+                if (formData.password !== formData.confirmPassword) {
+                  toast({
+                    title: 'Validation Error',
+                    description: 'Passwords do not match',
+                    variant: 'destructive',
+                  });
+                  return;
+                }
+
+                setSaving(true);
+                const body = {
+                  username: formData.username.trim(),
+                  email: formData.email.trim(),
+                  fullName: formData.name.trim(),
+                  role: formData.role,
+                  branchId: formData.branchId || null,
+                  phone: formData.phone || '',
+                };
+                if (formData.password?.trim()) body.password = formData.password;
+
+                const { ok, status, data } = await authFetch(`/api/users/${selectedUser.id}`, {
+                  method: 'PUT',
+                  body: JSON.stringify(body),
+                });
+                setSaving(false);
+
+                if (!ok) {
+                  toast({
+                    title: 'Update failed',
+                    description: data?.message || (status === 401 ? 'Please log in again' : 'Please try again'),
+                    variant: 'destructive',
+                  });
+                  return;
+                }
+
+                toast({ title: 'User updated', description: 'Changes have been saved.' });
+                setIsEditModalOpen(false);
+                setFormData({
+                  username: '',
+                  name: '',
+                  email: '',
+                  password: '',
+                  confirmPassword: '',
+                  role: 'staff',
+                  branchId: '',
+                  phone: '',
+                });
+                setSelectedUser(null);
+                fetchUsers();
+              }} className="space-y-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <UserPlus className="w-5 h-5 text-primary" />
+                    <h2 className="text-xl font-semibold">User Information</h2>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="edit-username">Username *</Label>
+                      <Input
+                        id="edit-username"
+                        name="username"
+                        value={formData.username}
+                        onChange={handleChange}
+                        placeholder="johndoe"
+                        className="mt-1"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-name">Full Name *</Label>
+                      <Input
+                        id="edit-name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        placeholder="John Doe"
+                        className="mt-1"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-email">Email Address *</Label>
+                      <Input
+                        id="edit-email"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        placeholder="user@example.com"
+                        className="mt-1"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-phone">Phone Number</Label>
+                      <Input
+                        id="edit-phone"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        placeholder="+94 77 123 4567"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-role">Role *</Label>
+                      <select
+                        id="edit-role"
+                        name="role"
+                        value={formData.role}
+                        onChange={handleChange}
+                        className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                        required
+                      >
+                        {roles.map((role) => (
+                          <option key={role} value={role}>
+                            {role.charAt(0).toUpperCase() + role.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {roleNeedsWarehouse && (
+                      <div>
+                        <Label htmlFor="edit-branchId">Branch/Warehouse</Label>
+                        <select
+                          id="edit-branchId"
+                          name="branchId"
+                          value={formData.branchId}
+                          onChange={handleChange}
+                          className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                        >
+                          <option value="">Select branch</option>
+                          {branches.map((branch) => (
+                            <option key={branch.id} value={branch.id}>
+                              {branch.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    <div>
+                      <Label htmlFor="edit-password">New Password (leave blank to keep current)</Label>
+                      <Input
+                        id="edit-password"
+                        name="password"
+                        type="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        placeholder="Enter new password"
+                        className="mt-1"
+                      />
+                    </div>
+                    {formData.password && (
+                      <div>
+                        <Label htmlFor="edit-confirmPassword">Confirm New Password</Label>
+                        <Input
+                          id="edit-confirmPassword"
+                          name="confirmPassword"
+                          type="password"
+                          value={formData.confirmPassword}
+                          onChange={handleChange}
+                          placeholder="Confirm new password"
+                          className="mt-1"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <Button type="button" variant="outline" onClick={() => {
+                    setIsEditModalOpen(false);
+                    setFormData({
+                      username: '',
+                      name: '',
+                      email: '',
+                      password: '',
+                      confirmPassword: '',
+                      role: 'staff',
+                      branchId: '',
+                      phone: '',
+                    });
+                    setSelectedUser(null);
+                  }}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={saving}>
+                    {saving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Save Changes
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
           </DialogContent>
         </Dialog>
       </div>

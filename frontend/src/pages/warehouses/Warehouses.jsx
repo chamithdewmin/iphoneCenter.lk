@@ -8,6 +8,8 @@ import {
   Pencil,
   MapPin,
   Phone,
+  Mail,
+  Eye,
   Loader2,
   Save,
   X
@@ -32,6 +34,10 @@ const Warehouses = () => {
   const { toast } = useToast();
   const { isAdmin, selectedBranchId } = useBranchFilter();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedWarehouse, setSelectedWarehouse] = useState(null);
+  const [loadingItem, setLoadingItem] = useState(false);
   const [warehouses, setWarehouses] = useState([]);
   const [filteredWarehouses, setFilteredWarehouses] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,6 +55,7 @@ const Warehouses = () => {
     phone: '',
     email: '',
     manager: '',
+    status: 'active',
   });
 
   const fetchBranches = useCallback(async (isRetry = false) => {
@@ -175,8 +182,104 @@ const Warehouses = () => {
     }
   };
 
-  const handleEdit = (warehouse) => {
-    window.location.href = `/warehouses/edit/${warehouse.id}`;
+  const handleView = async (warehouse) => {
+    setLoadingItem(true);
+    const { ok, data } = await authFetch(`/api/branches/${warehouse.id}`);
+    setLoadingItem(false);
+    if (ok && data?.data) {
+      setSelectedWarehouse(data.data);
+      setIsViewModalOpen(true);
+    } else {
+      toast({
+        title: 'Error',
+        description: data?.message || 'Failed to load warehouse',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleEdit = async (warehouse) => {
+    setLoadingItem(true);
+    const { ok, data } = await authFetch(`/api/branches/${warehouse.id}`);
+    setLoadingItem(false);
+    if (ok && data?.data) {
+      const b = data.data;
+      const addressParts = (b.address || '').split(',').map((s) => s.trim());
+      setFormData({
+        name: b.name || '',
+        code: b.code || '',
+        address: addressParts[0] || '',
+        city: addressParts[1] || '',
+        postalCode: addressParts[2] || '',
+        phone: b.phone || '',
+        email: b.email || '',
+        manager: '',
+        status: b.is_active !== false ? 'active' : 'inactive',
+      });
+      setSelectedWarehouse(b);
+      setIsEditModalOpen(true);
+    } else {
+      toast({
+        title: 'Error',
+        description: data?.message || 'Failed to load warehouse',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    if (!formData.name?.trim() || !formData.code?.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fill in name and code',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSaving(true);
+    const fullAddress = [formData.address, formData.city, formData.postalCode].filter(Boolean).join(', ');
+    const { ok, data } = await authFetch(`/api/branches/${selectedWarehouse.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        name: formData.name.trim(),
+        code: formData.code.trim().toUpperCase(),
+        address: fullAddress || null,
+        phone: formData.phone || null,
+        email: formData.email || null,
+        isActive: formData.status === 'active',
+      }),
+    });
+    setSaving(false);
+
+    if (!ok) {
+      toast({
+        title: 'Could not update warehouse',
+        description: data?.message || 'Please try again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({
+      title: 'Warehouse Updated',
+      description: `${formData.name} has been updated`,
+    });
+    setIsEditModalOpen(false);
+    setSelectedWarehouse(null);
+    setFormData({
+      name: '',
+      code: '',
+      address: '',
+      city: '',
+      postalCode: '',
+      phone: '',
+      email: '',
+      manager: '',
+      status: 'active',
+    });
+    fetchBranches();
   };
 
   const paginatedWarehouses = filteredWarehouses.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -294,6 +397,7 @@ const Warehouses = () => {
             onSelect={handleSelect}
             onSelectAll={handleSelectAll}
             onEdit={handleEdit}
+            onView={handleView}
             loading={loading}
             emptyMessage={warehouses.length === 0 
               ? "Get started by adding your first warehouse"
@@ -440,6 +544,261 @@ const Warehouses = () => {
                 </Button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* View Warehouse Modal */}
+        <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>View Warehouse</DialogTitle>
+              <DialogDescription>
+                Warehouse details
+              </DialogDescription>
+            </DialogHeader>
+            {loadingItem ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : selectedWarehouse ? (
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/70 rounded-full flex items-center justify-center text-white">
+                    <Warehouse className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">{selectedWarehouse.name || 'Unknown'}</h2>
+                    <p className="text-muted-foreground font-mono">Code: {selectedWarehouse.code || '—'} · ID: {selectedWarehouse.id}</p>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                    <MapPin className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Address</p>
+                      <p className="font-medium">{selectedWarehouse.address || '—'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                    <Phone className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Phone</p>
+                      <p className="font-medium">{selectedWarehouse.phone || '—'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                    <Mail className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Email</p>
+                      <p className="font-medium">{selectedWarehouse.email || '—'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                    <Warehouse className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Status</p>
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        selectedWarehouse.is_active !== false
+                          ? 'bg-green-500/20 text-green-600 dark:text-green-400'
+                          : 'bg-gray-500/20 text-gray-600 dark:text-gray-400'
+                      }`}>
+                        {selectedWarehouse.is_active !== false ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <Button variant="outline" onClick={() => setIsViewModalOpen(false)}>
+                    Close
+                  </Button>
+                  <Button onClick={() => {
+                    setIsViewModalOpen(false);
+                    handleEdit(selectedWarehouse);
+                  }}>
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Edit Warehouse
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-destructive">Warehouse not found</p>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Warehouse Modal */}
+        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Warehouse</DialogTitle>
+              <DialogDescription>
+                Update warehouse details
+              </DialogDescription>
+            </DialogHeader>
+            {loadingItem ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <form onSubmit={handleUpdate} className="space-y-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Warehouse className="w-5 h-5 text-primary" />
+                    <h2 className="text-xl font-semibold">Warehouse Information</h2>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="edit-name">Warehouse Name *</Label>
+                      <Input
+                        id="edit-name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        placeholder="Main Warehouse"
+                        className="mt-1"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-code">Warehouse Code *</Label>
+                      <Input
+                        id="edit-code"
+                        name="code"
+                        value={formData.code}
+                        onChange={handleChange}
+                        placeholder="WH-001"
+                        className="mt-1"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-manager">Manager Name</Label>
+                      <Input
+                        id="edit-manager"
+                        name="manager"
+                        value={formData.manager}
+                        onChange={handleChange}
+                        placeholder="Manager name"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-phone">Phone Number</Label>
+                      <Input
+                        id="edit-phone"
+                        name="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        placeholder="0771234567"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-email">Email</Label>
+                      <Input
+                        id="edit-email"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        placeholder="warehouse@example.com"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-status">Status</Label>
+                      <select
+                        id="edit-status"
+                        name="status"
+                        value={formData.status}
+                        onChange={handleChange}
+                        className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-secondary pt-6">
+                  <h2 className="text-xl font-semibold mb-4">Address Information</h2>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="edit-address">Street Address</Label>
+                      <Input
+                        id="edit-address"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleChange}
+                        placeholder="123 Warehouse Street"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="edit-city">City</Label>
+                        <Input
+                          id="edit-city"
+                          name="city"
+                          value={formData.city}
+                          onChange={handleChange}
+                          placeholder="Colombo"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-postalCode">Postal Code</Label>
+                        <Input
+                          id="edit-postalCode"
+                          name="postalCode"
+                          value={formData.postalCode}
+                          onChange={handleChange}
+                          placeholder="00100"
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <Button type="button" variant="outline" onClick={() => {
+                    setIsEditModalOpen(false);
+                    setSelectedWarehouse(null);
+                    setFormData({
+                      name: '',
+                      code: '',
+                      address: '',
+                      city: '',
+                      postalCode: '',
+                      phone: '',
+                      email: '',
+                      manager: '',
+                      status: 'active',
+                    });
+                  }}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={saving}>
+                    {saving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Save Changes
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
           </DialogContent>
         </Dialog>
       </div>

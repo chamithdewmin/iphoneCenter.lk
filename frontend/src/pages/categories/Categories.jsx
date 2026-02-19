@@ -208,27 +208,28 @@ const Categories = () => {
       </Helmet>
 
       <div className="space-y-4">
+        {/* Action Buttons - Top Right */}
+        <div className="flex items-center justify-end gap-3">
+          <Button
+            onClick={() => setIsAddModalOpen(true)}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Category
+          </Button>
+          <Button
+            className="flex items-center gap-2 bg-primary text-primary-foreground"
+          >
+            <List className="w-4 h-4" />
+            Category List
+          </Button>
+          <Button variant="outline" size="sm" onClick={fetchCategories} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+        
         <div className="space-y-4">
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3 px-4">
-            <Button
-              onClick={() => setIsAddModalOpen(true)}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add Category
-            </Button>
-            <Button
-              className="flex items-center gap-2 bg-primary text-primary-foreground"
-            >
-              <List className="w-4 h-4" />
-              Category List
-            </Button>
-            <Button variant="outline" size="sm" onClick={fetchCategories} disabled={loading}>
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
 
           {/* Search */}
           <div className="bg-card rounded-xl p-4 border border-secondary shadow-sm px-4">

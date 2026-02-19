@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
+import { motion } from 'framer-motion';
 import { 
   FileText, 
   Plus, 
@@ -14,7 +15,11 @@ import {
   Save,
   X,
   Minus,
-  Loader2
+  Loader2,
+  Pencil,
+  Mail,
+  Phone,
+  MapPin
 } from 'lucide-react';
 import { getStorageData, setStorageData } from '@/utils/storage';
 import { Input } from '@/components/ui/input';
@@ -33,6 +38,10 @@ import {
 const Orders = () => {
   const { toast } = useToast();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [loadingItem, setLoadingItem] = useState(false);
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -270,11 +279,106 @@ const Orders = () => {
     }
   };
 
-  const handleView = (order) => {
+  const handleView = async (order) => {
+    setLoadingItem(true);
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const foundOrder = orders.find(o => o.id === order.id);
+    setLoadingItem(false);
+    if (foundOrder) {
+      setSelectedOrder(foundOrder);
+      setIsViewModalOpen(true);
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Failed to load order',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleEdit = async (order) => {
+    setLoadingItem(true);
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const foundOrder = orders.find(o => o.id === order.id);
+    setLoadingItem(false);
+    if (foundOrder) {
+      setSelectedOrder(foundOrder);
+      setCustomerDetails({
+        name: foundOrder.customer?.name || '',
+        phone: foundOrder.customer?.phone || '',
+        email: foundOrder.customer?.email || '',
+        address: foundOrder.customer?.address || '',
+      });
+      setOrderItems(foundOrder.items || []);
+      setAdvancePayment(foundOrder.advancePayment || 0);
+      setIsEditModalOpen(true);
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Failed to load order',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleUpdate = () => {
+    if (!customerDetails.name || !customerDetails.phone) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in customer name and phone number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (orderItems.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please add at least one product to the order",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaving(true);
+    const subtotal = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const dueAmount = Math.max(0, subtotal - advancePayment);
+
+    const updatedOrder = {
+      ...selectedOrder,
+      customer: customerDetails,
+      items: orderItems.map(item => ({
+        id: item.id,
+        name: item.model || item.brand || item.name,
+        price: item.price,
+        quantity: item.quantity,
+        total: item.price * item.quantity,
+      })),
+      subtotal,
+      advancePayment: parseFloat(advancePayment) || 0,
+      dueAmount,
+      status: dueAmount > 0 ? 'pending' : 'completed',
+    };
+
+    const updatedOrders = orders.map(o => 
+      o.id === selectedOrder.id ? updatedOrder : o
+    );
+    setOrders(updatedOrders);
+    setStorageData('perOrders', updatedOrders);
+    setSaving(false);
+
     toast({
-      title: "View Order",
-      description: `Viewing details for order ${order.id}`,
+      title: "Order Updated",
+      description: `Order ${updatedOrder.id} has been updated successfully`,
     });
+
+    setIsEditModalOpen(false);
+    setSelectedOrder(null);
+    setCustomerDetails({ name: '', phone: '', email: '', address: '' });
+    setOrderItems([]);
+    setAdvancePayment(0);
   };
 
   const handleDelete = (order) => {
@@ -347,8 +451,8 @@ const Orders = () => {
       </Helmet>
 
       <div className="space-y-4">
-        {/* Action Buttons */}
-        <div className="flex items-center gap-3 px-4">
+        {/* Action Buttons - Top Right */}
+        <div className="flex items-center justify-end gap-3">
           <Button
             onClick={() => setIsAddModalOpen(true)}
             variant="outline"
@@ -400,6 +504,7 @@ const Orders = () => {
             onSelect={handleSelect}
             onSelectAll={handleSelectAll}
             onView={handleView}
+            onEdit={handleEdit}
             onDelete={handleDelete}
             loading={false}
             emptyMessage={orders.length === 0 
@@ -666,6 +771,303 @@ const Orders = () => {
                 </div>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* View Order Modal */}
+        <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>View Order</DialogTitle>
+              <DialogDescription>
+                Order details
+              </DialogDescription>
+            </DialogHeader>
+            {loadingItem ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : selectedOrder ? (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold font-mono">{selectedOrder.id}</h2>
+                    <p className="text-muted-foreground">{formatDate(selectedOrder.createdAt)}</p>
+                  </div>
+                  {getStatusBadge(selectedOrder.status)}
+                </div>
+
+                <div className="border-t border-secondary pt-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <User className="w-5 h-5 text-primary" />
+                    Customer Information
+                  </h3>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                      <User className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Name</p>
+                        <p className="font-medium">{selectedOrder.customer?.name || '—'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                      <Phone className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Phone</p>
+                        <p className="font-medium">{selectedOrder.customer?.phone || '—'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                      <Mail className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Email</p>
+                        <p className="font-medium">{selectedOrder.customer?.email || '—'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                      <MapPin className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Address</p>
+                        <p className="font-medium">{selectedOrder.customer?.address || '—'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-secondary pt-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Package className="w-5 h-5 text-primary" />
+                    Order Items ({selectedOrder.items?.length || 0})
+                  </h3>
+                  <div className="space-y-2">
+                    {selectedOrder.items?.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 border border-secondary rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-medium">{item.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            LKR {item.price?.toLocaleString()} × {item.quantity} = LKR {(item.price * item.quantity).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-secondary pt-6">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Subtotal:</span>
+                      <span className="font-semibold">LKR {selectedOrder.subtotal?.toLocaleString() || '0'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Advance Payment:</span>
+                      <span className="font-semibold">LKR {selectedOrder.advancePayment?.toLocaleString() || '0'}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <span className="text-lg font-semibold">Due Amount:</span>
+                      <span className={`text-lg font-bold ${selectedOrder.dueAmount > 0 ? 'text-primary' : 'text-green-600 dark:text-green-400'}`}>
+                        LKR {selectedOrder.dueAmount?.toLocaleString() || '0'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <Button variant="outline" onClick={() => setIsViewModalOpen(false)}>
+                    Close
+                  </Button>
+                  <Button onClick={() => {
+                    setIsViewModalOpen(false);
+                    handleEdit(selectedOrder);
+                  }}>
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Edit Order
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-destructive">Order not found</p>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Order Modal */}
+        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Order</DialogTitle>
+              <DialogDescription>
+                Update order details
+              </DialogDescription>
+            </DialogHeader>
+            {loadingItem ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Left Column - Customer & Products */}
+                  <div className="lg:col-span-2 space-y-6">
+                    {/* Customer Details */}
+                    <div className="bg-card rounded-lg p-6 border border-secondary">
+                      <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <User className="w-5 h-5 text-primary" />
+                        Customer Details
+                      </h2>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="edit-customerName">Name *</Label>
+                            <Input
+                              id="edit-customerName"
+                              value={customerDetails.name}
+                              onChange={(e) => setCustomerDetails({ ...customerDetails, name: e.target.value })}
+                              placeholder="Customer name"
+                              className="mt-1"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="edit-customerPhone">Phone *</Label>
+                            <Input
+                              id="edit-customerPhone"
+                              value={customerDetails.phone}
+                              onChange={(e) => setCustomerDetails({ ...customerDetails, phone: e.target.value })}
+                              placeholder="Phone number"
+                              className="mt-1"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="edit-customerEmail">Email</Label>
+                            <Input
+                              id="edit-customerEmail"
+                              type="email"
+                              value={customerDetails.email}
+                              onChange={(e) => setCustomerDetails({ ...customerDetails, email: e.target.value })}
+                              placeholder="Email address"
+                              className="mt-1"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="edit-customerAddress">Address</Label>
+                            <Input
+                              id="edit-customerAddress"
+                              value={customerDetails.address}
+                              onChange={(e) => setCustomerDetails({ ...customerDetails, address: e.target.value })}
+                              placeholder="Address"
+                              className="mt-1"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Order Items */}
+                    {orderItems.length > 0 && (
+                      <div className="bg-card rounded-lg p-6 border border-secondary">
+                        <h2 className="text-xl font-semibold mb-4">Order Items</h2>
+                        <div className="space-y-3">
+                          {orderItems.map(item => (
+                            <div key={item.id} className="flex items-center justify-between p-3 border border-secondary rounded-lg">
+                              <div className="flex-1">
+                                <p className="font-medium">{item.model || item.brand || item.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  LKR {item.price.toLocaleString()} × {item.quantity} = LKR {(item.price * item.quantity).toLocaleString()}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                                >
+                                  <Minus className="w-4 h-4" />
+                                </Button>
+                                <span className="w-12 text-center">{item.quantity}</span>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                                >
+                                  <Plus className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleRemoveProduct(item.id)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Column - Summary */}
+                  <div className="space-y-6">
+                    <div className="bg-card rounded-lg p-6 border border-secondary sticky top-6">
+                      <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+                      <div className="space-y-4">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Subtotal:</span>
+                          <span className="font-semibold">LKR {orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-advancePayment">Advance Payment</Label>
+                          <Input
+                            id="edit-advancePayment"
+                            type="number"
+                            value={advancePayment}
+                            onChange={(e) => setAdvancePayment(parseFloat(e.target.value) || 0)}
+                            placeholder="0.00"
+                            min="0"
+                            max={orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div className="border-t pt-4">
+                          <div className="flex justify-between items-center">
+                            <span className="text-lg font-semibold">Due Amount:</span>
+                            <span className="text-lg font-bold text-primary">
+                              LKR {Math.max(0, orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) - advancePayment).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-end gap-3 pt-4 border-t border-secondary">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setIsEditModalOpen(false);
+                              setSelectedOrder(null);
+                              setCustomerDetails({ name: '', phone: '', email: '', address: '' });
+                              setOrderItems([]);
+                              setAdvancePayment(0);
+                            }}
+                          >
+                            <X className="w-4 h-4 mr-2" />
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={handleUpdate}
+                            disabled={saving}
+                            className="w-full"
+                          >
+                            <Save className="w-5 h-5 mr-2" />
+                            {saving ? 'Saving…' : 'Update Order'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
