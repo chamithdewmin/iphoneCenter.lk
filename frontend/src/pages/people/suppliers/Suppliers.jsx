@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import DataTable from '@/components/DataTable';
+import Loading from '@/components/Loading';
 import {
   Dialog,
   DialogContent,
@@ -517,9 +518,7 @@ const Suppliers = () => {
               </DialogDescription>
             </DialogHeader>
             {loadingItem ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-              </div>
+              <Loading text={null} fullScreen={false} />
             ) : selectedSupplier ? (
               <div className="space-y-6">
                 <div className="flex items-center gap-4">
@@ -602,9 +601,7 @@ const Suppliers = () => {
               </DialogDescription>
             </DialogHeader>
             {loadingItem ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-              </div>
+              <Loading text={null} fullScreen={false} />
             ) : (
               <form onSubmit={handleUpdate} className="space-y-6">
                 <div>

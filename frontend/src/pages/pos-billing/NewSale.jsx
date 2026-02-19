@@ -9,6 +9,7 @@ import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
+import Loading from '@/components/Loading';
 
 // Normalize API product to POS shape (name, base_price, quantity/stock → model, price, stock)
 function normalizeProduct(p) {
@@ -378,9 +379,7 @@ const NewSale = () => {
             </div>
             <div className="flex-1 overflow-y-auto p-4">
               {productsLoading ? (
-                <div className="flex items-center justify-center py-16">
-                  <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
-                </div>
+                <Loading text={null} fullScreen={false} />
               ) : (
                 <>
                   <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">

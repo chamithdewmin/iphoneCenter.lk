@@ -22,6 +22,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useBranchFilter } from '@/hooks/useBranchFilter';
 import { BranchFilter } from '@/components/BranchFilter';
 import DataTable from '@/components/DataTable';
+import Loading from '@/components/Loading';
 import {
   Dialog,
   DialogContent,
@@ -557,9 +558,7 @@ const Warehouses = () => {
               </DialogDescription>
             </DialogHeader>
             {loadingItem ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-              </div>
+              <Loading text={null} fullScreen={false} />
             ) : selectedWarehouse ? (
               <div className="space-y-6">
                 <div className="flex items-center gap-4">
@@ -638,9 +637,7 @@ const Warehouses = () => {
               </DialogDescription>
             </DialogHeader>
             {loadingItem ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-              </div>
+              <Loading text={null} fullScreen={false} />
             ) : (
               <form onSubmit={handleUpdate} className="space-y-6">
                 <div>

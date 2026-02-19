@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useBranchFilter } from '@/hooks/useBranchFilter';
 import { BranchFilter } from '@/components/BranchFilter';
+import Loading from '@/components/Loading';
 
 const WarehouseList = () => {
   const { toast } = useToast();
@@ -99,9 +100,7 @@ const WarehouseList = () => {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
-          </div>
+          <Loading text={null} fullScreen={false} />
         ) : filteredWarehouses.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}

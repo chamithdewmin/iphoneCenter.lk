@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import Loading from '@/components/Loading';
 
 const CustomerList = () => {
   const [customers, setCustomers] = useState([]);
@@ -79,7 +80,6 @@ const CustomerList = () => {
         </div>
 
         {error && <div className="text-destructive text-sm">{error}</div>}
-        {loading && <p className="text-muted-foreground text-sm">Loading from database…</p>}
 
         {/* Search */}
         <div className="bg-card rounded-xl p-4 border border-secondary shadow-sm">
@@ -95,7 +95,9 @@ const CustomerList = () => {
         </div>
 
         {/* Customers Grid */}
-        {filteredCustomers.length === 0 ? (
+        {loading ? (
+          <Loading text={null} fullScreen={false} />
+        ) : filteredCustomers.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

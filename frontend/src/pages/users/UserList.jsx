@@ -7,6 +7,7 @@ import { authFetch } from '@/lib/api';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import Loading from '@/components/Loading';
 
 const UserList = () => {
   const navigate = useNavigate();
@@ -132,10 +133,7 @@ const UserList = () => {
         </div>
 
         {loading ? (
-          <div className="bg-card rounded-xl p-12 border border-secondary text-center">
-            <RefreshCw className="w-12 h-12 mx-auto text-muted-foreground mb-4 animate-spin" />
-            <p className="text-muted-foreground">Loading users from database…</p>
-          </div>
+          <Loading text={null} fullScreen={false} />
         ) : filteredUsers.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}

@@ -6,6 +6,7 @@ import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import Loading from '@/components/Loading';
 
 const Brands = () => {
   const [brands, setBrands] = useState([]);
@@ -313,10 +314,7 @@ const Brands = () => {
 
         {/* Brands Grid */}
         {loading ? (
-          <div className="bg-card rounded-xl p-12 border border-secondary text-center">
-            <RefreshCw className="w-8 h-8 mx-auto text-muted-foreground mb-4 animate-spin" />
-            <p className="text-muted-foreground">Loading brands...</p>
-          </div>
+          <Loading text={null} fullScreen={false} />
         ) : filteredBrands.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}

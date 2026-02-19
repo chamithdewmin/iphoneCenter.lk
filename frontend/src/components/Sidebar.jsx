@@ -22,7 +22,6 @@ import {
   X,
   ChevronRight,
   ChevronDown,
-  ChevronsUpDown,
   Plus,
   List,
   Tag,
@@ -348,20 +347,38 @@ const Sidebar = ({ isOpen, onClose }) => {
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="w-full flex items-center gap-3 py-2.5 rounded-lg hover:bg-secondary/50 transition-colors text-left"
+                  className="w-full flex items-center justify-between gap-4 bg-card border border-secondary rounded-xl px-4 py-3 shadow-lg hover:bg-secondary/50 transition-colors"
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black text-white text-xs font-bold uppercase">
-                    LogozDev
+                  {/* Avatar with green dot */}
+                  <div className="relative flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-secondary border border-secondary flex items-center justify-center">
+                      <span className="text-foreground text-sm font-semibold">
+                        {(user?.name || user?.username || 'U').charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    {/* Online dot */}
+                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-card rounded-full" />
                   </div>
+
+                  {/* Name & Email */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-primary truncate">
-                      {user?.name || user?.username || 'logozoDev'}
+                    <p className="text-foreground text-sm font-semibold truncate">
+                      {user?.name || user?.username || 'User'}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">
-                      {user?.email || 'logozoDev@gmail.com'}
+                    <p className="text-muted-foreground text-xs truncate">
+                      {user?.email || '—'}
                     </p>
                   </div>
-                  <ChevronsUpDown className="w-4 h-4 text-muted-foreground shrink-0" />
+
+                  {/* Chevron up/down */}
+                  <div className="flex flex-col text-muted-foreground gap-0.5 flex-shrink-0">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
+                    </svg>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">

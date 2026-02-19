@@ -6,6 +6,7 @@ import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import Loading from '@/components/Loading';
 
 const GenerateBarcode = () => {
   const [products, setProducts] = useState([]);
@@ -126,10 +127,7 @@ const GenerateBarcode = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             {loading ? (
-              <div className="bg-card rounded-xl p-12 border border-secondary text-center">
-                <RefreshCw className="w-12 h-12 mx-auto text-muted-foreground mb-4 animate-spin" />
-                <p className="text-muted-foreground">Loading inventory…</p>
-              </div>
+              <Loading text={null} fullScreen={false} />
             ) : filteredProducts.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}

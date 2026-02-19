@@ -12,13 +12,13 @@ import {
   RefreshCw,
   Save,
   X,
-  Loader2,
   UserPlus,
   Trash2,
   Pencil,
   Calendar,
   User
 } from 'lucide-react';
+import Loading from '@/components/Loading';
 import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -602,9 +602,7 @@ const Users = () => {
               </DialogDescription>
             </DialogHeader>
             {loadingUser ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-              </div>
+              <Loading text={null} fullScreen={false} />
             ) : selectedUser ? (
               <div className="space-y-6">
                 <div className="flex items-center gap-4">
@@ -679,9 +677,7 @@ const Users = () => {
               </DialogDescription>
             </DialogHeader>
             {loadingUser ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-              </div>
+              <Loading text={null} fullScreen={false} />
             ) : (
               <form onSubmit={async (e) => {
                 e.preventDefault();
@@ -890,7 +886,7 @@ const Users = () => {
                   <Button type="submit" disabled={saving}>
                     {saving ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                         Saving...
                       </>
                     ) : (

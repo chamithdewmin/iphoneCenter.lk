@@ -7,6 +7,7 @@ import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import Loading from '@/components/Loading';
 
 const CategoryList = () => {
   const [categories, setCategories] = useState([]);
@@ -156,10 +157,7 @@ const CategoryList = () => {
         </div>
 
         {loading ? (
-          <div className="bg-card rounded-xl p-12 border border-secondary text-center">
-            <RefreshCw className="w-8 h-8 mx-auto text-muted-foreground mb-4 animate-spin" />
-            <p className="text-muted-foreground">Loading categories...</p>
-          </div>
+          <Loading text={null} fullScreen={false} />
         ) : filteredCategories.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}

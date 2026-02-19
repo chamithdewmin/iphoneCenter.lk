@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import Loading from '@/components/Loading';
 
 const TransferStock = () => {
   const [products, setProducts] = useState([]);
@@ -99,9 +100,7 @@ const TransferStock = () => {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
-          </div>
+          <Loading text={null} fullScreen={false} />
         ) : (
         <form onSubmit={handleSubmit}>
           <div className="bg-card rounded-xl border border-secondary shadow-sm">

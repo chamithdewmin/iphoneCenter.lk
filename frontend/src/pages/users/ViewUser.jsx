@@ -4,6 +4,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Shield, User, Calendar } from 'lucide-react';
 import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
+import Loading from '@/components/Loading';
 
 const ViewUser = () => {
   const { id } = useParams();
@@ -26,11 +27,7 @@ const ViewUser = () => {
   }, [id]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-12">
-        <p className="text-muted-foreground">Loading user…</p>
-      </div>
-    );
+    return <Loading fullScreen={true} />;
   }
 
   if (error || !user) {

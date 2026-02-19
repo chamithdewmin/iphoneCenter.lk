@@ -9,7 +9,6 @@ import {
   RefreshCw,
   Save,
   X,
-  Loader2,
   FolderPlus
 } from 'lucide-react';
 import { authFetch } from '@/lib/api';
@@ -18,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import DataTable from '@/components/DataTable';
+import Loading from '@/components/Loading';
 import {
   Dialog,
   DialogContent,

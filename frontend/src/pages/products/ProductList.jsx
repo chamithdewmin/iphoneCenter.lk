@@ -7,6 +7,7 @@ import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import Loading from '@/components/Loading';
 
 const ProductList = () => {
   const navigate = useNavigate();
@@ -151,10 +152,7 @@ const ProductList = () => {
 
         {/* Products Grid */}
         {loading ? (
-          <div className="bg-card rounded-xl p-12 border border-secondary text-center">
-            <RefreshCw className="w-12 h-12 mx-auto text-muted-foreground animate-spin mb-4" />
-            <p className="text-muted-foreground">Loading products…</p>
-          </div>
+          <Loading text={null} fullScreen={false} />
         ) : filteredProducts.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}

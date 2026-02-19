@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Loading from './components/Loading';
 import POS from './pages/POS';
 import Inventory from './pages/Inventory';
 import CustomersPage from './pages/Customers';
@@ -106,11 +107,7 @@ function App() {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
-      </div>
-    );
+    return <Loading fullScreen={true} />;
   }
 
   return (

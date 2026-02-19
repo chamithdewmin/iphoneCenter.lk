@@ -15,7 +15,6 @@ import {
   Save,
   X,
   Minus,
-  Loader2,
   Pencil,
   Mail,
   Phone,
@@ -27,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import DataTable from '@/components/DataTable';
+import Loading from '@/components/Loading';
 import {
   Dialog,
   DialogContent,
@@ -784,9 +784,7 @@ const Orders = () => {
               </DialogDescription>
             </DialogHeader>
             {loadingItem ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-              </div>
+              <Loading text={null} fullScreen={false} />
             ) : selectedOrder ? (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
@@ -901,9 +899,7 @@ const Orders = () => {
               </DialogDescription>
             </DialogHeader>
             {loadingItem ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-              </div>
+              <Loading text={null} fullScreen={false} />
             ) : (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

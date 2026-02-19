@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import Loading from '@/components/Loading';
 
 const qty = (p) => p.quantity ?? p.stock ?? 0;
 
@@ -190,10 +191,7 @@ const LowStockAlert = () => {
 
         {/* Low Stock Products */}
         {loading ? (
-          <div className="bg-card rounded-xl p-12 border border-secondary text-center">
-            <RefreshCw className="w-12 h-12 mx-auto text-muted-foreground animate-spin mb-4" />
-            <p className="text-muted-foreground">Loading…</p>
-          </div>
+          <Loading text={null} fullScreen={false} />
         ) : lowStockProducts.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}

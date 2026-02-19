@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import Loading from '@/components/Loading';
 
 const EditWarehouse = () => {
   const { id } = useParams();
@@ -109,11 +110,7 @@ const EditWarehouse = () => {
   };
 
   if (fetching) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <Loading fullScreen={true} />;
   }
 
   return (

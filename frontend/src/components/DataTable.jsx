@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronUp, ChevronDown, ChevronsUpDown, Trash2, Pencil, Eye } from 'lucide-react';
+import Loading from './Loading';
 
 const DataTable = ({
   title,
@@ -69,9 +70,7 @@ const DataTable = ({
 
       {/* Table */}
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-        </div>
+        <Loading text={null} fullScreen={false} />
       ) : data.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 px-6">
           {EmptyIcon && <EmptyIcon className="w-16 h-16 text-muted-foreground mb-4 opacity-50" />}

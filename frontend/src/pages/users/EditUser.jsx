@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import Loading from '@/components/Loading';
 
 const EditUser = () => {
   const { id } = useParams();
@@ -114,11 +115,7 @@ const EditUser = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-12">
-        <p className="text-muted-foreground">Loading user…</p>
-      </div>
-    );
+    return <Loading fullScreen={true} />;
   }
 
   return (
