@@ -186,6 +186,7 @@ const Users = () => {
         fullName: formData.name.trim(),
         role: formData.role,
         branchId: roleNeedsWarehouse && formData.branchId ? parseInt(formData.branchId, 10) : null,
+        phone: formData.phone || null,
       }),
     });
     setSaving(false);

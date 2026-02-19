@@ -30,7 +30,7 @@ const register = async (req, res, next) => {
     try {
         await connection.beginTransaction();
 
-        const { username, email, password, fullName, role, branchId } = req.body;
+        const { username, email, password, fullName, role, branchId, phone } = req.body;
 
         // Validate required fields
         if (!username || !email || !password || !fullName || !role) {
@@ -93,9 +93,9 @@ const register = async (req, res, next) => {
 
         // Insert user
         const [result] = await connection.execute(
-            `INSERT INTO users (username, email, password_hash, full_name, role, branch_id) 
-             VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
-            [username, email, passwordHash, fullName, role, branchId || null]
+            `INSERT INTO users (username, email, password_hash, full_name, phone, role, branch_id) 
+             VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+            [username, email, passwordHash, fullName, phone || null, role, branchId || null]
         );
 
         await connection.commit();

@@ -8,7 +8,7 @@ const logger = require('../utils/logger');
 const getAllUsers = async (req, res, next) => {
     try {
         const [users] = await executeQuery(
-            `SELECT u.id, u.username, u.email, u.full_name, u.role, u.branch_id, u.is_active,
+            `SELECT u.id, u.username, u.email, u.full_name, u.phone, u.role, u.branch_id, u.is_active,
                     u.last_login, u.created_at, u.updated_at,
                     b.name as branch_name, b.code as branch_code
              FROM users u
@@ -35,7 +35,7 @@ const getUserById = async (req, res, next) => {
             return res.status(400).json({ success: false, message: 'Invalid user ID' });
         }
         const [users] = await executeQuery(
-            `SELECT u.id, u.username, u.email, u.full_name, u.role, u.branch_id, u.is_active,
+            `SELECT u.id, u.username, u.email, u.full_name, u.phone, u.role, u.branch_id, u.is_active,
                     u.last_login, u.created_at, u.updated_at,
                     b.name as branch_name, b.code as branch_code
              FROM users u
@@ -62,7 +62,7 @@ const updateUser = async (req, res, next) => {
         if (isNaN(id)) {
             return res.status(400).json({ success: false, message: 'Invalid user ID' });
         }
-        const { username, email, fullName, role, branchId, isActive, password } = req.body;
+        const { username, email, fullName, phone, role, branchId, isActive, password } = req.body;
 
         const [existing] = await executeQuery('SELECT id, username, email FROM users WHERE id = ?', [id]);
         if (!existing || existing.length === 0) {
@@ -91,6 +91,10 @@ const updateUser = async (req, res, next) => {
         if (fullName !== undefined) {
             updates.push('full_name = ?');
             params.push(fullName);
+        }
+        if (phone !== undefined) {
+            updates.push('phone = ?');
+            params.push(phone === '' ? null : phone);
         }
         if (role !== undefined) {
             updates.push('role = ?');
@@ -123,7 +127,7 @@ const updateUser = async (req, res, next) => {
         );
 
         const [updated] = await executeQuery(
-            `SELECT id, username, email, full_name, role, branch_id, is_active, updated_at
+            `SELECT id, username, email, full_name, phone, role, branch_id, is_active, updated_at
              FROM users WHERE id = ?`,
             [id]
         );
