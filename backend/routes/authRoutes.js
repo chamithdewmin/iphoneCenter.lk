@@ -36,4 +36,14 @@ router.post('/refresh', verifyRefreshToken, authController.refreshToken);
 router.post('/logout', authenticate, authController.logout);
 router.get('/profile', authenticate, authController.getProfile);
 
+// Password reset routes (no authentication required)
+router.post('/forgot-password', [
+    body('username').trim().notEmpty().withMessage('Username or email is required')
+], handleValidationErrors, authController.requestPasswordResetOTP);
+router.post('/reset-password', [
+    body('username').trim().notEmpty().withMessage('Username or email is required'),
+    body('otp').trim().notEmpty().withMessage('OTP is required'),
+    body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+], handleValidationErrors, authController.resetPasswordWithOTP);
+
 module.exports = router;

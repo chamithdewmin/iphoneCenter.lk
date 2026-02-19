@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(20),
     role user_role NOT NULL DEFAULT 'cashier',
     branch_id INT NULL REFERENCES branches(id) ON DELETE SET NULL,
     is_active BOOLEAN DEFAULT TRUE,
@@ -69,6 +70,11 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_branch_id ON users(branch_id);
 CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
+
+-- Add phone column if it doesn't exist (for existing databases)
+DO $$ BEGIN
+    ALTER TABLE users ADD COLUMN phone VARCHAR(20);
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
 CREATE TABLE IF NOT EXISTS refresh_tokens (
     id SERIAL PRIMARY KEY,

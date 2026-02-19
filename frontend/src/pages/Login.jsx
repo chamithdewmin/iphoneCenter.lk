@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -115,13 +115,12 @@ const Login = () => {
                   <Label htmlFor="password" className="text-white font-medium">
                     Password
                   </Label>
-                  <a
-                    href="#"
+                  <Link
+                    to="/forgot-password"
                     className="text-sm text-blue-400 hover:text-blue-300 focus:outline-none focus:underline"
-                    onClick={(e) => e.preventDefault()}
                   >
                     Forgot Password?
-                  </a>
+                  </Link>
                 </div>
                 <div className="relative">
                   <Input

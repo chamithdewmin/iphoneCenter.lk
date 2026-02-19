@@ -1,9 +1,11 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { executeQuery, getConnection } = require('../config/database');
 const { JWT_EXPIRY } = require('../config/constants');
 const { getJwtSecret, getJwtRefreshSecret, getTestLoginCredentials, TEST_USER_ID } = require('../config/env');
 const logger = require('../utils/logger');
+const { sendSMS } = require('../utils/smsService');
 
 /** Synthetic test user (not in database) for demo login */
 function getTestUser() {
@@ -417,10 +419,172 @@ const getProfile = async (req, res, next) => {
     }
 };
 
+// In-memory OTP store (in production, use Redis or database)
+const otpStore = new Map();
+
+/**
+ * Request OTP for password reset
+ */
+const requestPasswordResetOTP = async (req, res, next) => {
+    try {
+        const { username } = req.body;
+
+        if (!username) {
+            return res.status(400).json({
+                success: false,
+                message: 'Username or email is required'
+            });
+        }
+
+        // Find user by username or email
+        const [users] = await executeQuery(
+            'SELECT id, username, email, full_name, phone FROM users WHERE (username = ? OR email = ?) AND is_active = TRUE',
+            [username.trim(), username.trim()]
+        );
+
+        if (users.length === 0) {
+            // Don't reveal if user exists for security
+            return res.json({
+                success: true,
+                message: 'If the account exists, an OTP has been sent to the registered phone number'
+            });
+        }
+
+        const user = users[0];
+
+        // Check if user has phone number
+        if (!user.phone) {
+            return res.status(400).json({
+                success: false,
+                message: 'No phone number registered for this account. Please contact administrator.'
+            });
+        }
+
+        // Generate 6-digit OTP
+        const otp = crypto.randomInt(100000, 999999).toString();
+        const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+        // Store OTP
+        otpStore.set(user.id.toString(), {
+            otp,
+            expiresAt,
+            username: user.username
+        });
+
+        // Send OTP via SMS
+        const message = `Your password reset OTP for iphone center.lk is: ${otp}. Valid for 10 minutes.`;
+        const smsResult = await sendSMS(user.phone, message);
+
+        if (!smsResult.success) {
+            logger.error(`Failed to send OTP SMS to ${user.phone}:`, smsResult.error);
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to send OTP. Please try again later.'
+            });
+        }
+
+        logger.info(`Password reset OTP sent to user ${user.username} (${user.phone})`);
+
+        res.json({
+            success: true,
+            message: 'OTP has been sent to your registered phone number'
+        });
+    } catch (error) {
+        logger.error('Request password reset OTP error:', error);
+        next(error);
+    }
+};
+
+/**
+ * Verify OTP and reset password
+ */
+const resetPasswordWithOTP = async (req, res, next) => {
+    try {
+        const { username, otp, newPassword } = req.body;
+
+        if (!username || !otp || !newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Username, OTP, and new password are required'
+            });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 6 characters'
+            });
+        }
+
+        // Find user
+        const [users] = await executeQuery(
+            'SELECT id, username FROM users WHERE (username = ? OR email = ?) AND is_active = TRUE',
+            [username.trim(), username.trim()]
+        );
+
+        if (users.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        const user = users[0];
+        const storedOTP = otpStore.get(user.id.toString());
+
+        // Verify OTP
+        if (!storedOTP) {
+            return res.status(400).json({
+                success: false,
+                message: 'OTP not found or expired. Please request a new OTP.'
+            });
+        }
+
+        if (storedOTP.expiresAt < Date.now()) {
+            otpStore.delete(user.id.toString());
+            return res.status(400).json({
+                success: false,
+                message: 'OTP has expired. Please request a new OTP.'
+            });
+        }
+
+        if (storedOTP.otp !== otp) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid OTP'
+            });
+        }
+
+        // Hash new password
+        const passwordHash = await bcrypt.hash(newPassword, 10);
+
+        // Update password
+        await executeQuery(
+            'UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?',
+            [passwordHash, user.id]
+        );
+
+        // Remove OTP from store
+        otpStore.delete(user.id.toString());
+
+        logger.info(`Password reset successful for user ${user.username}`);
+
+        res.json({
+            success: true,
+            message: 'Password has been reset successfully'
+        });
+    } catch (error) {
+        logger.error('Reset password error:', error);
+        next(error);
+    }
+};
+
 module.exports = {
     register,
     login,
     refreshToken,
     logout,
-    getProfile
+    getProfile,
+    requestPasswordResetOTP,
+    resetPasswordWithOTP
 };
