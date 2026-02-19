@@ -159,7 +159,7 @@ const Dashboard = () => {
                     color: 'var(--card-foreground)',
                   }}
                 />
-                <Bar dataKey="sales" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="sales" fill="var(--primary)" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </motion.div>

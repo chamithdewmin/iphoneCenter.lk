@@ -19,7 +19,7 @@ module.exports = {
       colors: {
         border: 'var(--border)',
         input: 'var(--input)',
-        ring: 'hsl(var(--ring))',
+        ring: 'var(--ring)',
         background: 'var(--background)',
         foreground: 'var(--foreground)',
         card: {
@@ -27,7 +27,7 @@ module.exports = {
           foreground: 'var(--card-foreground)',
         },
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
+          DEFAULT: 'var(--primary)',
           foreground: 'var(--primary-foreground)',
         },
         secondary: {
@@ -43,7 +43,7 @@ module.exports = {
           foreground: 'var(--accent-foreground)',
         },
         destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
+          DEFAULT: 'var(--destructive)',
           foreground: 'var(--destructive-foreground)',
         },
         // Table colors for dark theme
@@ -61,6 +61,15 @@ module.exports = {
         'text-placeholder': 'var(--text-placeholder)',
         // Additional background colors
         'topbar-bg': 'var(--topbar-bg)',
+        // Status colors
+        success: 'var(--success)',
+        warning: 'var(--warning)',
+        cyan: 'var(--cyan)',
+        purple: 'var(--purple)',
+        orange: 'var(--orange)',
+        // UI elements
+        'button-bg': 'var(--button-bg)',
+        'button-border': 'var(--button-border)',
       },
       borderRadius: {
         lg: '0.75rem',

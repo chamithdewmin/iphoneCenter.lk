@@ -3,82 +3,139 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    /* Light theme - keeping HSL format for compatibility */
-    --background: 225 25% 6%;           /* #0c0e14 - Page background */
-    --foreground: 210 40% 96%;          /* Text color */
-    --card: 0 0% 100%;                  /* White cards */
-    --card-foreground: 222 47% 11%;     /* Dark text on cards */
-    --primary: 217 91% 60%;             /* Blue - Primary actions */
-    --primary-foreground: 0 0% 100%;    /* White text on primary */
-    --secondary: 214 20% 90%;           /* Light gray secondary */
-    --secondary-foreground: 222 47% 11%; /* Dark text on secondary */
-    --muted: 214 20% 92%;               /* Muted backgrounds */
-    --muted-foreground: 215 15% 35%;    /* Muted text */
-    --accent: 217 91% 60%;              /* Blue - Accent color */
-    --accent-foreground: 0 0% 100%;     /* White text on accent */
-    --destructive: 0 72% 51%;            /* Red - Destructive actions */
-    --destructive-foreground: 0 0% 100%; /* White text on destructive */
-    --border: 214 20% 86%;               /* Border color */
-    --input: 214 20% 88%;                /* Input background */
-    --ring: 222 84% 56%;                 /* Focus ring color */
-    --sidebar-active-bg: 217 55% 22%;   /* Dark blue sidebar active bg */
-    --sidebar-active-accent: 217 91% 60%; /* Blue sidebar active accent */
-  }
-
+  :root,
   .dark {
-    /* Background Colors (darkest → lightest) */
+    /* Background Colors */
     --background: #0c0e14;               /* Page background */
-    --topbar-bg: #0f1117;               /* Topbar & table header */
-    --card: #13161e;                    /* Cards & even rows */
-    --secondary: #111419;               /* Alternating table row (odd) */
-    --muted: #1a1d27;                   /* Row hover state */
-    --accent: #1e2433;                  /* Inner elements, dividers */
-    --border: #2a3347;                  /* Borders, dropdowns */
-    --input: #1e2433;                   /* Input background */
+    --card: #13161e;                     /* Card background */
+    --topbar-bg: #0f1117;                /* Topbar & table header */
+    --secondary: #111419;                /* Table odd row */
+    --muted: #1a1d27;                    /* Table hover */
+    --accent: #1c1e24;                   /* Button background */
+    --input: #1e2433;                    /* Input background */
+    
+    /* Borders */
+    --border: #1e2433;                   /* Border/divider */
+    --table-border: #2a3347;             /* Table border */
+    --button-border: #303338;             /* Button border */
     
     /* Text Colors */
-    --foreground: #fff;                 /* Primary headings & values */
-    --card-foreground: #fff;            /* Text on cards */
-    --primary-foreground: #fff;         /* White text on primary */
-    --secondary-foreground: #d1d9e6;    /* Body text, source names */
-    --muted-foreground: #8b9ab0;        /* Labels, secondary text */
-    --accent-foreground: #6b7a99;       /* Muted text, notes */
-    --destructive-foreground: #fff;     /* White text on destructive */
+    --foreground: #ffffff;               /* Primary text */
+    --card-foreground: #ffffff;          /* Text on cards */
+    --primary-foreground: #ffffff;       /* White text on primary */
+    --secondary-foreground: #d1d9e6;     /* Body text */
+    --muted-foreground: #8b9ab0;         /* Label text */
+    --accent-foreground: #6b7a99;        /* Muted text */
+    --destructive-foreground: #ffffff;   /* White text on destructive */
     
-    /* Primary & Accent Colors */
-    --primary: 217 91% 60%;             /* Blue - Primary actions */
-    --destructive: 0 72% 51%;            /* Red - Destructive actions */
-    --ring: 222 84% 56%;                 /* Focus ring color */
-    --sidebar-active-bg: 217 55% 22%;   /* Dark blue sidebar active bg */
-    --sidebar-active-accent: 217 91% 60%; /* Blue sidebar active accent */
+    /* Primary/Accent Colors */
+    --primary: #3b82f6;                  /* Primary blue */
+    --primary-dark: #2563eb;             /* Dark blue */
+    --primary-darkest: #1d4ed8;          /* Darkest blue */
+    --sidebar-active-bg: #2a3a4f;        /* Sidebar active background */
+    --sidebar-active-accent: #3b82f6;    /* Sidebar active accent */
+    
+    /* Status Colors */
+    --success: #22c55e;                  /* Success/Income green */
+    --destructive: #ef4444;              /* Error/Expense red */
+    --warning: #eab308;                  /* Warning yellow */
+    --cyan: #22d3ee;                     /* Cyan */
+    --purple: #a78bfa;                   /* Purple */
+    --orange: #f97316;                   /* Orange */
+    
+    /* Focus Ring */
+    --ring: #3b82f6;                     /* Focus ring color */
 
     /* Table Colors */
-    --table-header-bg: #0f1117;         /* Table header background */
+    --table-header-bg: #0f1117;          /* Table header background */
     --table-row-odd: #111419;            /* Odd row background */
     --table-row-even: #13161e;           /* Even row background */
-    --table-row-hover: #1a1d27;         /* Row hover background */
+    --table-row-hover: #1a1d27;          /* Row hover background */
     --table-divider: #1e2433;            /* Table divider/border */
-    --table-border: #2a3347;             /* Table border */
     
-    /* Text Colors */
-    --text-primary: #fff;                /* Primary headings & values */
+    /* Text Colors (duplicate for clarity) */
+    --text-primary: #ffffff;              /* Primary headings & values */
     --text-body: #d1d9e6;                /* Body text, source names */
     --text-label: #8b9ab0;               /* Labels, secondary text */
     --text-muted: #6b7a99;               /* Muted text, notes */
     --text-placeholder: #4a5568;         /* Placeholder text, null values */
+    
+    /* UI Elements */
+    --button-bg: #1c1e24;                /* Button background */
+    --button-border: #303338;            /* Button border */
+    --scrollbar-track: #111;              /* Scrollbar track */
+    --scrollbar-thumb: #333;              /* Scrollbar thumb */
+    --scrollbar-thumb-hover: #444;       /* Scrollbar hover */
   }
 
   * {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--background) !important;
+    color: var(--foreground) !important;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
       'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
       sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Ensure all root elements use dark theme */
+  html {
+    background-color: var(--background);
+    color-scheme: dark;
+  }
+  
+  /* Force dark backgrounds for common elements */
+  .bg-background {
+    background-color: var(--background) !important;
+  }
+  
+  .bg-card {
+    background-color: var(--card) !important;
+  }
+  
+  .text-foreground {
+    color: var(--foreground) !important;
+  }
+  
+  .text-card-foreground {
+    color: var(--card-foreground) !important;
+  }
+  
+  /* Recharts dark theme styling */
+  .recharts-wrapper,
+  .recharts-surface {
+    background-color: transparent !important;
+  }
+  
+  .recharts-cartesian-grid-horizontal line,
+  .recharts-cartesian-grid-vertical line {
+    stroke: var(--border) !important;
+    opacity: 0.2;
+  }
+  
+  .recharts-text {
+    fill: var(--muted-foreground) !important;
+  }
+  
+  .recharts-legend-wrapper {
+    color: var(--foreground) !important;
+  }
+  
+  .recharts-tooltip-wrapper {
+    background-color: var(--card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 0.5rem !important;
+  }
+  
+  .recharts-tooltip-label {
+    color: var(--card-foreground) !important;
+  }
+  
+  .recharts-tooltip-item {
+    color: var(--card-foreground) !important;
   }
 }
 
@@ -89,10 +146,10 @@
   }
 }
 
-/* Global scrollbar styling */
+/* Global scrollbar styling - Dark theme by default */
 * {
   scrollbar-width: thin;
-  scrollbar-color: hsl(214 20% 75%) transparent;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 *::-webkit-scrollbar {
@@ -101,33 +158,17 @@
 }
 
 *::-webkit-scrollbar-track {
-  background: hsl(214 20% 94%);
+  background: var(--scrollbar-track);
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: hsl(214 20% 75%);
+  background-color: var(--scrollbar-thumb);
   border-radius: 2px;
   transition: background-color 0.2s;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background-color: hsl(214 20% 65%);
-}
-
-.dark * {
-  scrollbar-color: #1e2433 #0f1117;
-}
-
-.dark *::-webkit-scrollbar-track {
-  background: #0f1117;
-}
-
-.dark *::-webkit-scrollbar-thumb {
-  background-color: #1e2433;
-}
-
-.dark *::-webkit-scrollbar-thumb:hover {
-  background-color: #2a3347;
+  background-color: var(--scrollbar-thumb-hover);
 }
 
 @media print {

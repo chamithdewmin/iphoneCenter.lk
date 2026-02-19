@@ -127,7 +127,7 @@ const ProductReport = () => {
                   }}
                   formatter={(value) => `LKR ${value.toLocaleString()}`}
                 />
-                <Bar dataKey="value" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="value" fill="var(--primary)" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </motion.div>

@@ -134,7 +134,7 @@ const SaleReport = () => {
                   }}
                   formatter={(value) => `LKR ${value.toLocaleString()}`}
                 />
-                <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="revenue" fill="var(--primary)" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </motion.div>

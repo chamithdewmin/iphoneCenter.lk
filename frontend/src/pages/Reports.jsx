@@ -56,7 +56,7 @@ const Reports = () => {
     setRevenueByBrand(revenueData);
   }, []);
 
-  const COLORS = ['hsl(var(--primary))', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
+  const COLORS = ['var(--primary)', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
 
   const handleExport = () => {
     toast({
@@ -166,7 +166,7 @@ const Reports = () => {
                     color: 'var(--card-foreground)',
                   }}
                 />
-                <Bar dataKey="sales" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="sales" fill="var(--primary)" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </motion.div>
