@@ -112,48 +112,10 @@ const menuItems = [
     ],
   },
   { type: 'link', to: '/warehouses', icon: Warehouse, label: 'Warehouses', permission: 'products' },
-  {
-    type: 'menu',
-    icon: TrendingDown,
-    label: 'Expense',
-    permission: 'settings',
-    children: [
-      { to: '/expenses', label: 'Expenses', icon: TrendingDown },
-    ],
-  },
-  {
-    type: 'menu',
-    icon: Users,
-    label: 'People',
-    permission: 'customers',
-    children: [
-      {
-        type: 'submenu',
-        label: 'Customers',
-        icon: Users,
-        children: [
-          { to: '/people/customers', label: 'Customers', icon: Users },
-        ],
-      },
-      {
-        type: 'submenu',
-        label: 'Suppliers',
-        icon: Building2,
-        children: [
-          { to: '/people/suppliers', label: 'Suppliers', icon: Building2 },
-        ],
-      },
-    ],
-  },
-  {
-    type: 'menu',
-    icon: FolderTree,
-    label: 'Categories',
-    permission: 'products',
-    children: [
-      { to: '/categories', label: 'Categories', icon: FolderTree },
-    ],
-  },
+  { type: 'link', to: '/expenses', icon: TrendingDown, label: 'Expenses', permission: 'settings' },
+  { type: 'link', to: '/people/customers', icon: Users, label: 'Customers', permission: 'customers' },
+  { type: 'link', to: '/people/suppliers', icon: Building2, label: 'Suppliers', permission: 'customers' },
+  { type: 'link', to: '/categories', icon: FolderTree, label: 'Categories', permission: 'products' },
   {
     type: 'menu',
     icon: BarChart3,
