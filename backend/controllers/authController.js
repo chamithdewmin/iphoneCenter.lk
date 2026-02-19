@@ -435,9 +435,21 @@ const requestPasswordResetOTP = async (req, res, next) => {
         phone: req.body?.phone,
         bodyKeys: Object.keys(req.body || {}),
         hasBody: !!req.body,
+        bodyType: typeof req.body,
+        bodyString: JSON.stringify(req.body),
         method: req.method,
         path: req.path,
         contentType: req.headers['content-type']
+    });
+    
+    // Log raw request for debugging
+    console.log('Forgot Password Request:', {
+        body: req.body,
+        bodyKeys: Object.keys(req.body || {}),
+        email: req.body?.email,
+        phone: req.body?.phone,
+        emailType: typeof req.body?.email,
+        phoneType: typeof req.body?.phone
     });
     
     try {

@@ -58,14 +58,14 @@ const publicFetch = async (path, options = {}) => {
     
     // Log error responses for debugging
     if (!res.ok) {
-      console.error('API Error:', {
+      console.error('API Error Details:', JSON.stringify({
         url,
         status: res.status,
         data,
         errors: data?.errors,
         message: data?.message,
         body: options.body
-      });
+      }, null, 2));
     }
     
     return { ok: res.ok, status: res.status, data };
@@ -158,12 +158,13 @@ export default function LoginPage() {
           errorMsg = errorMessages || errorMsg;
         }
         
-        console.error('OTP Request Failed:', {
+        console.error('OTP Request Failed - Full Details:', JSON.stringify({
           status,
           message: errorMsg,
           errors: data?.errors,
-          fullData: data
-        });
+          fullData: data,
+          responseData: data
+        }, null, 2));
         
         setOtpError(errorMsg);
       }
