@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
 import { 
   DollarSign, 
   Plus, 
@@ -19,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import DataTable from '@/components/DataTable';
 import {
   Dialog,
   DialogContent,
@@ -35,6 +35,9 @@ const Expenses = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [formData, setFormData] = useState({
     category: '',
     amount: '',
@@ -159,6 +162,80 @@ const Expenses = () => {
   const categories = ['all', ...new Set(expenses.map(e => e.category).filter(Boolean))];
   const totalExpenses = filteredExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
 
+  const handleSelect = (id) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const paginatedExpenses = filteredExpenses.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    if (selected.length === paginatedExpenses.length) {
+      setSelected([]);
+    } else {
+      setSelected(paginatedExpenses.map((e) => e.id));
+    }
+  };
+
+  const handleView = (expense) => {
+    toast({
+      title: "View Expense",
+      description: `Viewing details for ${expense.category}`,
+    });
+  };
+
+  const handleDeleteExpense = (expense) => {
+    handleDelete(expense.id);
+  };
+
+  const paginatedExpenses = filteredExpenses.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage);
+
+  const columns = [
+    {
+      key: 'name',
+      label: 'Name',
+      render: (expense) => (
+        <div>
+          <div className="text-foreground font-medium text-sm">{expense.description || expense.category || '—'}</div>
+          {expense.reference && (
+            <div className="text-muted-foreground text-xs font-mono">{expense.reference}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      render: (expense) => (
+        <span className="text-foreground font-medium text-sm">{expense.category || 'Uncategorized'}</span>
+      ),
+    },
+    {
+      key: 'amount',
+      label: 'Amount',
+      render: (expense) => (
+        <span className="text-foreground font-semibold text-sm">LKR {expense.amount?.toLocaleString() || '0'}</span>
+      ),
+    },
+    {
+      key: 'date',
+      label: 'Date',
+      render: (expense) => (
+        <span className="text-muted-foreground text-sm">{formatDate(expense.date || expense.createdAt)}</span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (expense) => (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-primary/20 text-primary">
+          {expense.paymentMethod ? expense.paymentMethod.charAt(0).toUpperCase() + expense.paymentMethod.slice(1) : 'Paid'}
+        </span>
+      ),
+    },
+  ];
+
   return (
     <>
       <Helmet>
@@ -223,93 +300,29 @@ const Expenses = () => {
             </div>
           </div>
 
-          {/* Expenses List */}
-          {filteredExpenses.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-xl p-12 border border-secondary text-center px-4"
-            >
-              <DollarSign className="w-16 h-16 mx-auto text-muted-foreground mb-4 opacity-50" />
-              <h3 className="text-xl font-semibold mb-2">No Expenses Found</h3>
-              <p className="text-muted-foreground mb-6">
-                {expenses.length === 0 
-                  ? "No expenses have been recorded yet"
-                  : "No expenses match your search criteria"}
-              </p>
-              {expenses.length === 0 && (
-                <Button onClick={() => setIsAddModalOpen(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Your First Expense
-                </Button>
-              )}
-            </motion.div>
-          ) : (
-            <div className="space-y-4 px-4">
-              {filteredExpenses.map((expense, index) => (
-                <motion.div
-                  key={expense.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="bg-card rounded-xl border border-secondary overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
-                >
-                  <div className="p-6">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                      <div className="flex-1 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-bold text-lg">{expense.category || 'Uncategorized'}</h3>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {expense.description || 'No description'}
-                            </p>
-                          </div>
-                          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-primary/20 text-primary">
-                            LKR {expense.amount.toLocaleString()}
-                          </span>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-muted-foreground" />
-                            <div>
-                              <p className="text-xs text-muted-foreground">Date</p>
-                              <p className="font-medium">{formatDate(expense.date || expense.createdAt)}</p>
-                            </div>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Payment Method</p>
-                            <p className="font-medium capitalize">{expense.paymentMethod || 'N/A'}</p>
-                          </div>
-                          {expense.reference && (
-                            <div>
-                              <p className="text-xs text-muted-foreground">Reference</p>
-                              <p className="font-medium font-mono text-xs">{expense.reference}</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
-                          <Eye className="w-4 h-4 mr-2" />
-                          View
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(expense.id)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
+          {/* Expenses Table */}
+          <div className="px-4">
+            <DataTable
+              title="Expenses"
+              count={filteredExpenses.length}
+              data={paginatedExpenses}
+              columns={columns}
+              selected={selected}
+              onSelect={handleSelect}
+              onSelectAll={handleSelectAll}
+              onView={handleView}
+              onDelete={handleDeleteExpense}
+              loading={false}
+              emptyMessage={expenses.length === 0 
+                ? "No expenses have been recorded yet"
+                : "No expenses match your search criteria"}
+              emptyIcon={DollarSign}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              getRowId={(expense) => expense.id}
+            />
+          </div>
         </div>
 
         {/* Add Expense Modal */}

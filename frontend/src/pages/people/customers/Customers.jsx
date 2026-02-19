@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
 import { 
   User, 
   Plus, 
@@ -21,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import DataTable from '@/components/DataTable';
 import {
   Dialog,
   DialogContent,
@@ -37,6 +37,9 @@ const Customers = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -130,6 +133,80 @@ const Customers = () => {
     fetchCustomers();
   };
 
+  const handleSelect = (id) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const paginatedCustomers = filteredCustomers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    if (selected.length === paginatedCustomers.length) {
+      setSelected([]);
+    } else {
+      setSelected(paginatedCustomers.map((c) => c.id));
+    }
+  };
+
+  const handleView = (customer) => {
+    toast({
+      title: "View Customer",
+      description: `Viewing details for ${customer.name}`,
+    });
+  };
+
+  const paginatedCustomers = filteredCustomers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+
+  const columns = [
+    {
+      key: 'name',
+      label: 'Name',
+      render: (customer) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white font-bold text-xs">
+            {(customer.name || 'C').charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <div className="text-foreground font-medium text-sm">{customer.name || '—'}</div>
+            <div className="text-muted-foreground text-xs">ID: {customer.id}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'email',
+      label: 'Email',
+      render: (customer) => (
+        <span className="text-muted-foreground text-sm">{customer.email || '—'}</span>
+      ),
+    },
+    {
+      key: 'phone',
+      label: 'Phone',
+      render: (customer) => (
+        <span className="text-muted-foreground text-sm">{customer.phone || '—'}</span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (customer) => (
+        <span className="inline-flex items-center gap-1.5 bg-secondary border border-secondary text-green-400 text-xs font-medium px-2.5 py-1 rounded-full">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+          Active
+        </span>
+      ),
+    },
+    {
+      key: 'address',
+      label: 'Address',
+      render: (customer) => (
+        <span className="text-muted-foreground text-sm">{customer.address || '—'}</span>
+      ),
+    },
+  ];
+
   return (
     <>
       <Helmet>
@@ -138,27 +215,28 @@ const Customers = () => {
       </Helmet>
 
       <div className="space-y-4">
+        {/* Action Buttons - Top Right */}
+        <div className="flex items-center justify-end gap-3">
+          <Button
+            onClick={() => setIsAddModalOpen(true)}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Customer
+          </Button>
+          <Button
+            className="flex items-center gap-2 bg-primary text-primary-foreground"
+          >
+            <List className="w-4 h-4" />
+            Customer List
+          </Button>
+          <Button variant="outline" size="sm" onClick={fetchCustomers} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+        
         <div className="space-y-4">
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3 px-4">
-            <Button
-              onClick={() => setIsAddModalOpen(true)}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add Customer
-            </Button>
-            <Button
-              className="flex items-center gap-2 bg-primary text-primary-foreground"
-            >
-              <List className="w-4 h-4" />
-              Customer List
-            </Button>
-            <Button variant="outline" size="sm" onClick={fetchCustomers} disabled={loading}>
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
 
           {/* Search */}
           <div className="bg-card rounded-xl p-4 border border-secondary shadow-sm px-4">
@@ -173,97 +251,28 @@ const Customers = () => {
             </div>
           </div>
 
-          {/* Customers List */}
-          {loading ? (
-            <div className="flex items-center justify-center py-16 px-4">
-              <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
-            </div>
-          ) : filteredCustomers.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-xl p-12 border border-secondary text-center px-4"
-            >
-              <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
-                <Mail className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">No Customers Found</h3>
-              <p className="text-muted-foreground mb-6">
-                {customers.length === 0 
-                  ? "Get started by adding your first customer"
-                  : "No customers match your search criteria"}
-              </p>
-              {customers.length === 0 && (
-                <Button onClick={() => setIsAddModalOpen(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Your First Customer
-                </Button>
-              )}
-            </motion.div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
-              {filteredCustomers.map((customer, index) => (
-                <motion.div
-                  key={customer.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  whileHover={{ y: -4 }}
-                  className="bg-card rounded-xl border border-secondary overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
-                >
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/70 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                          {customer.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-lg">{customer.name}</h3>
-                          <p className="text-xs text-muted-foreground">ID: {customer.id}</p>
-                        </div>
-                      </div>
-                      <Button size="sm" variant="outline">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    </div>
-
-                    <div className="space-y-2 mb-4">
-                      {customer.phone && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Phone className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">{customer.phone}</span>
-                        </div>
-                      )}
-                      {customer.email && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Mail className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-muted-foreground truncate">{customer.email}</span>
-                        </div>
-                      )}
-                      {customer.address && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-muted-foreground truncate">{customer.address}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="pt-4 border-t border-secondary">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <ShoppingBag className="w-4 h-4" />
-                          <span>Purchases</span>
-                        </div>
-                        <span className="font-semibold">
-                          {customer.purchaseHistory?.length || 0}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
+          {/* Customers Table */}
+          <div className="px-4">
+            <DataTable
+              title="Customers"
+              count={filteredCustomers.length}
+              data={paginatedCustomers}
+              columns={columns}
+              selected={selected}
+              onSelect={handleSelect}
+              onSelectAll={handleSelectAll}
+              onView={handleView}
+              loading={loading}
+              emptyMessage={customers.length === 0 
+                ? "Get started by adding your first customer"
+                : "No customers match your search criteria"}
+              emptyIcon={User}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              getRowId={(customer) => customer.id}
+            />
+          </div>
         </div>
 
         {/* Add Customer Modal */}

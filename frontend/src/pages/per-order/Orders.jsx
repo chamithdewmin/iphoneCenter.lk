@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
 import { 
   FileText, 
   Plus, 
@@ -22,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import DataTable from '@/components/DataTable';
 import {
   Dialog,
   DialogContent,
@@ -51,6 +51,9 @@ const Orders = () => {
   const [productSearchQuery, setProductSearchQuery] = useState('');
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const loadedOrders = getStorageData('perOrders', []);
@@ -252,6 +255,90 @@ const Orders = () => {
     );
   };
 
+  const handleSelect = (id) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const paginatedOrders = filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    if (selected.length === paginatedOrders.length) {
+      setSelected([]);
+    } else {
+      setSelected(paginatedOrders.map((o) => o.id));
+    }
+  };
+
+  const handleView = (order) => {
+    toast({
+      title: "View Order",
+      description: `Viewing details for order ${order.id}`,
+    });
+  };
+
+  const handleDelete = (order) => {
+    handleDeleteOrder(order.id);
+  };
+
+  const paginatedOrders = filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+
+  const columns = [
+    {
+      key: 'id',
+      label: 'Order ID',
+      render: (order) => (
+        <span className="text-foreground font-medium text-sm font-mono">{order.id || '—'}</span>
+      ),
+    },
+    {
+      key: 'customer',
+      label: 'Customer Name',
+      render: (order) => (
+        <div>
+          <div className="text-foreground font-medium text-sm">{order.customer?.name || '—'}</div>
+          <div className="text-muted-foreground text-xs">{order.customer?.phone || '—'}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (order) => getStatusBadge(order.status),
+    },
+    {
+      key: 'items',
+      label: 'Items Count',
+      render: (order) => (
+        <span className="text-muted-foreground text-sm">{order.items?.length || 0} item(s)</span>
+      ),
+    },
+    {
+      key: 'subtotal',
+      label: 'Subtotal',
+      render: (order) => (
+        <span className="text-foreground font-medium text-sm">LKR {order.subtotal?.toLocaleString() || '0'}</span>
+      ),
+    },
+    {
+      key: 'dueAmount',
+      label: 'Due Amount',
+      render: (order) => (
+        <span className={`font-semibold text-sm ${order.dueAmount > 0 ? 'text-primary' : 'text-green-600 dark:text-green-400'}`}>
+          LKR {order.dueAmount?.toLocaleString() || '0'}
+        </span>
+      ),
+    },
+    {
+      key: 'date',
+      label: 'Date',
+      render: (order) => (
+        <span className="text-muted-foreground text-sm">{formatDate(order.createdAt)}</span>
+      ),
+    },
+  ];
+
   return (
     <>
       <Helmet>
@@ -302,109 +389,29 @@ const Orders = () => {
                 </div>
         </div>
 
-        {/* Orders List */}
-        {filteredOrders.length === 0 ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-card rounded-lg p-12 border border-secondary text-center px-4"
-                >
-                  <Package className="w-16 h-16 mx-auto text-muted-foreground mb-4 opacity-50" />
-                  <h3 className="text-xl font-semibold mb-2">No Orders Found</h3>
-                  <p className="text-muted-foreground mb-6">
-                    {orders.length === 0 
-                      ? "No per orders found. Create your first order!"
-                      : "No orders match your search criteria"}
-                  </p>
-                  {orders.length === 0 && (
-                    <Button onClick={() => setIsAddModalOpen(true)}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create Your First Order
-                    </Button>
-                  )}
-                </motion.div>
-              ) : (
-                <div className="space-y-4 px-4">
-                  {filteredOrders.map((order, index) => (
-                    <motion.div
-                      key={order.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="border border-secondary rounded-lg p-6 hover:bg-secondary/50 transition-colors bg-card"
-                    >
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div className="flex-1 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h3 className="font-bold text-lg">{order.id}</h3>
-                              <div className="flex items-center gap-2 mt-1">
-                                <User className="w-4 h-4 text-muted-foreground" />
-                                <span className="font-medium">{order.customer.name}</span>
-                                <span className="text-sm text-muted-foreground">• {order.customer.phone}</span>
-                              </div>
-                            </div>
-                            {getStatusBadge(order.status)}
-                          </div>
-                          
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div>
-                              <p className="text-muted-foreground">Items</p>
-                              <p className="font-medium flex items-center gap-1">
-                                <Package className="w-4 h-4" />
-                                {order.items.length} item(s)
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Subtotal</p>
-                              <p className="font-medium">LKR {order.subtotal.toLocaleString()}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Advance Payment</p>
-                              <p className="font-medium">LKR {order.advancePayment.toLocaleString()}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Due Amount</p>
-                              <p className={`font-semibold ${order.dueAmount > 0 ? 'text-primary' : 'text-green-600 dark:text-green-400'}`}>
-                                LKR {order.dueAmount.toLocaleString()}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Calendar className="w-4 h-4" />
-                            <span>{formatDate(order.createdAt)}</span>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              toast({
-                                title: "View Order",
-                                description: `Viewing details for order ${order.id}`,
-                              });
-                            }}
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            View
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeleteOrder(order.id)}
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </Button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-        )}
+        {/* Orders Table */}
+        <div className="px-4">
+          <DataTable
+            title="Per Orders"
+            count={filteredOrders.length}
+            data={paginatedOrders}
+            columns={columns}
+            selected={selected}
+            onSelect={handleSelect}
+            onSelectAll={handleSelectAll}
+            onView={handleView}
+            onDelete={handleDelete}
+            loading={false}
+            emptyMessage={orders.length === 0 
+              ? "No per orders found. Create your first order!"
+              : "No orders match your search criteria"}
+            emptyIcon={FileText}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            getRowId={(order) => order.id}
+          />
+        </div>
 
         {/* Summary */}
         {filteredOrders.length > 0 && (

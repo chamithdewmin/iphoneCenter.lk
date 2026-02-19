@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
 import { 
   Warehouse, 
   Plus, 
@@ -13,7 +12,6 @@ import {
   Save,
   X
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -21,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { useBranchFilter } from '@/hooks/useBranchFilter';
 import { BranchFilter } from '@/components/BranchFilter';
+import DataTable from '@/components/DataTable';
 import {
   Dialog,
   DialogContent,
@@ -38,6 +37,9 @@ const Warehouses = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -158,6 +160,85 @@ const Warehouses = () => {
     setIsAddModalOpen(true);
   };
 
+  const handleSelect = (id) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const paginatedWarehouses = filteredWarehouses.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    if (selected.length === paginatedWarehouses.length) {
+      setSelected([]);
+    } else {
+      setSelected(paginatedWarehouses.map((w) => w.id));
+    }
+  };
+
+  const handleEdit = (warehouse) => {
+    window.location.href = `/warehouses/edit/${warehouse.id}`;
+  };
+
+  const paginatedWarehouses = filteredWarehouses.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(filteredWarehouses.length / itemsPerPage);
+
+  const columns = [
+    {
+      key: 'name',
+      label: 'Name',
+      render: (warehouse) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/70 rounded-full flex items-center justify-center text-white">
+            <Warehouse className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-foreground font-medium text-sm">{warehouse.name || '—'}</div>
+            <div className="text-muted-foreground text-xs font-mono">{warehouse.code || '—'}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'code',
+      label: 'Code',
+      render: (warehouse) => <span className="text-muted-foreground text-sm font-mono">{warehouse.code || '—'}</span>,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (warehouse) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+          warehouse.is_active !== false
+            ? 'bg-green-500/20 text-green-600 dark:text-green-400'
+            : 'bg-gray-500/20 text-gray-600 dark:text-gray-400'
+        }`}>
+          {warehouse.is_active !== false ? 'Active' : 'Inactive'}
+        </span>
+      ),
+    },
+    {
+      key: 'address',
+      label: 'Address',
+      render: (warehouse) => (
+        <span className="text-muted-foreground text-sm">{warehouse.address || '—'}</span>
+      ),
+    },
+    {
+      key: 'phone',
+      label: 'Phone',
+      render: (warehouse) => (
+        <span className="text-muted-foreground text-sm">{warehouse.phone || '—'}</span>
+      ),
+    },
+    {
+      key: 'email',
+      label: 'Email',
+      render: (warehouse) => (
+        <span className="text-muted-foreground text-sm">{warehouse.email || '—'}</span>
+      ),
+    },
+  ];
+
   return (
     <>
       <Helmet>
@@ -166,23 +247,23 @@ const Warehouses = () => {
       </Helmet>
 
       <div className="space-y-4">
-        {/* Action Buttons */}
-        <div className="flex items-center gap-3 px-4">
-                <Button
-                  onClick={handleAddClick}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Warehouse
-                </Button>
-                <Button
-                  className="flex items-center gap-2 bg-primary text-primary-foreground"
-                >
-                  <List className="w-4 h-4" />
-                  Warehouse List
-                </Button>
-              </div>
+        {/* Action Buttons - Top Right */}
+        <div className="flex items-center justify-end gap-3">
+          <Button
+            onClick={handleAddClick}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Warehouse
+          </Button>
+          <Button
+            className="flex items-center gap-2 bg-primary text-primary-foreground"
+          >
+            <List className="w-4 h-4" />
+            Warehouse List
+          </Button>
+        </div>
 
         {/* Search Bar */}
         <div className="bg-card rounded-xl p-4 border border-secondary shadow-sm">
@@ -202,94 +283,28 @@ const Warehouses = () => {
           <BranchFilter id="warehouse-branch" />
         </div>
 
-        {/* Warehouse List */}
-              {loading ? (
-                <div className="flex items-center justify-center py-16">
-                  <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
-                </div>
-              ) : filteredWarehouses.length === 0 ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-card rounded-xl p-12 border border-secondary text-center"
-                >
-                  <Warehouse className="w-16 h-16 mx-auto text-muted-foreground mb-4 opacity-50" />
-                  <h3 className="text-xl font-semibold mb-2">No Warehouses Found</h3>
-                  <p className="text-muted-foreground mb-6">
-                    {warehouses.length === 0 
-                      ? "Get started by adding your first warehouse"
-                      : "No warehouses match your search criteria"}
-                  </p>
-                  {warehouses.length === 0 && (
-                    <Button onClick={handleAddClick}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Your First Warehouse
-                    </Button>
-                  )}
-                </motion.div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
-                  {filteredWarehouses.map((warehouse, index) => (
-                    <motion.div
-                      key={warehouse.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      whileHover={{ y: -4 }}
-                      className="bg-card rounded-xl border border-secondary overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
-                    >
-                      <div className="p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                              <Warehouse className="w-6 h-6" />
-                            </div>
-                            <div>
-                              <h3 className="font-bold text-lg">{warehouse.name}</h3>
-                              <p className="text-xs text-muted-foreground font-mono">{warehouse.code}</p>
-                            </div>
-                          </div>
-                          <Link to={`/warehouses/edit/${warehouse.id}`}>
-                            <Button size="sm" variant="outline" title="Edit">
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                          </Link>
-                        </div>
-
-                        <div className="space-y-2 mb-4">
-                          {warehouse.phone && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Phone className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-muted-foreground">{warehouse.phone}</span>
-                            </div>
-                          )}
-                          {warehouse.email && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="text-muted-foreground truncate">{warehouse.email}</span>
-                            </div>
-                          )}
-                          {warehouse.address && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <MapPin className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-muted-foreground truncate">{warehouse.address}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="pt-4 border-t border-secondary">
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                            warehouse.is_active !== false
-                              ? 'bg-green-500/20 text-green-600 dark:text-green-400'
-                              : 'bg-gray-500/20 text-gray-600 dark:text-gray-400'
-                          }`}>
-                            {warehouse.is_active !== false ? 'active' : 'inactive'}
-                          </span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-        )}
+        {/* Warehouse Table */}
+        <div className="px-4">
+          <DataTable
+            title="Warehouses"
+            count={filteredWarehouses.length}
+            data={paginatedWarehouses}
+            columns={columns}
+            selected={selected}
+            onSelect={handleSelect}
+            onSelectAll={handleSelectAll}
+            onEdit={handleEdit}
+            loading={loading}
+            emptyMessage={warehouses.length === 0 
+              ? "Get started by adding your first warehouse"
+              : "No warehouses match your search criteria"}
+            emptyIcon={Warehouse}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            getRowId={(warehouse) => warehouse.id}
+          />
+        </div>
 
         {/* Add Warehouse Modal */}
         <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>

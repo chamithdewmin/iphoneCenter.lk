@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
 import { 
   FolderTree, 
   Plus, 
@@ -18,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import DataTable from '@/components/DataTable';
 import {
   Dialog,
   DialogContent,
@@ -34,6 +34,9 @@ const Categories = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -142,6 +145,61 @@ const Categories = () => {
     fetchCategories();
   };
 
+  const handleSelect = (id) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const paginatedCategories = filteredCategories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    if (selected.length === paginatedCategories.length) {
+      setSelected([]);
+    } else {
+      setSelected(paginatedCategories.map((c) => c.id));
+    }
+  };
+
+  const paginatedCategories = filteredCategories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
+
+  const columns = [
+    {
+      key: 'name',
+      label: 'Name',
+      render: (category) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+            <FolderTree className="w-4 h-4 text-primary" />
+          </div>
+          <div>
+            <div className="text-foreground font-medium text-sm">{category.name || '—'}</div>
+            {category.productCount !== undefined && (
+              <div className="text-muted-foreground text-xs">{category.productCount || 0} products</div>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'description',
+      label: 'Description',
+      render: (category) => (
+        <span className="text-muted-foreground text-sm">{category.description || '—'}</span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (category) => (
+        <span className="inline-flex items-center gap-1.5 bg-secondary border border-secondary text-green-400 text-xs font-medium px-2.5 py-1 rounded-full">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+          Active
+        </span>
+      ),
+    },
+  ];
+
   return (
     <>
       <Helmet>
@@ -185,70 +243,27 @@ const Categories = () => {
             </div>
           </div>
 
-          {/* Categories List */}
-          {loading ? (
-            <div className="flex items-center justify-center py-16 px-4">
-              <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
-            </div>
-          ) : filteredCategories.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-xl p-12 border border-secondary text-center px-4"
-            >
-              <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
-                <FolderTree className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">No Categories Found</h3>
-              <p className="text-muted-foreground mb-6">
-                {categories.length === 0 
-                  ? "Get started by adding your first category"
-                  : "No categories match your search criteria"}
-              </p>
-              {categories.length === 0 && (
-                <Button onClick={() => setIsAddModalOpen(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Your First Category
-                </Button>
-              )}
-            </motion.div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
-              {filteredCategories.map((category, index) => (
-                <motion.div
-                  key={category.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  whileHover={{ y: -4 }}
-                  className="bg-card rounded-xl border border-secondary overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
-                >
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <FolderTree className="w-6 h-6 text-primary" />
-                      </div>
-                    </div>
-                    
-                    <h3 className="font-bold text-lg mb-2">{category.name}</h3>
-                    {category.description && (
-                      <p className="text-sm text-muted-foreground mb-4">{category.description}</p>
-                    )}
-                    
-                    <div className="pt-4 border-t border-secondary">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Package className="w-4 h-4" />
-                          <span>Products</span>
-                        </div>
-                        <span className="font-semibold">{category.productCount || 0}</span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
+          {/* Categories Table */}
+          <div className="px-4">
+            <DataTable
+              title="Categories"
+              count={filteredCategories.length}
+              data={paginatedCategories}
+              columns={columns}
+              selected={selected}
+              onSelect={handleSelect}
+              onSelectAll={handleSelectAll}
+              loading={loading}
+              emptyMessage={categories.length === 0 
+                ? "Get started by adding your first category"
+                : "No categories match your search criteria"}
+              emptyIcon={FolderTree}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              getRowId={(category) => category.id}
+            />
+          </div>
         </div>
 
         {/* Add Category Modal */}

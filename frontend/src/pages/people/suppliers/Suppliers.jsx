@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
 import { 
   Building2, 
   Plus, 
@@ -20,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import DataTable from '@/components/DataTable';
 import {
   Dialog,
   DialogContent,
@@ -36,6 +36,9 @@ const Suppliers = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -124,6 +127,80 @@ const Suppliers = () => {
     fetchSuppliers();
   };
 
+  const handleSelect = (id) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const paginatedSuppliers = filteredSuppliers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    if (selected.length === paginatedSuppliers.length) {
+      setSelected([]);
+    } else {
+      setSelected(paginatedSuppliers.map((s) => s.id));
+    }
+  };
+
+  const handleView = (supplier) => {
+    toast({
+      title: "View Supplier",
+      description: `Viewing details for ${supplier.name}`,
+    });
+  };
+
+  const paginatedSuppliers = filteredSuppliers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(filteredSuppliers.length / itemsPerPage);
+
+  const columns = [
+    {
+      key: 'name',
+      label: 'Name',
+      render: (supplier) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/70 rounded-full flex items-center justify-center text-white font-bold text-xs">
+            {(supplier.name || 'S').charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <div className="text-foreground font-medium text-sm">{supplier.name || '—'}</div>
+            <div className="text-muted-foreground text-xs">ID: {supplier.id}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'email',
+      label: 'Email',
+      render: (supplier) => (
+        <span className="text-muted-foreground text-sm">{supplier.email || '—'}</span>
+      ),
+    },
+    {
+      key: 'phone',
+      label: 'Phone',
+      render: (supplier) => (
+        <span className="text-muted-foreground text-sm">{supplier.phone || '—'}</span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (supplier) => (
+        <span className="inline-flex items-center gap-1.5 bg-secondary border border-secondary text-green-400 text-xs font-medium px-2.5 py-1 rounded-full">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+          Active
+        </span>
+      ),
+    },
+    {
+      key: 'address',
+      label: 'Address',
+      render: (supplier) => (
+        <span className="text-muted-foreground text-sm">{supplier.address || '—'}</span>
+      ),
+    },
+  ];
+
   return (
     <>
       <Helmet>
@@ -167,91 +244,28 @@ const Suppliers = () => {
             </div>
           </div>
 
-          {/* Suppliers List */}
-          {loading ? (
-            <div className="flex items-center justify-center py-16 px-4">
-              <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
-            </div>
-          ) : filteredSuppliers.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-xl p-12 border border-secondary text-center px-4"
-            >
-              <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
-                <Building2 className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">No Suppliers Found</h3>
-              <p className="text-muted-foreground mb-6">
-                {suppliers.length === 0 
-                  ? "Get started by adding your first supplier"
-                  : "No suppliers match your search criteria"}
-              </p>
-              {suppliers.length === 0 && (
-                <Button onClick={() => setIsAddModalOpen(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Your First Supplier
-                </Button>
-              )}
-            </motion.div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
-              {filteredSuppliers.map((supplier, index) => (
-                <motion.div
-                  key={supplier.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  whileHover={{ y: -4 }}
-                  className="bg-card rounded-xl border border-secondary overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
-                >
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                          {supplier.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-lg">{supplier.name}</h3>
-                          <p className="text-xs text-muted-foreground">ID: {supplier.id}</p>
-                        </div>
-                      </div>
-                      <Button size="sm" variant="outline">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    </div>
-
-                    <div className="space-y-2 mb-4">
-                      {supplier.contactPerson && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-muted-foreground">Contact:</span>
-                          <span className="font-medium">{supplier.contactPerson}</span>
-                        </div>
-                      )}
-                      {supplier.phone && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Phone className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">{supplier.phone}</span>
-                        </div>
-                      )}
-                      {supplier.email && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Mail className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-muted-foreground truncate">{supplier.email}</span>
-                        </div>
-                      )}
-                      {supplier.address && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-muted-foreground truncate">{supplier.address}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
+          {/* Suppliers Table */}
+          <div className="px-4">
+            <DataTable
+              title="Suppliers"
+              count={filteredSuppliers.length}
+              data={paginatedSuppliers}
+              columns={columns}
+              selected={selected}
+              onSelect={handleSelect}
+              onSelectAll={handleSelectAll}
+              onView={handleView}
+              loading={loading}
+              emptyMessage={suppliers.length === 0 
+                ? "Get started by adding your first supplier"
+                : "No suppliers match your search criteria"}
+              emptyIcon={Building2}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              getRowId={(supplier) => supplier.id}
+            />
+          </div>
         </div>
 
         {/* Add Supplier Modal */}

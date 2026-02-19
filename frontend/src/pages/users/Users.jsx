@@ -13,14 +13,17 @@ import {
   Save,
   X,
   Loader2,
-  UserPlus
+  UserPlus,
+  Trash2,
+  Pencil
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import DataTable from '@/components/DataTable';
 import {
   Dialog,
   DialogContent,
@@ -31,12 +34,16 @@ import {
 
 const Users = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [branches, setBranches] = useState([]);
   const [formData, setFormData] = useState({
     username: '',
@@ -220,6 +227,100 @@ const Users = () => {
     );
   };
 
+  const handleSelect = (id) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    const paginatedIds = paginatedUsers.map((u) => u.id);
+    const allSelected = paginatedIds.every(id => selected.includes(id));
+    
+    if (allSelected) {
+      // Deselect all on current page
+      setSelected(selected.filter(id => !paginatedIds.includes(id)));
+    } else {
+      // Select all on current page
+      setSelected([...new Set([...selected, ...paginatedIds])]);
+    }
+  };
+
+  const handleDelete = async (user) => {
+    if (!confirm(`Are you sure you want to delete ${user.full_name || user.username}?`)) return;
+    
+    const { ok, data } = await authFetch(`/api/users/${user.id}`, {
+      method: 'DELETE',
+    });
+    
+    if (ok) {
+      toast({
+        title: 'User deleted',
+        description: 'User has been deleted successfully.',
+      });
+      fetchUsers();
+      setSelected(selected.filter(id => id !== user.id));
+    } else {
+      toast({
+        title: 'Error',
+        description: data?.message || 'Failed to delete user.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleEdit = (user) => {
+    navigate(`/users/edit/${user.id}`);
+  };
+
+  const handleView = (user) => {
+    navigate(`/users/view/${user.id}`);
+  };
+
+  const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+
+  const columns = [
+    {
+      key: 'name',
+      label: 'Name',
+      render: (user) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white font-bold text-xs">
+            {(user.full_name || user.username || 'U').charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <div className="text-foreground font-medium text-sm">{user.full_name || user.username || 'Unknown User'}</div>
+            <div className="text-muted-foreground text-xs">@{user.username}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (user) => (
+        <span className={`inline-flex items-center gap-1.5 bg-secondary border border-secondary text-green-400 text-xs font-medium px-2.5 py-1 rounded-full ${
+          user.is_active === false ? 'text-gray-400' : ''
+        }`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${user.is_active === false ? 'bg-gray-400' : 'bg-green-400 animate-pulse'}`} />
+          {user.is_active !== false ? 'Active' : 'Inactive'}
+        </span>
+      ),
+    },
+    {
+      key: 'role',
+      label: 'Role',
+      render: (user) => getRoleBadge(user.role),
+    },
+    {
+      key: 'email',
+      label: 'Email address',
+      render: (user) => <span className="text-muted-foreground text-sm">{user.email || '—'}</span>,
+    },
+  ];
+
   return (
     <>
       <Helmet>
@@ -228,27 +329,28 @@ const Users = () => {
       </Helmet>
 
       <div className="space-y-4">
+        {/* Action Buttons - Top Right */}
+        <div className="flex items-center justify-end gap-3">
+          <Button
+            onClick={() => setIsAddModalOpen(true)}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add User
+          </Button>
+          <Button
+            className="flex items-center gap-2 bg-primary text-primary-foreground"
+          >
+            <List className="w-4 h-4" />
+            User List
+          </Button>
+          <Button variant="outline" size="sm" onClick={fetchUsers} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+        
         <div className="space-y-4">
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3 px-4">
-            <Button
-              onClick={() => setIsAddModalOpen(true)}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add User
-            </Button>
-            <Button
-              className="flex items-center gap-2 bg-primary text-primary-foreground"
-            >
-              <List className="w-4 h-4" />
-              User List
-            </Button>
-            <Button variant="outline" size="sm" onClick={fetchUsers} disabled={loading}>
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
 
           {/* Search */}
           <div className="bg-card rounded-xl p-4 border border-secondary shadow-sm px-4">
@@ -263,89 +365,28 @@ const Users = () => {
             </div>
           </div>
 
-          {/* Users List */}
-          {loading ? (
-            <div className="flex items-center justify-center py-16 px-4">
-              <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
-            </div>
-          ) : filteredUsers.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-xl p-12 border border-secondary text-center px-4"
-            >
-              <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
-                <UserCog className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">No Users Found</h3>
-              <p className="text-muted-foreground mb-6">
-                {users.length === 0 
-                  ? "Get started by adding your first user"
-                  : "No users match your search criteria"}
-              </p>
-              {users.length === 0 && (
-                <Button onClick={() => setIsAddModalOpen(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Your First User
-                </Button>
-              )}
-            </motion.div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
-              {filteredUsers.map((user, index) => (
-                <motion.div
-                  key={user.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  whileHover={{ y: -4 }}
-                  className="bg-card rounded-xl border border-secondary overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
-                >
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/70 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                          {(user.full_name || user.username || 'U').charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-lg">{user.full_name || user.username || 'Unknown User'}</h3>
-                          <p className="text-xs text-muted-foreground">@{user.username} · ID: {user.id}</p>
-                        </div>
-                      </div>
-                      <Link to={`/users/view/${user.id}`}>
-                        <Button size="sm" variant="outline">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      </Link>
-                    </div>
-
-                    <div className="space-y-2 mb-4">
-                      {user.email && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Mail className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-muted-foreground truncate">{user.email}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="pt-4 border-t border-secondary flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-muted-foreground" />
-                        {getRoleBadge(user.role)}
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        user.is_active !== false
-                          ? 'bg-green-500/20 text-green-600 dark:text-green-400'
-                          : 'bg-gray-500/20 text-gray-600 dark:text-gray-400'
-                      }`}>
-                        {user.is_active !== false ? 'Active' : 'Inactive'}
-                      </span>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
+          {/* Users Table */}
+          <DataTable
+            title="Team members"
+            count={filteredUsers.length}
+            data={paginatedUsers}
+            columns={columns}
+            selected={selected}
+            onSelect={handleSelect}
+            onSelectAll={handleSelectAll}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onView={handleView}
+            loading={loading}
+            emptyMessage={users.length === 0 
+              ? "Get started by adding your first user"
+              : "No users match your search criteria"}
+            emptyIcon={UserCog}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            getRowId={(user) => user.id}
+          />
         </div>
 
         {/* Add User Modal */}
