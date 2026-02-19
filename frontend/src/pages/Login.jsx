@@ -122,22 +122,13 @@ export default function LoginPage() {
       setOtpError('Please enter your email or username (at least 3 characters)');
       return;
     }
-    
-    // Normalize phone number (remove spaces, dashes, etc.)
-    const normalizedPhone = phone.replace(/[\s\-\(\)]/g, '').trim();
-    
-    if (!normalizedPhone || normalizedPhone.length < 9) {
-      setOtpError('Please enter a valid phone number');
-      return;
-    }
 
     setLoading(true);
     try {
       const { ok, data } = await publicFetch('/api/auth/forgot-password', {
         method: 'POST',
         body: JSON.stringify({ 
-          email: normalizedEmail,
-          phone: normalizedPhone 
+          username: normalizedEmail
         }),
       });
 
