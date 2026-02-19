@@ -30,11 +30,11 @@
     --destructive-foreground: #ffffff;   /* White text on destructive */
     
     /* Primary/Accent Colors */
-    --primary: #ffffff;                  /* Primary white */
-    --primary-dark: #e5e5e5;             /* Light gray */
-    --primary-darkest: #d4d4d4;           /* Medium gray */
+    --primary: #f97316;                  /* Primary orange */
+    --primary-dark: #ea580c;             /* Dark orange */
+    --primary-darkest: #c2410c;           /* Darkest orange */
     --sidebar-active-bg: #2a3a4f;        /* Sidebar active background */
-    --sidebar-active-accent: #ffffff;    /* Sidebar active accent */
+    --sidebar-active-accent: #f97316;    /* Sidebar active accent */
     
     /* Status Colors */
     --success: #22c55e;                  /* Success/Income green */
@@ -42,10 +42,10 @@
     --warning: #eab308;                  /* Warning yellow */
     --cyan: #22d3ee;                     /* Cyan */
     --purple: #a78bfa;                   /* Purple */
-    --orange: #ffffff;                   /* White */
+    --orange: #f97316;                   /* Orange */
     
     /* Focus Ring */
-    --ring: #ffffff;                     /* Focus ring color */
+    --ring: #f97316;                     /* Focus ring color */
 
     /* Table Colors */
     --table-header-bg: #0f1117;          /* Table header background */
