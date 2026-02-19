@@ -39,21 +39,18 @@ router.get('/profile', authenticate, authController.getProfile);
 // Password reset routes (no authentication required)
 router.post('/forgot-password', [
     body('email')
-        .custom((value) => {
-            if (!value || (typeof value === 'string' && value.trim().length === 0)) {
-                throw new Error('Email or username is required');
-            }
-            const trimmed = String(value).trim();
-            if (trimmed.length < 3) {
-                throw new Error('Email or username must be at least 3 characters');
-            }
-            return true;
-        }),
+        .trim()
+        .notEmpty()
+        .withMessage('Email or username is required')
+        .bail()
+        .isLength({ min: 3 })
+        .withMessage('Email or username must be at least 3 characters'),
     body('phone')
+        .trim()
+        .notEmpty()
+        .withMessage('Phone number is required')
+        .bail()
         .custom((value) => {
-            if (!value || (typeof value === 'string' && value.trim().length === 0)) {
-                throw new Error('Phone number is required');
-            }
             const trimmed = String(value).trim();
             // Remove spaces, dashes, parentheses for validation
             const normalized = trimmed.replace(/[\s\-\(\)]/g, '');
