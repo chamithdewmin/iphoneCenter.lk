@@ -759,28 +759,62 @@ const requestPasswordResetOTP = async (req, res, next) => {
 };
 
 /**
+ * Normalize phone to digits-only, strip leading 94 (Sri Lanka) or 0 for consistent comparison.
+ */
+function normalizePhoneForLookup(phoneStr) {
+    if (!phoneStr || typeof phoneStr !== 'string') return '';
+    const digits = phoneStr.replace(/\D/g, '');
+    return digits.replace(/^(94|0)+/, '') || digits;
+}
+
+/**
+ * Get OTP from store by trying multiple possible keys (DB format, request format, digits-only).
+ */
+function getStoredOTP(otpStore, ...keys) {
+    for (const key of keys) {
+        if (!key) continue;
+        const stored = otpStore.get(key);
+        if (stored) return { stored, usedKey: key };
+    }
+    return { stored: null, usedKey: null };
+}
+
+/**
  * Verify OTP and reset password.
  * Supports lookup by username, email, or phone (req.body.username can be any of these).
+ * Status codes: 400 invalid input, 401 invalid/expired OTP, 404 user not found, 200 success.
  */
 const resetPasswordWithOTP = async (req, res, next) => {
+    const logCtx = { path: '/api/auth/reset-password', method: req.method };
     try {
         const { username: identifier, otp, newPassword, confirmPassword } = req.body;
 
-        if (!identifier || !otp || !newPassword) {
+        logger.info('Reset password request received', { ...logCtx, hasUsername: !!identifier, hasOtp: !!otp });
+
+        // --- Validation: required fields ---
+        if (!identifier || String(identifier).trim() === '') {
+            logger.warn('Reset password validation failed: username/email/phone required', logCtx);
             return res.status(400).json({
                 success: false,
-                message: 'Username/email/phone, OTP, and new password are required'
+                message: 'Username, email, or phone is required'
             });
         }
-
-        if (newPassword.length < 6) {
+        if (!otp || String(otp).trim() === '') {
+            logger.warn('Reset password validation failed: OTP required', logCtx);
             return res.status(400).json({
                 success: false,
-                message: 'Password must be at least 6 characters'
+                message: 'OTP is required'
             });
         }
-
-        if (confirmPassword && newPassword !== confirmPassword) {
+        if (!newPassword || newPassword.length < 6) {
+            logger.warn('Reset password validation failed: password too short', logCtx);
+            return res.status(400).json({
+                success: false,
+                message: 'New password must be at least 6 characters'
+            });
+        }
+        if (confirmPassword !== undefined && newPassword !== confirmPassword) {
+            logger.warn('Reset password validation failed: passwords do not match', logCtx);
             return res.status(400).json({
                 success: false,
                 message: 'Passwords do not match'
@@ -790,29 +824,32 @@ const resetPasswordWithOTP = async (req, res, next) => {
         const identifierTrimmed = String(identifier).trim();
         const identifierLower = identifierTrimmed.toLowerCase();
         const identifierDigits = identifierTrimmed.replace(/\D/g, '');
+        const normalizedPhoneForLookup = identifierDigits.length >= 9 ? normalizePhoneForLookup(identifierTrimmed) : null;
 
-        // Find user by username, email, or phone (phone: compare digits-only)
+        // --- User lookup: username OR email OR phone (phone normalized for 0/94 prefix) ---
         let users;
         try {
+            const phoneParam = normalizedPhoneForLookup || '';
             [users] = await executeQuery(
                 `SELECT id, username, email, phone, is_active FROM users
                  WHERE is_active = TRUE
                  AND (
                    username = ?
-                   OR LOWER(TRIM(email)) = ?
-                   OR (LENGTH(?) >= 9 AND REGEXP_REPLACE(COALESCE(phone, ''), '[^0-9]', '', 'g') = ?)
+                   OR LOWER(TRIM(COALESCE(email, ''))) = ?
+                   OR (? <> '' AND REGEXP_REPLACE(REGEXP_REPLACE(COALESCE(phone, ''), '[^0-9]', '', 'g'), '^(94|0)+', '') = ?)
                  )`,
-                [identifierTrimmed, identifierLower, identifierDigits, identifierDigits]
+                [identifierTrimmed, identifierLower, phoneParam, phoneParam]
             );
         } catch (dbErr) {
-            logger.error('Reset password user lookup error', { message: dbErr?.message });
+            logger.error('Reset password user lookup error', { ...logCtx, message: dbErr?.message });
             return res.status(500).json({
                 success: false,
                 message: 'Database error. Please try again later.'
             });
         }
 
-        if (!users || users.length === 0) {
+        if (!Array.isArray(users) || users.length === 0) {
+            logger.warn('Reset password: user not found', { ...logCtx, identifier: identifierTrimmed });
             return res.status(404).json({
                 success: false,
                 message: 'User not found'
@@ -820,39 +857,40 @@ const resetPasswordWithOTP = async (req, res, next) => {
         }
 
         const user = users[0];
+        logger.info('Reset password: user found', { ...logCtx, userId: user.id, username: user.username });
 
-        // Normalize user's phone the same way as in requestPasswordResetOTP (OTP store key)
-        const normalizedPhone = (user.phone || '').replace(/[\s\-\(\)]/g, '').trim();
-        // When frontend sends username: phone, OTP may be stored under that phone string; try both
+        // OTP store keys: DB phone (as stored in forgot-password), request phone, digits-only variants
+        const dbPhoneRaw = (user.phone || '').replace(/[\s\-\(\)]/g, '').trim();
         const requestPhoneKey = identifierDigits.length >= 9 ? identifierTrimmed.replace(/[\s\-\(\)]/g, '').trim() : null;
-        const storedOTP = otpStore.get(normalizedPhone) || (requestPhoneKey ? otpStore.get(requestPhoneKey) : null);
+        const keysToTry = [dbPhoneRaw, requestPhoneKey, normalizedPhoneForLookup, identifierDigits].filter(Boolean);
+        const uniqKeys = [...new Set(keysToTry)];
+        const { stored: storedOTP, usedKey: otpKey } = getStoredOTP(otpStore, ...uniqKeys);
 
         if (!storedOTP) {
-            return res.status(400).json({
+            logger.warn('Reset password: OTP not found or expired', { ...logCtx, userId: user.id });
+            return res.status(401).json({
                 success: false,
-                message: 'OTP not found or expired. Please request a new OTP.'
+                message: 'Invalid or expired OTP. Please request a new one.'
             });
         }
 
-        // Verify OTP not expired
         if (storedOTP.expiresAt < Date.now()) {
-            otpStore.delete(normalizedPhone);
-            if (requestPhoneKey && requestPhoneKey !== normalizedPhone) otpStore.delete(requestPhoneKey);
-            return res.status(400).json({
+            uniqKeys.forEach(k => otpStore.delete(k));
+            logger.warn('Reset password: OTP expired', { ...logCtx, userId: user.id });
+            return res.status(401).json({
                 success: false,
-                message: 'OTP has expired. Please request a new OTP.'
+                message: 'OTP has expired. Please request a new one.'
             });
         }
 
-        // Verify OTP matches
-        if (storedOTP.otp !== otp.trim()) {
-            return res.status(400).json({
+        if (storedOTP.otp !== String(otp).trim()) {
+            logger.warn('Reset password: invalid OTP', { ...logCtx, userId: user.id });
+            return res.status(401).json({
                 success: false,
                 message: 'Invalid OTP'
             });
         }
 
-        // Ensure we have the same user (stored userId)
         const userId = storedOTP.userId;
         const [usersById] = await executeQuery(
             'SELECT id, username, is_active FROM users WHERE id = ? AND is_active = TRUE',
@@ -860,8 +898,8 @@ const resetPasswordWithOTP = async (req, res, next) => {
         );
 
         if (!usersById || usersById.length === 0) {
-            otpStore.delete(normalizedPhone);
-            if (requestPhoneKey && requestPhoneKey !== normalizedPhone) otpStore.delete(requestPhoneKey);
+            uniqKeys.forEach(k => otpStore.delete(k));
+            logger.warn('Reset password: user no longer active', { ...logCtx, userId });
             return res.status(404).json({
                 success: false,
                 message: 'User account not found or inactive'
@@ -870,31 +908,22 @@ const resetPasswordWithOTP = async (req, res, next) => {
 
         const userToUpdate = usersById[0];
 
-        // Hash new password
         const passwordHash = await bcrypt.hash(newPassword, 10);
-
-        // Update password
         await executeQuery(
             'UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?',
             [passwordHash, userToUpdate.id]
         );
 
-        // Remove OTP from store (both possible keys)
-        otpStore.delete(normalizedPhone);
-        if (requestPhoneKey && requestPhoneKey !== normalizedPhone) otpStore.delete(requestPhoneKey);
+        uniqKeys.forEach(k => otpStore.delete(k));
 
-        logger.info(`Password reset successful for user ${userToUpdate.username} (id: ${userToUpdate.id})`);
+        logger.info('Password reset successful', { ...logCtx, userId: userToUpdate.id, username: userToUpdate.username });
 
-        res.json({
+        return res.json({
             success: true,
-            message: 'Password has been reset successfully'
+            message: 'Password reset successfully'
         });
     } catch (error) {
-        logger.error('Reset password error:', {
-            message: error?.message,
-            stack: error?.stack,
-            code: error?.code
-        });
+        logger.error('Reset password error', { ...logCtx, message: error?.message, stack: error?.stack });
         next(error);
     }
 };
