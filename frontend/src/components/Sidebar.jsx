@@ -455,7 +455,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               <div key={groupIdx} className="mb-4">
                 {!collapsed && (
                   <div className="px-2 py-1.5 mb-1">
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       {group.label}
                     </span>
                   </div>
