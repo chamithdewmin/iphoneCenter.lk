@@ -167,6 +167,20 @@ const Suppliers = () => {
     }
   };
 
+  const handleDelete = async (supplier) => {
+    if (!confirm(`Are you sure you want to delete ${supplier.name}?`)) return;
+    
+    const updatedSuppliers = suppliers.filter(s => s.id !== supplier.id);
+    setSuppliers(updatedSuppliers);
+    setStorageData('suppliers', updatedSuppliers);
+    
+    toast({
+      title: 'Supplier deleted',
+      description: 'Supplier has been deleted successfully.',
+    });
+    setSelected(selected.filter(id => id !== supplier.id));
+  };
+
   const handleEdit = async (supplier) => {
     setLoadingItem(true);
     // Simulate API call delay
@@ -353,6 +367,7 @@ const Suppliers = () => {
             onSelectAll={handleSelectAll}
             onView={handleView}
             onEdit={handleEdit}
+            onDelete={handleDelete}
             loading={loading}
               emptyMessage={suppliers.length === 0 
                 ? "Get started by adding your first supplier"

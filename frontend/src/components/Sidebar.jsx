@@ -347,11 +347,11 @@ const Sidebar = ({ isOpen, onClose }) => {
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="w-full flex items-center justify-between gap-4 bg-card border border-secondary rounded-xl px-4 py-3 shadow-lg hover:bg-secondary/50 transition-colors"
+                  className="w-full flex items-center justify-between gap-4 bg-muted border border-secondary rounded-xl px-4 py-3 shadow-lg hover:bg-accent transition-colors"
                 >
                   {/* Avatar with green dot */}
                   <div className="relative flex-shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-secondary border border-secondary flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-accent border border-secondary flex items-center justify-center">
                       <span className="text-foreground text-sm font-semibold">
                         {(user?.name || user?.username || 'U').charAt(0).toUpperCase()}
                       </span>

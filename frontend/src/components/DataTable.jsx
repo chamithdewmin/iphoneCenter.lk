@@ -146,15 +146,6 @@ const DataTable = ({
                               renderRowActions(row)
                             ) : (
                               <>
-                                {onDelete && (
-                                  <button
-                                    onClick={() => onDelete(row)}
-                                    className="hover:text-destructive transition-colors p-1 rounded hover:bg-secondary"
-                                    title="Delete"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                )}
                                 {onEdit && (
                                   <button
                                     onClick={() => onEdit(row)}
@@ -171,6 +162,15 @@ const DataTable = ({
                                     title="View"
                                   >
                                     <Eye className="w-4 h-4" />
+                                  </button>
+                                )}
+                                {onDelete && (
+                                  <button
+                                    onClick={() => onDelete(row)}
+                                    className="hover:text-destructive transition-colors p-1 rounded hover:bg-secondary"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
                                   </button>
                                 )}
                               </>

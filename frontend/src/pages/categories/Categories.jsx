@@ -160,6 +160,29 @@ const Categories = () => {
     }
   };
 
+  const handleDelete = async (category) => {
+    if (!confirm(`Are you sure you want to delete ${category.name}?`)) return;
+    
+    const { ok, data } = await authFetch(`/api/categories/${category.id}`, {
+      method: 'DELETE',
+    });
+    
+    if (ok) {
+      toast({
+        title: 'Category deleted',
+        description: 'Category has been deleted successfully.',
+      });
+      fetchCategories();
+      setSelected(selected.filter(id => id !== category.id));
+    } else {
+      toast({
+        title: 'Error',
+        description: data?.message || 'Failed to delete category.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const paginatedCategories = filteredCategories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
 
@@ -254,6 +277,7 @@ const Categories = () => {
               selected={selected}
               onSelect={handleSelect}
               onSelectAll={handleSelectAll}
+              onDelete={handleDelete}
               loading={loading}
               emptyMessage={categories.length === 0 
                 ? "Get started by adding your first category"

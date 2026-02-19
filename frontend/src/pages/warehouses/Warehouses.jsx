@@ -199,6 +199,29 @@ const Warehouses = () => {
     }
   };
 
+  const handleDelete = async (warehouse) => {
+    if (!confirm(`Are you sure you want to delete ${warehouse.name}?`)) return;
+    
+    const { ok, data } = await authFetch(`/api/branches/${warehouse.id}`, {
+      method: 'DELETE',
+    });
+    
+    if (ok) {
+      toast({
+        title: 'Warehouse deleted',
+        description: 'Warehouse has been deleted successfully.',
+      });
+      fetchBranches();
+      setSelected(selected.filter(id => id !== warehouse.id));
+    } else {
+      toast({
+        title: 'Error',
+        description: data?.message || 'Failed to delete warehouse.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleEdit = async (warehouse) => {
     setLoadingItem(true);
     const { ok, data } = await authFetch(`/api/branches/${warehouse.id}`);
@@ -398,6 +421,7 @@ const Warehouses = () => {
             onSelect={handleSelect}
             onSelectAll={handleSelectAll}
             onEdit={handleEdit}
+            onDelete={handleDelete}
             onView={handleView}
             loading={loading}
             emptyMessage={warehouses.length === 0 

@@ -170,6 +170,29 @@ const Customers = () => {
     }
   };
 
+  const handleDelete = async (customer) => {
+    if (!confirm(`Are you sure you want to delete ${customer.name}?`)) return;
+    
+    const { ok, data } = await authFetch(`/api/customers/${customer.id}`, {
+      method: 'DELETE',
+    });
+    
+    if (ok) {
+      toast({
+        title: 'Customer deleted',
+        description: 'Customer has been deleted successfully.',
+      });
+      fetchCustomers();
+      setSelected(selected.filter(id => id !== customer.id));
+    } else {
+      toast({
+        title: 'Error',
+        description: data?.message || 'Failed to delete customer.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleEdit = async (customer) => {
     setLoadingItem(true);
     const { ok, data } = await authFetch(`/api/customers/${customer.id}`);
@@ -347,6 +370,7 @@ const Customers = () => {
             onSelectAll={handleSelectAll}
             onView={handleView}
             onEdit={handleEdit}
+            onDelete={handleDelete}
             loading={loading}
               emptyMessage={customers.length === 0 
                 ? "Get started by adding your first customer"
