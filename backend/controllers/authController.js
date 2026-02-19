@@ -437,10 +437,29 @@ const requestPasswordResetOTP = async (req, res, next) => {
         }
 
         // Find user by username or email
-        const [users] = await executeQuery(
-            'SELECT id, username, email, full_name, phone FROM users WHERE (username = ? OR email = ?) AND is_active = TRUE',
-            [username.trim(), username.trim()]
-        );
+        let users;
+        try {
+            [users] = await executeQuery(
+                'SELECT id, username, email, full_name, phone FROM users WHERE (username = ? OR email = ?) AND is_active = TRUE',
+                [username.trim(), username.trim()]
+            );
+        } catch (dbError) {
+            logger.error('Database error in requestPasswordResetOTP:', dbError);
+            // If phone column doesn't exist, try without it
+            if (dbError.message && dbError.message.includes('phone')) {
+                logger.warn('Phone column may not exist, trying query without phone');
+                [users] = await executeQuery(
+                    'SELECT id, username, email, full_name FROM users WHERE (username = ? OR email = ?) AND is_active = TRUE',
+                    [username.trim(), username.trim()]
+                );
+                // Add phone as null if column doesn't exist
+                if (users && users.length > 0) {
+                    users = users.map(u => ({ ...u, phone: null }));
+                }
+            } else {
+                throw dbError;
+            }
+        }
 
         if (users.length === 0) {
             // Don't reveal if user exists for security
@@ -453,7 +472,8 @@ const requestPasswordResetOTP = async (req, res, next) => {
         const user = users[0];
 
         // Check if user has phone number
-        if (!user.phone) {
+        if (!user.phone || user.phone.trim() === '') {
+            logger.warn(`User ${user.username} has no phone number registered`);
             return res.status(400).json({
                 success: false,
                 message: 'No phone number registered for this account. Please contact administrator.'
@@ -472,14 +492,24 @@ const requestPasswordResetOTP = async (req, res, next) => {
         });
 
         // Send OTP via SMS
-        const message = `Your password reset OTP for iphone center.lk is: ${otp}. Valid for 10 minutes.`;
-        const smsResult = await sendSMS(user.phone, message);
+        try {
+            const message = `Your password reset OTP for iphone center.lk is: ${otp}. Valid for 10 minutes.`;
+            const smsResult = await sendSMS(user.phone, message);
 
-        if (!smsResult.success) {
-            logger.error(`Failed to send OTP SMS to ${user.phone}:`, smsResult.error);
+            if (!smsResult.success) {
+                logger.error(`Failed to send OTP SMS to ${user.phone}:`, smsResult.error);
+                // Still return success but log the error - OTP is stored, user can try again
+                logger.warn(`OTP ${otp} generated for user ${user.username} but SMS failed. User can contact admin.`);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Failed to send OTP SMS. Please contact administrator or try again later.'
+                });
+            }
+        } catch (smsError) {
+            logger.error('SMS sending exception:', smsError);
             return res.status(500).json({
                 success: false,
-                message: 'Failed to send OTP. Please try again later.'
+                message: 'Failed to send OTP. Please contact administrator.'
             });
         }
 

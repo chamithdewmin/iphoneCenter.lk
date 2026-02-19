@@ -6,7 +6,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertCircle, ArrowLeft, CheckCircle2 } from 'lucide-react';
-import { authFetch } from '@/lib/api';
+import { getApiUrl } from '@/lib/api';
+
+// Helper function for non-authenticated requests
+const publicFetch = async (path, options = {}) => {
+  const base = getApiUrl();
+  const url = path.startsWith('http') ? path : `${base}${path.startsWith('/') ? path : `/${path}`}`;
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, data };
+};
 import loginBg from '@/assets/login-bg.jpg';
 import Loading from '@/components/Loading';
 
@@ -35,7 +50,7 @@ const ForgotPassword = () => {
 
     setLoading(true);
     try {
-      const { ok, data } = await authFetch('/api/auth/forgot-password', {
+      const { ok, data } = await publicFetch('/api/auth/forgot-password', {
         method: 'POST',
         body: JSON.stringify({ username: username.trim() }),
       });
@@ -72,7 +87,7 @@ const ForgotPassword = () => {
 
     setLoading(true);
     try {
-      const { ok, data } = await authFetch('/api/auth/reset-password', {
+      const { ok, data } = await publicFetch('/api/auth/reset-password', {
         method: 'POST',
         body: JSON.stringify({
           username: username.trim(),

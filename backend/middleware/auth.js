@@ -112,6 +112,20 @@ const verifyRefreshToken = async (req, res, next) => {
         req.userId = decoded.userId;
         next();
     } catch (error) {
+        if (error.name === 'TokenExpiredError') {
+            logger.debug('Refresh token expired');
+            return res.status(401).json({
+                success: false,
+                message: 'Refresh token expired'
+            });
+        }
+        if (error.name === 'JsonWebTokenError') {
+            logger.debug('Invalid refresh token format');
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid refresh token'
+            });
+        }
         logger.error('Refresh token verification error:', error);
         return res.status(401).json({
             success: false,
