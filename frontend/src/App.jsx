@@ -5,7 +5,6 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import POS from './pages/POS';
 import Inventory from './pages/Inventory';
-import Orders from './pages/Orders';
 import CustomersPage from './pages/Customers';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
@@ -228,7 +227,6 @@ function App() {
         {/* Per Order */}
         <Route path="per-order/add" element={<AddPerOrder />} />
         <Route path="per-order/list" element={<ListPerOrder />} />
-        <Route path="orders" element={<Orders />} />
       </Route>
     </Routes>
   );

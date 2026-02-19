@@ -107,6 +107,7 @@ const menuItems = [
   { type: 'link', to: '/people/customers', icon: Users, label: 'Customers', permission: 'customers' },
   { type: 'link', to: '/people/suppliers', icon: Building2, label: 'Suppliers', permission: 'customers' },
   { type: 'link', to: '/categories', icon: FolderTree, label: 'Categories', permission: 'products' },
+  { type: 'link', to: '/users/roles', icon: ShieldCheck, label: 'Roles', permission: 'users' },
   {
     type: 'menu',
     icon: BarChart3,
@@ -140,16 +141,7 @@ const menuItems = [
       { to: '/sms/custom-message', label: 'Custom Message', icon: MessageSquare },
     ],
   },
-  {
-    type: 'menu',
-    icon: UserCog,
-    label: 'User Manage',
-    permission: 'users',
-    children: [
-      { to: '/users', label: 'Users', icon: UserCog },
-      { to: '/users/roles', label: 'Roles', icon: ShieldCheck },
-    ],
-  },
+  { type: 'link', to: '/users', icon: UserCog, label: 'Users', permission: 'users' },
   {
     type: 'menu',
     icon: Settings,
