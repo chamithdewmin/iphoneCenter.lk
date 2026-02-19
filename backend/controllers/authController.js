@@ -608,10 +608,10 @@ const requestPasswordResetOTP = async (req, res, next) => {
             });
         }
 
-        // Verify phone matches
-        const userPhone = (user.phone || '').replace(/[\s\-\(\)]/g, '').trim();
-        if (userPhone !== normalizedPhone) {
-            logger.warn(`Phone mismatch for user ${user.username} (ID: ${user.id}). Provided: ${normalizedPhone}, DB: ${userPhone}`);
+        // Verify phone matches (normalize DB phone for comparison)
+        const dbPhone = (user.phone || '').replace(/[\s\-\(\)]/g, '').trim();
+        if (dbPhone !== normalizedPhone) {
+            logger.warn(`Phone mismatch for user ${user.username} (ID: ${user.id}). Provided: ${normalizedPhone}, DB: ${dbPhone}`);
             return res.status(400).json({
                 success: false,
                 message: 'Email and phone number do not match. Please verify both details are correct.'
@@ -636,8 +636,8 @@ const requestPasswordResetOTP = async (req, res, next) => {
             });
         }
 
-        // Use the normalized phone number from request (not from DB, as DB might have different format)
-        const userPhone = normalizedPhone;
+        console.log(`User verified: ${user.username} (${user.email}) - Phone: ${normalizedPhone}`);
+        console.log('Account is active and has role:', user.role);
 
         // Generate 6-digit OTP
         const otp = crypto.randomInt(100000, 999999).toString();
@@ -673,16 +673,30 @@ const requestPasswordResetOTP = async (req, res, next) => {
             });
         }
 
+        // Format phone for SMS (add country code if needed)
+        let smsPhone = normalizedPhone;
+        // If phone starts with 0, replace with 94 (Sri Lanka country code)
+        if (smsPhone.startsWith('0')) {
+            smsPhone = '94' + smsPhone.substring(1);
+        }
+        // If phone doesn't start with country code, add 94
+        else if (!smsPhone.startsWith('94')) {
+            smsPhone = '94' + smsPhone;
+        }
+
+        console.log(`Sending OTP via SMS to: ${smsPhone} for user: ${user.username}`);
+        
         let smsResult;
         try {
             const message = `Your password reset OTP for iphone center.lk is: ${otp}. Valid for 10 minutes.`;
-            logger.info(`Attempting to send SMS to ${userPhone} for user ${user.username}`);
-            smsResult = await sendSMS(userPhone, message);
+            logger.info(`Attempting to send SMS to ${smsPhone} for user ${user.username}`);
+            smsResult = await sendSMS(smsPhone, message);
             logger.info(`SMS send result:`, { success: smsResult?.success, error: smsResult?.error });
 
             // Check if SMS was sent successfully
             if (!smsResult) {
-                logger.error(`SMS service returned null/undefined for ${userPhone}`);
+                logger.error(`SMS service returned null/undefined for ${smsPhone}`);
+                console.error(`SMS service returned null/undefined for ${smsPhone}`);
                 return res.status(500).json({
                     success: false,
                     message: 'Failed to send OTP SMS. Please contact administrator.'
@@ -691,7 +705,8 @@ const requestPasswordResetOTP = async (req, res, next) => {
 
             if (smsResult.success !== true) {
                 const errorMsg = smsResult.error || 'Unknown SMS error';
-                logger.error(`Failed to send OTP SMS to ${userPhone}:`, errorMsg);
+                logger.error(`Failed to send OTP SMS to ${smsPhone}:`, errorMsg);
+                console.error(`Failed to send OTP SMS to ${smsPhone}:`, errorMsg);
                 // OTP is stored, but SMS failed - return error so user knows
                 return res.status(500).json({
                     success: false,
@@ -699,7 +714,8 @@ const requestPasswordResetOTP = async (req, res, next) => {
                 });
             }
 
-            logger.info(`Password reset OTP sent successfully to user ${user.username} (${userPhone})`);
+            logger.info(`Password reset OTP sent successfully to user ${user.username} (${smsPhone})`);
+            console.log(`✅ OTP sent successfully to ${smsPhone} for user ${user.username}`);
 
             return res.json({
                 success: true,
@@ -709,11 +725,12 @@ const requestPasswordResetOTP = async (req, res, next) => {
             logger.error('SMS sending exception:', {
                 message: smsError?.message || 'Unknown error',
                 stack: smsError?.stack,
-                phone: userPhone,
+                phone: smsPhone,
                 errorName: smsError?.name,
                 errorCode: smsError?.code,
                 fullError: smsError
             });
+            console.error('SMS Exception:', smsError);
             // OTP is still stored, but SMS failed
             return res.status(500).json({
                 success: false,
