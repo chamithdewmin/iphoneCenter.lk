@@ -5,7 +5,11 @@ const { executeQuery, getConnection } = require('../config/database');
 const { JWT_EXPIRY } = require('../config/constants');
 const { getJwtSecret, getJwtRefreshSecret, getTestLoginCredentials, TEST_USER_ID } = require('../config/env');
 const logger = require('../utils/logger');
-const { sendSMS } = require('../utils/smsService');
+const smsService = require('../utils/smsService');
+const sendSMS = smsService?.sendSMS;
+if (!sendSMS) {
+    logger.error('sendSMS function not found in smsService module. Available:', Object.keys(smsService || {}));
+}
 
 /** Synthetic test user (not in database) for demo login */
 function getTestUser() {
@@ -426,35 +430,48 @@ const otpStore = new Map();
  * Request OTP for password reset
  */
 const requestPasswordResetOTP = async (req, res, next) => {
+    logger.info('Password reset OTP request received', { 
+        username: req.body?.username,
+        hasBody: !!req.body,
+        method: req.method,
+        path: req.path
+    });
+    
     try {
         const { username } = req.body;
 
         if (!username) {
+            logger.warn('Password reset request missing username');
             return res.status(400).json({
                 success: false,
                 message: 'Username or email is required'
             });
         }
 
+        logger.info(`Looking up user: ${username.trim()}`);
+
         // Find user by username or email
         let users;
         try {
             // Try with phone column first
+            logger.debug('Executing user lookup query with phone column');
             [users] = await executeQuery(
                 'SELECT id, username, email, full_name, phone FROM users WHERE (username = ? OR email = ?) AND is_active = TRUE',
                 [username.trim(), username.trim()]
             );
+            logger.debug(`Query returned ${users?.length || 0} users`);
         } catch (dbError) {
             logger.error('Database error in requestPasswordResetOTP:', {
-                message: dbError.message,
-                code: dbError.code,
-                sqlState: dbError.sqlState
+                message: dbError?.message || 'Unknown database error',
+                code: dbError?.code,
+                sqlState: dbError?.sqlState,
+                stack: dbError?.stack
             });
             
             // Check if it's a column not found error (PostgreSQL: 42703, MySQL: 42S22)
-            const isColumnError = dbError.code === '42703' || 
-                                 dbError.code === '42S22' ||
-                                 (dbError.message && (
+            const isColumnError = dbError?.code === '42703' || 
+                                 dbError?.code === '42S22' ||
+                                 (dbError?.message && (
                                      dbError.message.toLowerCase().includes('phone') || 
                                      dbError.message.toLowerCase().includes('column') ||
                                      dbError.message.toLowerCase().includes('does not exist')
@@ -463,16 +480,21 @@ const requestPasswordResetOTP = async (req, res, next) => {
             if (isColumnError) {
                 logger.warn('Phone column may not exist, trying query without phone');
                 try {
-                    [users] = await executeQuery(
+                    const retryResult = await executeQuery(
                         'SELECT id, username, email, full_name FROM users WHERE (username = ? OR email = ?) AND is_active = TRUE',
                         [username.trim(), username.trim()]
                     );
+                    users = retryResult && retryResult[0] ? retryResult[0] : [];
                     // Add phone as null if column doesn't exist
                     if (users && users.length > 0) {
                         users = users.map(u => ({ ...u, phone: null }));
                     }
                 } catch (retryError) {
-                    logger.error('Retry query also failed:', retryError);
+                    logger.error('Retry query also failed:', {
+                        message: retryError?.message,
+                        code: retryError?.code,
+                        stack: retryError?.stack
+                    });
                     return res.status(500).json({
                         success: false,
                         message: 'Database error. Please contact administrator.'
@@ -485,6 +507,12 @@ const requestPasswordResetOTP = async (req, res, next) => {
                     message: 'Database error. Please try again later.'
                 });
             }
+        }
+
+        // Ensure users is an array
+        if (!Array.isArray(users)) {
+            logger.warn('Users query did not return an array:', typeof users);
+            users = [];
         }
 
         if (!users || users.length === 0) {
@@ -519,23 +547,66 @@ const requestPasswordResetOTP = async (req, res, next) => {
         });
 
         // Send OTP via SMS
+        // For testing: if SMS_TEST_MODE is enabled, skip actual SMS sending
+        const smsTestMode = process.env.SMS_TEST_MODE === 'true';
+        
+        if (smsTestMode) {
+            logger.warn(`SMS_TEST_MODE enabled - OTP ${otp} generated for ${user.username} but SMS not sent`);
+            return res.json({
+                success: true,
+                message: `OTP generated (TEST MODE): ${otp}. SMS not sent in test mode.`
+            });
+        }
+
+        // Check if SMS service is available
+        if (!sendSMS || typeof sendSMS !== 'function') {
+            logger.error('SMS service not available');
+            return res.status(500).json({
+                success: false,
+                message: 'SMS service is not configured. Please contact administrator.'
+            });
+        }
+
+        let smsResult;
         try {
             const message = `Your password reset OTP for iphone center.lk is: ${otp}. Valid for 10 minutes.`;
-            const smsResult = await sendSMS(userPhone, message);
+            logger.info(`Attempting to send SMS to ${userPhone} for user ${user.username}`);
+            smsResult = await sendSMS(userPhone, message);
+            logger.info(`SMS send result:`, { success: smsResult?.success, error: smsResult?.error });
 
-            if (!smsResult.success) {
-                logger.error(`Failed to send OTP SMS to ${userPhone}:`, smsResult.error);
+            // Check if SMS was sent successfully
+            if (!smsResult) {
+                logger.error(`SMS service returned null/undefined for ${userPhone}`);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Failed to send OTP SMS. Please contact administrator.'
+                });
+            }
+
+            if (smsResult.success !== true) {
+                const errorMsg = smsResult.error || 'Unknown SMS error';
+                logger.error(`Failed to send OTP SMS to ${userPhone}:`, errorMsg);
                 // OTP is stored, but SMS failed - return error so user knows
                 return res.status(500).json({
                     success: false,
-                    message: 'Failed to send OTP SMS. Please check your phone number or contact administrator.'
+                    message: `Failed to send OTP SMS: ${errorMsg}. Please check your phone number or contact administrator.`
                 });
             }
+
+            logger.info(`Password reset OTP sent successfully to user ${user.username} (${userPhone})`);
+
+            return res.json({
+                success: true,
+                message: 'OTP has been sent to your registered phone number'
+            });
         } catch (smsError) {
             logger.error('SMS sending exception:', {
-                message: smsError.message,
-                stack: smsError.stack,
-                phone: userPhone
+                message: smsError?.message || 'Unknown error',
+                stack: smsError?.stack,
+                phone: userPhone,
+                errorName: smsError?.name,
+                errorCode: smsError?.code,
+                fullError: smsError
             });
             // OTP is still stored, but SMS failed
             return res.status(500).json({
@@ -543,24 +614,24 @@ const requestPasswordResetOTP = async (req, res, next) => {
                 message: 'Failed to send OTP. Please contact administrator or verify your phone number is correct.'
             });
         }
-
-        logger.info(`Password reset OTP sent to user ${user.username} (${userPhone})`);
-
-        res.json({
-            success: true,
-            message: 'OTP has been sent to your registered phone number'
-        });
     } catch (error) {
-        logger.error('Request password reset OTP error:', {
-            message: error.message,
-            stack: error.stack,
-            code: error.code
+        logger.error('Request password reset OTP error (outer catch):', {
+            message: error?.message || 'Unknown error',
+            stack: error?.stack,
+            code: error?.code,
+            name: error?.name,
+            type: typeof error
         });
-        // Don't expose internal errors to user
-        return res.status(500).json({
-            success: false,
-            message: 'An error occurred while processing your request. Please try again later or contact administrator.'
-        });
+        
+        // Make sure we return a response, don't let it fall through to next()
+        if (!res.headersSent) {
+            return res.status(500).json({
+                success: false,
+                message: 'An error occurred while processing your request. Please try again later or contact administrator.'
+            });
+        }
+        // If headers already sent, call next() to let error handler deal with it
+        next(error);
     }
 };
 
