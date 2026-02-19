@@ -85,7 +85,6 @@ export default function LoginPage() {
   // Forgot password flow states
   const [view, setView] = useState("login"); // login | forgot | otp | reset
   const [forgotEmail, setForgotEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState(["","","","","",""]);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -116,7 +115,6 @@ export default function LoginPage() {
     setOtpError("");
     setOtpSuccess("");
     
-    // Validate email/username (allow both)
     const normalizedEmail = (forgotEmail || '').trim().toLowerCase();
     if (!normalizedEmail || normalizedEmail.length < 3) {
       setOtpError('Please enter your email or username (at least 3 characters)');
@@ -127,9 +125,7 @@ export default function LoginPage() {
     try {
       const { ok, data } = await publicFetch('/api/auth/forgot-password', {
         method: 'POST',
-        body: JSON.stringify({ 
-          username: normalizedEmail
-        }),
+        body: JSON.stringify({ email: normalizedEmail }),
       });
 
       if (ok) {
@@ -142,7 +138,7 @@ export default function LoginPage() {
         }, 1000);
       } else {
         // Show validation errors if available, otherwise show general message
-        let errorMsg = data?.message || 'Failed to send OTP. Please verify your email and phone number are correct.';
+        let errorMsg = data?.message || 'Failed to send OTP. Please check your email and try again.';
         
         if (data?.errors && data.errors.length > 0) {
           const errorMessages = data.errors.map(e => e.message || e.msg || `${e.field}: ${e.message || e.msg}`).join('. ');
@@ -214,11 +210,11 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const normalizedPhone = phone.replace(/[\s\-\(\)]/g, '').trim();
+      const normalizedEmail = (forgotEmail || '').trim().toLowerCase();
       const { ok, data } = await publicFetch('/api/auth/reset-password', {
         method: 'POST',
         body: JSON.stringify({
-          username: normalizedPhone,
+          username: normalizedEmail,
           otp: otp.join(''),
           newPassword: newPassword,
           confirmPassword: confirmPassword,
@@ -229,7 +225,6 @@ export default function LoginPage() {
         setOtpSuccess(data?.message || 'Password has been reset successfully');
         setTimeout(() => {
           setView("login");
-          setPhone("");
           setOtp(["","","","","",""]);
           setNewPassword("");
           setConfirmPassword("");
@@ -254,9 +249,7 @@ export default function LoginPage() {
     try {
       const { ok, data } = await publicFetch('/api/auth/forgot-password', {
         method: 'POST',
-        body: JSON.stringify({ 
-          username: normalizedEmail
-        }),
+        body: JSON.stringify({ email: normalizedEmail }),
       });
 
       if (ok) {
@@ -464,7 +457,7 @@ export default function LoginPage() {
                   <Icon name="phone" size={26} color="#ff8040"/></div>
                 <h1 style={{color:"#fff",fontSize:24,fontWeight:600,letterSpacing:"-0.02em",marginBottom:6}}>Forgot Password?</h1>
                 <p style={{color:"rgba(255,255,255,.38)",fontSize:13,lineHeight:1.6}}>
-                  Enter your registered email and phone number.<br/>We'll verify both match your account and send a 6-digit OTP.
+                  Enter your registered email.<br/>We'll send a 6-digit OTP to your registered phone number.
                 </p>
               </div>
 
@@ -490,30 +483,17 @@ export default function LoginPage() {
 
               <form onSubmit={handleSendOtp} style={{display:"flex",flexDirection:"column",gap:14}}>
                 <div className="fr">
-                  <label style={{display:"block",color:"rgba(255,255,255,.55)",fontSize:12,marginBottom:7,letterSpacing:"0.03em",textTransform:"uppercase"}}>Email or Username</label>
-                  <input className="ifield" type="text" placeholder="staff@iphonecenter.com"
+                  <label style={{display:"block",color:"rgba(255,255,255,.55)",fontSize:12,marginBottom:7,letterSpacing:"0.03em",textTransform:"uppercase"}}>Email</label>
+                  <input className="ifield" type="email" placeholder="staff@iphonecenter.com"
                     value={forgotEmail} onChange={e=>{setForgotEmail(e.target.value);setOtpError("");}}
                     required/>
                 </div>
-                <div className="fr">
-                  <label style={{display:"block",color:"rgba(255,255,255,.55)",fontSize:12,marginBottom:7,letterSpacing:"0.03em",textTransform:"uppercase"}}>Phone Number</label>
-                  <div style={{position:"relative"}}>
-                    <div style={{
-                      position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",
-                      color:"rgba(255,255,255,.4)",fontSize:14,fontWeight:600,
-                      borderRight:"1px solid rgba(255,255,255,.1)",paddingRight:12,
-                    }}>+94</div>
-                    <input className="ifield" type="tel" placeholder="7X XXX XXXX"
-                      value={phone} onChange={e=>{setPhone(e.target.value.replace(/\D/g,"").slice(0,9));setOtpError("");}}
-                      style={{paddingLeft:62}} required/>
-                  </div>
-                </div>
 
                 <div style={{marginTop:4,display:"flex",flexDirection:"column",gap:10}}>
-                  <button type="submit" className="lbtn" disabled={loading || phone.length < 7 || !forgotEmail.trim()}>
+                  <button type="submit" className="lbtn" disabled={loading || !forgotEmail.trim()}>
                     {loading ? <div style={{width:20,height:20,border:"2px solid rgba(255,255,255,.25)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite",margin:"0 auto"}}/> : "Send OTP"}
                   </button>
-                  <button type="button" onClick={()=>{setView("login");setOtpError("");setOtpSuccess("");setPhone("");setForgotEmail("");}} style={{
+                  <button type="button" onClick={()=>{setView("login");setOtpError("");setOtpSuccess("");setForgotEmail("");}} style={{
                     background:"none",border:"1px solid rgba(255,255,255,.1)",borderRadius:14,
                     padding:"14px",color:"rgba(255,255,255,.45)",fontSize:14,cursor:"pointer",
                     fontFamily:"inherit",transition:"all .2s",
@@ -530,7 +510,7 @@ export default function LoginPage() {
             {view === "otp" && <>
               {/* Step indicator */}
               <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginBottom:28}}>
-                {["Phone","OTP","Reset"].map((s,i) => (
+                {["Email","OTP","Reset"].map((s,i) => (
                   <div key={s} style={{display:"flex",alignItems:"center",gap:6}}>
                     <div style={{
                       width:24,height:24,borderRadius:"50%",fontSize:11,fontWeight:700,
@@ -555,10 +535,7 @@ export default function LoginPage() {
                   <Icon name="key" size={26} color="#ff8040"/></div>
                 <h1 style={{color:"#fff",fontSize:22,fontWeight:600,letterSpacing:"-0.02em",marginBottom:6}}>Enter OTP Code</h1>
                 <p style={{color:"rgba(255,255,255,.38)",fontSize:13,lineHeight:1.6}}>
-                  6-digit code sent to<br/>
-                  <span style={{color:"rgba(255,130,50,.9)",fontWeight:600,fontSize:14}}>
-                    +94 {phone.slice(0,2)} {phone.slice(2,5)} {phone.slice(5)}
-                  </span>
+                  6-digit code sent to your registered phone number.
                 </p>
               </div>
 
@@ -650,7 +627,7 @@ export default function LoginPage() {
                   color:"rgba(255,255,255,.3)",fontSize:13,fontFamily:"inherit",
                   display:"flex",alignItems:"center",justifyContent:"center",gap:4,
                 }}>
-                  ← Change email or phone number
+                  ← Change email
                 </button>
               </form>
             </>}
@@ -659,7 +636,7 @@ export default function LoginPage() {
             {view === "reset" && <>
               {/* Step indicator */}
               <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginBottom:28}}>
-                {["Phone","OTP","Reset"].map((s,i) => (
+                {["Email","OTP","Reset"].map((s,i) => (
                   <div key={s} style={{display:"flex",alignItems:"center",gap:6}}>
                     <div style={{
                       width:24,height:24,borderRadius:"50%",fontSize:11,fontWeight:700,

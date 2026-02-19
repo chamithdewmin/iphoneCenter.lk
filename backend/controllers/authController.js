@@ -432,40 +432,17 @@ const otpStore = new Map();
  * All validation is done directly in this controller to avoid field name issues
  */
 const requestPasswordResetOTP = async (req, res, next) => {
-    // Log immediately to confirm this function is being called (not express-validator)
-    console.log('=== requestPasswordResetOTP FUNCTION CALLED ===');
-    console.log('This confirms express-validator is NOT being used');
-    console.log('Route: /forgot-password, Method:', req.method);
-    console.log('Raw body:', JSON.stringify(req.body, null, 2));
-    
-    logger.info('Password reset OTP request received', { 
-        email: req.body?.email,
-        phone: req.body?.phone,
+    logger.info('Password reset OTP request received', {
         bodyKeys: Object.keys(req.body || {}),
-        hasBody: !!req.body,
-        bodyType: typeof req.body,
-        bodyString: JSON.stringify(req.body),
         method: req.method,
-        path: req.path,
-        contentType: req.headers['content-type']
+        path: req.path
     });
-    
-    // Log raw request for debugging
-    console.log('=== FORGOT PASSWORD REQUEST ===');
-    console.log('Body:', JSON.stringify(req.body, null, 2));
-    console.log('Body keys:', Object.keys(req.body || {}));
-    console.log('Email:', req.body?.email, 'Type:', typeof req.body?.email);
-    console.log('Phone:', req.body?.phone, 'Type:', typeof req.body?.phone);
-    console.log('===============================');
-    
-    try {
-        // Get values from request body
-        const email = req.body?.email;
-        const phone = req.body?.phone;
 
-        // Validate email/username field - check for existence and non-empty
-        if (email === undefined || email === null || email === '') {
-            console.log('Validation failed: email is missing or empty');
+    try {
+        // Accept email or username only; phone is looked up from DB
+        const emailOrUsername = req.body?.email ?? req.body?.username;
+
+        if (emailOrUsername === undefined || emailOrUsername === null || String(emailOrUsername).trim() === '') {
             return res.status(400).json({
                 success: false,
                 message: 'Email or username is required',
@@ -473,150 +450,55 @@ const requestPasswordResetOTP = async (req, res, next) => {
             });
         }
 
-        // Check if email is a non-empty string after trimming
-        const emailStr = String(email).trim();
-        if (emailStr.length === 0) {
-            console.log('Validation failed: email is empty after trim');
-            return res.status(400).json({
-                success: false,
-                message: 'Email or username cannot be empty',
-                errors: [{ field: 'email', message: 'Email or username cannot be empty' }]
-            });
-        }
-
-        // Validate phone field - check for existence and non-empty
-        if (phone === undefined || phone === null || phone === '') {
-            console.log('Validation failed: phone is missing or empty');
-            return res.status(400).json({
-                success: false,
-                message: 'Phone number is required',
-                errors: [{ field: 'phone', message: 'Phone number is required' }]
-            });
-        }
-
-        // Check if phone is a non-empty string after trimming
-        const phoneStr = String(phone).trim();
-        if (phoneStr.length === 0) {
-            console.log('Validation failed: phone is empty after trim');
-            return res.status(400).json({
-                success: false,
-                message: 'Phone number cannot be empty',
-                errors: [{ field: 'phone', message: 'Phone number cannot be empty' }]
-            });
-        }
-
-        // Normalize email (trim and lowercase) - allow username or email
-        const normalizedEmail = emailStr.toLowerCase();
-        
-        // Normalize phone number (remove spaces, dashes, etc.)
-        const normalizedPhone = phoneStr.replace(/[\s\-\(\)]/g, '');
-        
-        console.log('Normalized values:', { normalizedEmail, normalizedPhone });
-        
-        // Validate email/username length
+        const normalizedEmail = String(emailOrUsername).trim().toLowerCase();
         if (normalizedEmail.length < 3) {
-            console.log('Validation failed: email too short');
             return res.status(400).json({
                 success: false,
                 message: 'Email or username must be at least 3 characters',
                 errors: [{ field: 'email', message: 'Email or username must be at least 3 characters' }]
             });
         }
-        
-        // Validate phone number format
-        if (normalizedPhone.length < 9) {
-            console.log('Validation failed: phone too short');
-            return res.status(400).json({
-                success: false,
-                message: 'Phone number must be at least 9 digits',
-                errors: [{ field: 'phone', message: 'Phone number must be at least 9 digits' }]
-            });
-        }
 
-        if (!/^\d+$/.test(normalizedPhone)) {
-            console.log('Validation failed: phone contains non-digits');
-            return res.status(400).json({
-                success: false,
-                message: 'Phone number must contain only digits',
-                errors: [{ field: 'phone', message: 'Phone number must contain only digits' }]
-            });
-        }
+        logger.info(`Looking up user by email/username: ${normalizedEmail}`);
 
-        console.log('Validation passed, proceeding to database lookup...');
-        logger.info(`Looking up user by email: ${normalizedEmail} and phone: ${normalizedPhone}`);
-
-        // Find user by BOTH email and phone number - must match the same user
+        // Find user by email or username only
         let users;
         try {
-            // Query by both email and phone - check if account is active and has a role
-            logger.debug('Executing user lookup query by email and phone number');
             [users] = await executeQuery(
-                'SELECT id, username, email, full_name, phone, role, is_active FROM users WHERE (email = ? OR username = ?) AND phone = ? AND is_active = TRUE',
-                [normalizedEmail, normalizedEmail, normalizedPhone]
+                'SELECT id, username, email, full_name, phone, role, is_active FROM users WHERE (LOWER(TRIM(email)) = ? OR LOWER(TRIM(username)) = ?) AND is_active = TRUE',
+                [normalizedEmail, normalizedEmail]
             );
-            logger.debug(`Query returned ${users?.length || 0} users`);
         } catch (dbError) {
-            logger.error('Database error in requestPasswordResetOTP:', {
-                message: dbError?.message || 'Unknown database error',
-                code: dbError?.code,
-                sqlState: dbError?.sqlState,
-                stack: dbError?.stack
+            logger.error('Database error in requestPasswordResetOTP', { message: dbError?.message });
+            return res.status(500).json({
+                success: false,
+                message: 'Database error. Please try again later.'
             });
-            
-            // Check if it's a column not found error (PostgreSQL: 42703, MySQL: 42S22)
-            const isColumnError = dbError?.code === '42703' || 
-                                 dbError?.code === '42S22' ||
-                                 (dbError?.message && (
-                                     dbError.message.toLowerCase().includes('phone') || 
-                                     dbError.message.toLowerCase().includes('column') ||
-                                     dbError.message.toLowerCase().includes('does not exist')
-                                 ));
-            
-            } else {
-                logger.error('Unexpected database error:', dbError);
-                return res.status(500).json({
-                    success: false,
-                    message: 'Database error. Please try again later.'
-                });
-            }
         }
 
-        // Ensure users is an array
-        if (!Array.isArray(users)) {
-            logger.warn('Users query did not return an array:', typeof users);
-            users = [];
-        }
-
-        if (!users || users.length === 0) {
-            // Don't reveal if user exists for security
-            logger.warn(`No active user found matching email: ${normalizedEmail} and phone: ${normalizedPhone}`);
+        if (!Array.isArray(users) || users.length === 0) {
+            logger.warn(`No active user found for email/username: ${normalizedEmail}`);
             return res.status(400).json({
                 success: false,
-                message: 'No account found with the provided email and phone number combination. Please verify both details are correct.'
+                message: 'No account found with this email. Please check and try again.'
             });
         }
 
         const user = users[0];
 
-        // Verify email matches (case-insensitive)
-        const userEmail = (user.email || '').trim().toLowerCase();
-        if (userEmail !== normalizedEmail && user.username !== normalizedEmail) {
-            logger.warn(`Email mismatch for user ${user.username} (ID: ${user.id}). Provided: ${normalizedEmail}, DB: ${userEmail}`);
+        // Get phone from user record and send OTP to that number
+        const rawPhone = (user.phone || '').trim().replace(/[\s\-\(\)]/g, '');
+        if (!rawPhone || rawPhone.length < 9 || !/^\d+$/.test(rawPhone.replace(/^\+/, ''))) {
+            logger.warn(`User ${user.username} has no valid phone number on file`);
             return res.status(400).json({
                 success: false,
-                message: 'Email and phone number do not match. Please verify both details are correct.'
+                message: 'No phone number on file for this account. Please contact your administrator.'
             });
         }
 
-        // Verify phone matches (normalize DB phone for comparison)
-        const dbPhone = (user.phone || '').replace(/[\s\-\(\)]/g, '').trim();
-        if (dbPhone !== normalizedPhone) {
-            logger.warn(`Phone mismatch for user ${user.username} (ID: ${user.id}). Provided: ${normalizedPhone}, DB: ${dbPhone}`);
-            return res.status(400).json({
-                success: false,
-                message: 'Email and phone number do not match. Please verify both details are correct.'
-            });
-        }
+        // Key for OTP store: same format as getOtpLookupKeys uses (user.phone normalized)
+        const otpStoreKey = rawPhone;
+        const smsPhone = rawPhone.startsWith('94') ? rawPhone : rawPhone.startsWith('0') ? '94' + rawPhone.slice(1) : '94' + rawPhone;
 
         // Verify account is active
         if (!user.is_active) {
@@ -636,35 +518,30 @@ const requestPasswordResetOTP = async (req, res, next) => {
             });
         }
 
-        console.log(`User verified: ${user.username} (${user.email}) - Phone: ${normalizedPhone}`);
-        console.log('Account is active and has role:', user.role);
+        logger.info(`User verified: ${user.username} (${user.email}) - sending OTP to registered phone`);
 
         // Generate 6-digit OTP
         const otp = crypto.randomInt(100000, 999999).toString();
         const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-        // Store OTP with phone number as key (normalized) and include user info
-        otpStore.set(normalizedPhone, {
+        // Store OTP keyed by user's phone (so reset-password can find it when lookup by email)
+        otpStore.set(otpStoreKey, {
             otp,
             expiresAt,
             userId: user.id,
             username: user.username,
-            phone: normalizedPhone
+            phone: otpStoreKey
         });
 
-        // Send OTP via SMS
-        // For testing: if SMS_TEST_MODE is enabled, skip actual SMS sending
         const smsTestMode = process.env.SMS_TEST_MODE === 'true';
-        
         if (smsTestMode) {
-            logger.warn(`SMS_TEST_MODE enabled - OTP ${otp} generated for ${user.username} but SMS not sent`);
+            logger.warn(`SMS_TEST_MODE enabled - OTP ${otp} for ${user.username} (SMS not sent)`);
             return res.json({
                 success: true,
                 message: `OTP generated (TEST MODE): ${otp}. SMS not sent in test mode.`
             });
         }
 
-        // Check if SMS service is available
         if (!sendSMS || typeof sendSMS !== 'function') {
             logger.error('SMS service not available');
             return res.status(500).json({
@@ -673,18 +550,7 @@ const requestPasswordResetOTP = async (req, res, next) => {
             });
         }
 
-        // Format phone for SMS (add country code if needed)
-        let smsPhone = normalizedPhone;
-        // If phone starts with 0, replace with 94 (Sri Lanka country code)
-        if (smsPhone.startsWith('0')) {
-            smsPhone = '94' + smsPhone.substring(1);
-        }
-        // If phone doesn't start with country code, add 94
-        else if (!smsPhone.startsWith('94')) {
-            smsPhone = '94' + smsPhone;
-        }
-
-        console.log(`Sending OTP via SMS to: ${smsPhone} for user: ${user.username}`);
+        logger.info(`Sending OTP via SMS to ${smsPhone} for user: ${user.username}`);
         
         let smsResult;
         try {
