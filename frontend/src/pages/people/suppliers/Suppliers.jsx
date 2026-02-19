@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Building2, 
   Plus, 
   List, 
-  ChevronDown, 
-  ChevronRight,
   Search,
   Eye,
   Mail,
@@ -32,7 +30,6 @@ import {
 
 const Suppliers = () => {
   const { toast } = useToast();
-  const [isExpanded, setIsExpanded] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
   const [filteredSuppliers, setFilteredSuppliers] = useState([]);
@@ -135,154 +132,127 @@ const Suppliers = () => {
       </Helmet>
 
       <div className="space-y-4">
-        {/* Collapsible Header */}
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full flex items-center justify-between p-4 bg-card rounded-lg border border-secondary hover:bg-secondary/50 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <Building2 className="w-5 h-5 text-primary" />
-            <span className="text-lg font-semibold text-primary">Suppliers</span>
-          </div>
-          {isExpanded ? (
-            <ChevronDown className="w-5 h-5 text-primary" />
-          ) : (
-            <ChevronRight className="w-5 h-5 text-primary" />
-          )}
-        </button>
-
-        {/* Expanded Content */}
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-4"
+        <div className="space-y-4">
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3 px-4">
+            <Button
+              onClick={() => setIsAddModalOpen(true)}
+              variant="outline"
+              className="flex items-center gap-2"
             >
-              {/* Action Buttons */}
-              <div className="flex items-center gap-3 px-4">
-                <Button
-                  onClick={() => setIsAddModalOpen(true)}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Supplier
-                </Button>
-                <Button
-                  className="flex items-center gap-2 bg-primary text-primary-foreground"
-                >
-                  <List className="w-4 h-4" />
-                  Supplier List
-                </Button>
-                <Button variant="outline" size="sm" onClick={fetchSuppliers} disabled={loading}>
-                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                </Button>
+              <Plus className="w-4 h-4" />
+              Add Supplier
+            </Button>
+            <Button
+              className="flex items-center gap-2 bg-primary text-primary-foreground"
+            >
+              <List className="w-4 h-4" />
+              Supplier List
+            </Button>
+            <Button variant="outline" size="sm" onClick={fetchSuppliers} disabled={loading}>
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+
+          {/* Search */}
+          <div className="bg-card rounded-xl p-4 border border-secondary shadow-sm px-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, email, phone, or contact person..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-11"
+              />
+            </div>
+          </div>
+
+          {/* Suppliers List */}
+          {loading ? (
+            <div className="flex items-center justify-center py-16 px-4">
+              <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
+            </div>
+          ) : filteredSuppliers.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-card rounded-xl p-12 border border-secondary text-center px-4"
+            >
+              <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                <Building2 className="w-8 h-8 text-primary" />
               </div>
-
-              {/* Search */}
-              <div className="bg-card rounded-xl p-4 border border-secondary shadow-sm px-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by name, email, phone, or contact person..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 h-11"
-                  />
-                </div>
-              </div>
-
-              {/* Suppliers List */}
-              {loading ? (
-                <div className="flex items-center justify-center py-16 px-4">
-                  <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
-                </div>
-              ) : filteredSuppliers.length === 0 ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-card rounded-xl p-12 border border-secondary text-center px-4"
-                >
-                  <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
-                    <Building2 className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">No Suppliers Found</h3>
-                  <p className="text-muted-foreground mb-6">
-                    {suppliers.length === 0 
-                      ? "Get started by adding your first supplier"
-                      : "No suppliers match your search criteria"}
-                  </p>
-                  {suppliers.length === 0 && (
-                    <Button onClick={() => setIsAddModalOpen(true)}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Your First Supplier
-                    </Button>
-                  )}
-                </motion.div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
-                  {filteredSuppliers.map((supplier, index) => (
-                    <motion.div
-                      key={supplier.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      whileHover={{ y: -4 }}
-                      className="bg-card rounded-xl border border-secondary overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
-                    >
-                      <div className="p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                              {supplier.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <h3 className="font-bold text-lg">{supplier.name}</h3>
-                              <p className="text-xs text-muted-foreground">ID: {supplier.id}</p>
-                            </div>
-                          </div>
-                          <Button size="sm" variant="outline">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </div>
-
-                        <div className="space-y-2 mb-4">
-                          {supplier.contactPerson && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="text-muted-foreground">Contact:</span>
-                              <span className="font-medium">{supplier.contactPerson}</span>
-                            </div>
-                          )}
-                          {supplier.phone && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Phone className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-muted-foreground">{supplier.phone}</span>
-                            </div>
-                          )}
-                          {supplier.email && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Mail className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-muted-foreground truncate">{supplier.email}</span>
-                            </div>
-                          )}
-                          {supplier.address && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <MapPin className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-muted-foreground truncate">{supplier.address}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+              <h3 className="text-xl font-semibold mb-2">No Suppliers Found</h3>
+              <p className="text-muted-foreground mb-6">
+                {suppliers.length === 0 
+                  ? "Get started by adding your first supplier"
+                  : "No suppliers match your search criteria"}
+              </p>
+              {suppliers.length === 0 && (
+                <Button onClick={() => setIsAddModalOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your First Supplier
+                </Button>
               )}
             </motion.div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
+              {filteredSuppliers.map((supplier, index) => (
+                <motion.div
+                  key={supplier.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  whileHover={{ y: -4 }}
+                  className="bg-card rounded-xl border border-secondary overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
+                >
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                          {supplier.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg">{supplier.name}</h3>
+                          <p className="text-xs text-muted-foreground">ID: {supplier.id}</p>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2 mb-4">
+                      {supplier.contactPerson && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-muted-foreground">Contact:</span>
+                          <span className="font-medium">{supplier.contactPerson}</span>
+                        </div>
+                      )}
+                      {supplier.phone && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Phone className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">{supplier.phone}</span>
+                        </div>
+                      )}
+                      {supplier.email && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Mail className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-muted-foreground truncate">{supplier.email}</span>
+                        </div>
+                      )}
+                      {supplier.address && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <MapPin className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-muted-foreground truncate">{supplier.address}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           )}
-        </AnimatePresence>
+        </div>
 
         {/* Add Supplier Modal */}
         <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>

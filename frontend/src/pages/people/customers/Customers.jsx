@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   User, 
   Plus, 
   List, 
-  ChevronDown, 
-  ChevronRight,
   Search,
   Eye,
   Mail,
@@ -33,7 +31,6 @@ import {
 
 const Customers = () => {
   const { toast } = useToast();
-  const [isExpanded, setIsExpanded] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [customers, setCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
@@ -141,160 +138,133 @@ const Customers = () => {
       </Helmet>
 
       <div className="space-y-4">
-        {/* Collapsible Header */}
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full flex items-center justify-between p-4 bg-card rounded-lg border border-secondary hover:bg-secondary/50 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <User className="w-5 h-5 text-primary" />
-            <span className="text-lg font-semibold text-primary">Customers</span>
-          </div>
-          {isExpanded ? (
-            <ChevronDown className="w-5 h-5 text-primary" />
-          ) : (
-            <ChevronRight className="w-5 h-5 text-primary" />
-          )}
-        </button>
-
-        {/* Expanded Content */}
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-4"
+        <div className="space-y-4">
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3 px-4">
+            <Button
+              onClick={() => setIsAddModalOpen(true)}
+              variant="outline"
+              className="flex items-center gap-2"
             >
-              {/* Action Buttons */}
-              <div className="flex items-center gap-3 px-4">
-                <Button
-                  onClick={() => setIsAddModalOpen(true)}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Customer
-                </Button>
-                <Button
-                  className="flex items-center gap-2 bg-primary text-primary-foreground"
-                >
-                  <List className="w-4 h-4" />
-                  Customer List
-                </Button>
-                <Button variant="outline" size="sm" onClick={fetchCustomers} disabled={loading}>
-                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                </Button>
+              <Plus className="w-4 h-4" />
+              Add Customer
+            </Button>
+            <Button
+              className="flex items-center gap-2 bg-primary text-primary-foreground"
+            >
+              <List className="w-4 h-4" />
+              Customer List
+            </Button>
+            <Button variant="outline" size="sm" onClick={fetchCustomers} disabled={loading}>
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+
+          {/* Search */}
+          <div className="bg-card rounded-xl p-4 border border-secondary shadow-sm px-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, email, or phone..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-11"
+              />
+            </div>
+          </div>
+
+          {/* Customers List */}
+          {loading ? (
+            <div className="flex items-center justify-center py-16 px-4">
+              <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
+            </div>
+          ) : filteredCustomers.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-card rounded-xl p-12 border border-secondary text-center px-4"
+            >
+              <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                <Mail className="w-8 h-8 text-primary" />
               </div>
-
-              {/* Search */}
-              <div className="bg-card rounded-xl p-4 border border-secondary shadow-sm px-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by name, email, or phone..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 h-11"
-                  />
-                </div>
-              </div>
-
-              {/* Customers List */}
-              {loading ? (
-                <div className="flex items-center justify-center py-16 px-4">
-                  <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
-                </div>
-              ) : filteredCustomers.length === 0 ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-card rounded-xl p-12 border border-secondary text-center px-4"
-                >
-                  <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
-                    <Mail className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">No Customers Found</h3>
-                  <p className="text-muted-foreground mb-6">
-                    {customers.length === 0 
-                      ? "Get started by adding your first customer"
-                      : "No customers match your search criteria"}
-                  </p>
-                  {customers.length === 0 && (
-                    <Button onClick={() => setIsAddModalOpen(true)}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Your First Customer
-                    </Button>
-                  )}
-                </motion.div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
-                  {filteredCustomers.map((customer, index) => (
-                    <motion.div
-                      key={customer.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      whileHover={{ y: -4 }}
-                      className="bg-card rounded-xl border border-secondary overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
-                    >
-                      <div className="p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/70 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                              {customer.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <h3 className="font-bold text-lg">{customer.name}</h3>
-                              <p className="text-xs text-muted-foreground">ID: {customer.id}</p>
-                            </div>
-                          </div>
-                          <Button size="sm" variant="outline">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </div>
-
-                        <div className="space-y-2 mb-4">
-                          {customer.phone && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Phone className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-muted-foreground">{customer.phone}</span>
-                            </div>
-                          )}
-                          {customer.email && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Mail className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-muted-foreground truncate">{customer.email}</span>
-                            </div>
-                          )}
-                          {customer.address && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <MapPin className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-muted-foreground truncate">{customer.address}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="pt-4 border-t border-secondary">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <ShoppingBag className="w-4 h-4" />
-                              <span>Purchases</span>
-                            </div>
-                            <span className="font-semibold">
-                              {customer.purchaseHistory?.length || 0}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+              <h3 className="text-xl font-semibold mb-2">No Customers Found</h3>
+              <p className="text-muted-foreground mb-6">
+                {customers.length === 0 
+                  ? "Get started by adding your first customer"
+                  : "No customers match your search criteria"}
+              </p>
+              {customers.length === 0 && (
+                <Button onClick={() => setIsAddModalOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your First Customer
+                </Button>
               )}
             </motion.div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
+              {filteredCustomers.map((customer, index) => (
+                <motion.div
+                  key={customer.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  whileHover={{ y: -4 }}
+                  className="bg-card rounded-xl border border-secondary overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
+                >
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/70 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                          {customer.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg">{customer.name}</h3>
+                          <p className="text-xs text-muted-foreground">ID: {customer.id}</p>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2 mb-4">
+                      {customer.phone && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Phone className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">{customer.phone}</span>
+                        </div>
+                      )}
+                      {customer.email && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Mail className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-muted-foreground truncate">{customer.email}</span>
+                        </div>
+                      )}
+                      {customer.address && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <MapPin className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-muted-foreground truncate">{customer.address}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-4 border-t border-secondary">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <ShoppingBag className="w-4 h-4" />
+                          <span>Purchases</span>
+                        </div>
+                        <span className="font-semibold">
+                          {customer.purchaseHistory?.length || 0}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           )}
-        </AnimatePresence>
+        </div>
 
         {/* Add Customer Modal */}
         <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>

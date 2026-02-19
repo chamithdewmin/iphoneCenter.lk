@@ -41,7 +41,6 @@ import AddUser from './pages/users/AddUser';
 import UserList from './pages/users/UserList';
 import ViewUser from './pages/users/ViewUser';
 import EditUser from './pages/users/EditUser';
-import Roles from './pages/users/Roles';
 import Users from './pages/users/Users';
 
 // Categories
@@ -72,7 +71,6 @@ import Warehouses from './pages/warehouses/Warehouses';
 
 // Settings
 import GeneralSetting from './pages/settings/GeneralSetting';
-import PermissionSetting from './pages/settings/PermissionSetting';
 
 // POS Billing
 import ScanBarcode from './pages/pos-billing/ScanBarcode';
@@ -183,7 +181,6 @@ function App() {
         <Route path="users/list" element={<UserList />} />
         <Route path="users/view/:id" element={<ViewUser />} />
         <Route path="users/edit/:id" element={<EditUser />} />
-        <Route path="users/roles" element={<Roles />} />
         <Route path="users" element={<Users />} />
 
         {/* Categories */}
@@ -222,7 +219,6 @@ function App() {
 
         {/* Settings */}
         <Route path="settings/general" element={<GeneralSetting />} />
-        <Route path="settings/permission" element={<PermissionSetting />} />
 
         {/* Per Order */}
         <Route path="per-order/add" element={<AddPerOrder />} />

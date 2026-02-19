@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Warehouse, 
   Plus, 
   List, 
-  ChevronDown, 
-  ChevronRight,
   Search,
   Pencil,
   MapPin,
@@ -34,7 +32,6 @@ import {
 const Warehouses = () => {
   const { toast } = useToast();
   const { isAdmin, selectedBranchId } = useBranchFilter();
-  const [isExpanded, setIsExpanded] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [warehouses, setWarehouses] = useState([]);
   const [filteredWarehouses, setFilteredWarehouses] = useState([]);
@@ -169,34 +166,8 @@ const Warehouses = () => {
       </Helmet>
 
       <div className="space-y-4">
-        {/* Collapsible Header */}
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full flex items-center justify-between p-4 bg-card rounded-lg border border-secondary hover:bg-secondary/50 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <Warehouse className="w-5 h-5 text-primary" />
-            <span className="text-lg font-semibold text-primary">Warehouses</span>
-          </div>
-          {isExpanded ? (
-            <ChevronDown className="w-5 h-5 text-primary" />
-          ) : (
-            <ChevronRight className="w-5 h-5 text-primary" />
-          )}
-        </button>
-
-        {/* Expanded Content */}
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-4"
-            >
-              {/* Action Buttons */}
-              <div className="flex items-center gap-3 px-4">
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3 px-4">
                 <Button
                   onClick={handleAddClick}
                   variant="outline"
@@ -213,8 +184,8 @@ const Warehouses = () => {
                 </Button>
               </div>
 
-              {/* Search Bar */}
-              <div className="bg-card rounded-xl p-4 border border-secondary shadow-sm">
+        {/* Search Bar */}
+        <div className="bg-card rounded-xl p-4 border border-secondary shadow-sm">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
@@ -226,12 +197,12 @@ const Warehouses = () => {
                 </div>
               </div>
 
-              {/* Branch Filter */}
-              <div className="px-4">
-                <BranchFilter id="warehouse-branch" />
-              </div>
+        {/* Branch Filter */}
+        <div className="px-4">
+          <BranchFilter id="warehouse-branch" />
+        </div>
 
-              {/* Warehouse List */}
+        {/* Warehouse List */}
               {loading ? (
                 <div className="flex items-center justify-center py-16">
                   <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
@@ -318,10 +289,7 @@ const Warehouses = () => {
                     </motion.div>
                   ))}
                 </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        )}
 
         {/* Add Warehouse Modal */}
         <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>

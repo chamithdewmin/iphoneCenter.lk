@@ -22,6 +22,7 @@ import {
   X,
   ChevronRight,
   ChevronDown,
+  ChevronsUpDown,
   Plus,
   List,
   Tag,
@@ -31,7 +32,6 @@ import {
   CreditCard,
   Building2,
   UserPlus,
-  ShieldCheck,
   FolderPlus,
   BarChart3,
   ScanLine,
@@ -107,7 +107,6 @@ const menuItems = [
   { type: 'link', to: '/people/customers', icon: Users, label: 'Customers', permission: 'customers' },
   { type: 'link', to: '/people/suppliers', icon: Building2, label: 'Suppliers', permission: 'customers' },
   { type: 'link', to: '/categories', icon: FolderTree, label: 'Categories', permission: 'products' },
-  { type: 'link', to: '/users/roles', icon: ShieldCheck, label: 'Roles', permission: 'users' },
   {
     type: 'menu',
     icon: BarChart3,
@@ -142,16 +141,7 @@ const menuItems = [
     ],
   },
   { type: 'link', to: '/users', icon: UserCog, label: 'Users', permission: 'users' },
-  {
-    type: 'menu',
-    icon: Settings,
-    label: 'Settings',
-    permission: 'settings',
-    children: [
-      { to: '/settings/general', label: 'General Setting', icon: Settings },
-      { to: '/settings/permission', label: 'Permission Setting', icon: ShieldCheck },
-    ],
-  },
+  { type: 'link', to: '/settings/general', icon: Settings, label: 'Settings', permission: 'settings' },
 ];
 
 /** Filter menu by role permissions: show item only if user has the required permission (admin has all). */
@@ -352,7 +342,7 @@ const Sidebar = ({ isOpen, onClose }) => {
             ))}
           </nav>
 
-          {/* Logged-in user – same layout as reference: logo box | Account / email | chevron */}
+          {/* Logged-in user */}
           <div className="mt-auto border-t border-secondary p-4 space-y-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -360,18 +350,18 @@ const Sidebar = ({ isOpen, onClose }) => {
                   type="button"
                   className="w-full flex items-center gap-3 py-2.5 rounded-lg hover:bg-secondary/50 transition-colors text-left"
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-secondary text-primary text-base font-semibold">
-                    {(user?.name || user?.username || user?.email || 'U').charAt(0).toUpperCase()}
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black text-white text-xs font-bold uppercase">
+                    LogozDev
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">
-                      {user?.name || user?.username || 'Account'}
+                    <p className="text-sm font-semibold text-primary truncate">
+                      {user?.name || user?.username || 'logozoDev'}
                     </p>
                     <p className="text-xs text-muted-foreground truncate mt-0.5">
-                      {user?.email || '—'}
+                      {user?.email || 'logozoDev@gmail.com'}
                     </p>
                   </div>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <ChevronsUpDown className="w-4 h-4 text-muted-foreground shrink-0" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">

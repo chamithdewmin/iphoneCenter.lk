@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   FileText, 
   Plus, 
   List, 
-  ChevronDown, 
-  ChevronRight,
   Search,
   Eye,
   Trash2,
@@ -34,7 +32,6 @@ import {
 
 const Orders = () => {
   const { toast } = useToast();
-  const [isExpanded, setIsExpanded] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
@@ -263,52 +260,26 @@ const Orders = () => {
       </Helmet>
 
       <div className="space-y-4">
-        {/* Collapsible Header */}
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full flex items-center justify-between p-4 bg-card rounded-lg border border-secondary hover:bg-secondary/50 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <FileText className="w-5 h-5 text-primary" />
-            <span className="text-lg font-semibold text-primary">Orders</span>
-          </div>
-          {isExpanded ? (
-            <ChevronDown className="w-5 h-5 text-primary" />
-          ) : (
-            <ChevronRight className="w-5 h-5 text-primary" />
-          )}
-        </button>
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3 px-4">
+          <Button
+            onClick={() => setIsAddModalOpen(true)}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Per Order
+          </Button>
+          <Button
+            className="flex items-center gap-2 bg-primary text-primary-foreground"
+          >
+            <List className="w-4 h-4" />
+            Per Order List
+          </Button>
+        </div>
 
-        {/* Expanded Content */}
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-4"
-            >
-              {/* Action Buttons */}
-              <div className="flex items-center gap-3 px-4">
-                <Button
-                  onClick={() => setIsAddModalOpen(true)}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Per Order
-                </Button>
-                <Button
-                  className="flex items-center gap-2 bg-primary text-primary-foreground"
-                >
-                  <List className="w-4 h-4" />
-                  Per Order List
-                </Button>
-              </div>
-
-              {/* Filters */}
-              <div className="bg-card rounded-lg p-4 border border-secondary px-4">
+        {/* Filters */}
+        <div className="bg-card rounded-lg p-4 border border-secondary px-4">
                 <div className="flex flex-col md:flex-row gap-4">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -329,10 +300,10 @@ const Orders = () => {
                     <option value="completed">Completed</option>
                   </select>
                 </div>
-              </div>
+        </div>
 
-              {/* Orders List */}
-              {filteredOrders.length === 0 ? (
+        {/* Orders List */}
+        {filteredOrders.length === 0 ? (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -433,11 +404,11 @@ const Orders = () => {
                     </motion.div>
                   ))}
                 </div>
-              )}
+        )}
 
-              {/* Summary */}
-              {filteredOrders.length > 0 && (
-                <div className="bg-card rounded-lg p-6 border border-secondary px-4">
+        {/* Summary */}
+        {filteredOrders.length > 0 && (
+          <div className="bg-card rounded-lg p-6 border border-secondary px-4">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="text-center p-4 bg-secondary/50 rounded-lg">
                       <p className="text-sm text-muted-foreground">Total Orders</p>
@@ -462,11 +433,8 @@ const Orders = () => {
                       </p>
                     </div>
                   </div>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+          </div>
+        )}
 
         {/* Add Per Order Modal */}
         <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
