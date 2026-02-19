@@ -311,7 +311,7 @@ export default function LoginPage() {
           .lbtn {
             width:100%; padding:16px; border:none; border-radius:14px; font-size:16px;
             font-weight:600; font-family:inherit; letter-spacing:.02em; cursor:pointer;
-            background:linear-gradient(135deg,#ff8040 0%,#e05010 54%,#c03800 100%);
+            background:var(--primary-gradient);
             color:#fff; transition:all .3s;
           }
           .lbtn:hover:not(:disabled){ transform:translateY(-1px); box-shadow:0 12px 42px rgba(255,100,30,.42); }
@@ -431,7 +431,7 @@ export default function LoginPage() {
                     background:"none",border:"none",cursor:"pointer",
                     color:"rgba(255,120,40,.75)",fontSize:13,padding:0,transition:"color .2s",fontFamily:"inherit",
                   }}
-                  onMouseEnter={e=>e.currentTarget.style.color="#ff8040"}
+                  onMouseEnter={e=>{e.currentTarget.style.color="var(--primary)";}}
                   onMouseLeave={e=>e.currentTarget.style.color="rgba(255,120,40,.75)"}>
                     Forgot password?
                   </button>
@@ -454,7 +454,7 @@ export default function LoginPage() {
                   background:"linear-gradient(135deg,rgba(255,120,40,.15),rgba(255,80,20,.06))",
                   border:"1px solid rgba(255,120,40,.25)", marginBottom:18,
                 }}>
-                  <Icon name="phone" size={26} color="#ff8040"/></div>
+                  <Icon name="phone" size={26} color="var(--primary)"/></div>
                 <h1 style={{color:"#fff",fontSize:24,fontWeight:600,letterSpacing:"-0.02em",marginBottom:6}}>Forgot Password?</h1>
                 <p style={{color:"rgba(255,255,255,.38)",fontSize:13,lineHeight:1.6}}>
                   Enter your registered email.<br/>We'll send a 6-digit OTP to your registered phone number.
@@ -515,7 +515,7 @@ export default function LoginPage() {
                     <div style={{
                       width:24,height:24,borderRadius:"50%",fontSize:11,fontWeight:700,
                       display:"flex",alignItems:"center",justifyContent:"center",
-                      background:i<=1?"linear-gradient(135deg,#ff8040,#e05010)":"rgba(255,255,255,0.08)",
+                      background:i<=1?"var(--primary-gradient)":"rgba(255,255,255,0.08)",
                       color:i<=1?"#fff":"rgba(255,255,255,0.3)",
                       border:i<=1?"none":"1px solid rgba(255,255,255,0.1)",
                     }}>{i+1}</div>
@@ -532,7 +532,7 @@ export default function LoginPage() {
                   background:"linear-gradient(135deg,rgba(255,120,40,.15),rgba(255,80,20,.06))",
                   border:"1px solid rgba(255,120,40,.25)", marginBottom:16,
                 }}>
-                  <Icon name="key" size={26} color="#ff8040"/></div>
+                  <Icon name="key" size={26} color="var(--primary)"/></div>
                 <h1 style={{color:"#fff",fontSize:22,fontWeight:600,letterSpacing:"-0.02em",marginBottom:6}}>Enter OTP Code</h1>
                 <p style={{color:"rgba(255,255,255,.38)",fontSize:13,lineHeight:1.6}}>
                   6-digit code sent to your registered phone number.
@@ -572,7 +572,7 @@ export default function LoginPage() {
                         background:d?"rgba(255,120,40,.13)":"rgba(255,255,255,.04)",
                         border:d?"1.5px solid rgba(255,120,40,.6)":"1.5px solid rgba(255,255,255,.1)",
                         borderRadius:14,color:"#fff",outline:"none",
-                        fontFamily:"inherit",transition:"all .2s",caretColor:"#ff8040",
+                        fontFamily:"inherit",transition:"all .2s",caretColor:"var(--primary)",
                         boxShadow:d?"0 0 0 3px rgba(255,100,30,.08)":"none",
                       }}
                       onFocus={e=>{e.target.style.borderColor="rgba(255,120,40,.7)";e.target.style.boxShadow="0 0 0 3px rgba(255,100,30,.12)"}}
@@ -586,7 +586,7 @@ export default function LoginPage() {
                   <div style={{
                     height:"100%",borderRadius:4,transition:"width .3s ease",
                     width:`${(otp.filter(d=>d).length/6)*100}%`,
-                    background:"linear-gradient(90deg,#ff8040,#ffb347)",
+                    background:"linear-gradient(90deg,var(--primary),var(--primary-mid))",
                   }}/>
                 </div>
 
@@ -598,9 +598,9 @@ export default function LoginPage() {
                         width:28,height:28,borderRadius:"50%",
                         background:"rgba(255,120,40,.08)",border:"1px solid rgba(255,120,40,.2)",
                         display:"flex",alignItems:"center",justifyContent:"center",
-                        fontSize:11,fontWeight:700,color:"#ff8040",
+                        fontSize:11,fontWeight:700,color:"var(--primary)",
                       }}>{countdown}</div>
-                      <span style={{color:"rgba(255,255,255,.3)",fontSize:13}}>Resend OTP in <span style={{color:"#ff8040",fontWeight:600}}>{countdown}s</span></span>
+                      <span style={{color:"rgba(255,255,255,.3)",fontSize:13}}>Resend OTP in <span style={{color:"var(--primary)",fontWeight:600}}>{countdown}s</span></span>
                     </div>
                   ) : (
                     <button type="button" onClick={handleResendOtp} style={{
@@ -641,7 +641,7 @@ export default function LoginPage() {
                     <div style={{
                       width:24,height:24,borderRadius:"50%",fontSize:11,fontWeight:700,
                       display:"flex",alignItems:"center",justifyContent:"center",
-                      background:"linear-gradient(135deg,#ff8040,#e05010)",color:"#fff",
+                      background:"var(--primary-gradient)",color:"#fff",
                     }}>{i+1}</div>
                     <span style={{fontSize:10,color:"rgba(255,140,60,0.8)",fontWeight:600}}>{s}</span>
                     {i<2 && <div style={{width:20,height:1,background:"rgba(255,120,40,0.4)"}}/>}
@@ -711,13 +711,13 @@ export default function LoginPage() {
                       <div key={i} style={{
                         flex:1,height:4,borderRadius:2,
                         background:newPassword.length>=min
-                          ?["#ff4444","#ff8040","#ffb347","#30d158"][i]
+                          ?["#ff4444","var(--primary)","#ffb347","#30d158"][i]
                           :"rgba(255,255,255,.1)",
                         transition:"background .3s",
                       }}/>
                     ))}
                     <span style={{
-                      color:["#ff4444","#ff8040","#ffb347","#30d158"][
+                      color:["#ff4444","var(--primary)","#ffb347","#30d158"][
                         newPassword.length>=10?3:newPassword.length>=8?2:newPassword.length>=6?1:0
                       ],
                       fontSize:11,whiteSpace:"nowrap",alignSelf:"center",marginLeft:6,

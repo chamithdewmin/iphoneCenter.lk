@@ -226,8 +226,8 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
             "flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-150 text-base font-medium",
             "hover:bg-secondary",
             isActive
-              ? "bg-primary text-primary-foreground"
-              : "text-secondary-foreground"
+              ? "bg-primary-gradient text-primary-foreground"
+              : "text-secondary-foreground hover:text-primary"
           )
         }
         title={isCollapsed ? item.label : undefined}
@@ -257,8 +257,8 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
                 "w-full flex items-center justify-center px-3 py-2.5 rounded-md transition-all duration-150",
                 "hover:bg-secondary",
                 hasActiveChild
-                  ? "bg-primary/10 text-primary"
-                  : "text-secondary-foreground"
+                  ? "bg-primary/10 text-primary border-l-2 border-primary"
+                  : "text-secondary-foreground hover:text-primary"
               )}
               title={item.label}
             >
@@ -291,8 +291,8 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
             "w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md transition-all duration-150 text-base font-medium",
             "hover:bg-secondary",
             hasActiveChild
-              ? "bg-primary/10 text-primary"
-              : "text-secondary-foreground"
+              ? "bg-primary/10 text-primary border-l-2 border-primary"
+              : "text-secondary-foreground hover:text-primary"
           )}
         >
           <div className="flex items-center gap-3">
@@ -345,8 +345,8 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
           "flex items-center gap-2.5 px-3 py-2 rounded-md transition-all duration-150 text-sm",
           "hover:bg-secondary",
           isActive
-            ? "bg-primary text-primary-foreground"
-            : "text-secondary-foreground"
+            ? "bg-primary-gradient text-primary-foreground"
+            : "text-secondary-foreground hover:text-primary"
         )
       }
       title={isCollapsed ? item.label : undefined}

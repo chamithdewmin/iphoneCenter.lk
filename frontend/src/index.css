@@ -29,12 +29,14 @@
     --accent-foreground: #6b7a99;        /* Muted text */
     --destructive-foreground: #ffffff;   /* White text on destructive */
     
-    /* Primary/Accent Colors */
-    --primary: #f97316;                  /* Primary orange */
-    --primary-dark: #ea580c;             /* Dark orange */
-    --primary-darkest: #c2410c;           /* Darkest orange */
+    /* Primary/Accent Colors - Mix Orange (Bright → Deep → Burnt) */
+    --primary: #ff8040;                  /* Bright Orange */
+    --primary-mid: #e05010;              /* Deep Orange */
+    --primary-dark: #c03800;             /* Burnt Orange */
+    --primary-darkest: #a03000;          /* Darker accent */
+    --primary-gradient: linear-gradient(135deg, #ff8040 0%, #e05010 54%, #c03800 100%);
     --sidebar-active-bg: #2a3a4f;        /* Sidebar active background */
-    --sidebar-active-accent: #f97316;    /* Sidebar active accent */
+    --sidebar-active-accent: #ff8040;    /* Sidebar active accent */
     
     /* Status Colors */
     --success: #22c55e;                  /* Success/Income green */
@@ -42,10 +44,10 @@
     --warning: #eab308;                  /* Warning yellow */
     --cyan: #22d3ee;                     /* Cyan */
     --purple: #a78bfa;                   /* Purple */
-    --orange: #f97316;                   /* Orange */
+    --orange: #ff8040;                   /* Orange (Bright) */
     
     /* Focus Ring */
-    --ring: #f97316;                     /* Focus ring color */
+    --ring: #ff8040;                     /* Focus ring color */
 
     /* Table Colors */
     --table-header-bg: #0f1117;          /* Table header background */
@@ -170,6 +172,21 @@
 
 *::-webkit-scrollbar-thumb:hover {
   background-color: var(--scrollbar-thumb-hover);
+}
+
+/* Primary gradient for buttons and icons (mix orange: Bright 0% → Deep 54% → Burnt 100%) */
+.bg-primary-gradient {
+  background: var(--primary-gradient);
+}
+.bg-primary-gradient:hover {
+  background: linear-gradient(135deg, #e07030 0%, #c84808 54%, #a03000 100%);
+  filter: brightness(1.05);
+}
+.text-primary-gradient {
+  color: var(--primary);
+}
+.border-primary-gradient {
+  border-color: var(--primary);
 }
 
 @media print {
