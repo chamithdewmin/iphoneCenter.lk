@@ -39,25 +39,28 @@ router.get('/profile', authenticate, authController.getProfile);
 // Password reset routes (no authentication required)
 router.post('/forgot-password', [
     body('email')
-        .trim()
         .notEmpty()
         .withMessage('Email or username is required')
         .bail()
+        .trim()
         .isLength({ min: 3 })
         .withMessage('Email or username must be at least 3 characters'),
     body('phone')
-        .trim()
         .notEmpty()
         .withMessage('Phone number is required')
         .bail()
+        .trim()
         .custom((value) => {
             if (!value || typeof value !== 'string') {
-                throw new Error('Phone number is required');
+                throw new Error('Phone number must be a string');
             }
             // Remove spaces, dashes, parentheses for validation
             const normalized = value.replace(/[\s\-\(\)]/g, '');
             if (normalized.length < 9) {
                 throw new Error('Phone number must be at least 9 digits');
+            }
+            if (!/^\d+$/.test(normalized)) {
+                throw new Error('Phone number must contain only digits');
             }
             return true;
         })

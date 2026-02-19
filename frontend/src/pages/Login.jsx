@@ -62,6 +62,8 @@ const publicFetch = async (path, options = {}) => {
         url,
         status: res.status,
         data,
+        errors: data?.errors,
+        message: data?.message,
         body: options.body
       });
     }
@@ -149,9 +151,20 @@ export default function LoginPage() {
         }, 1000);
       } else {
         // Show validation errors if available, otherwise show general message
-        const errorMsg = data?.errors && data.errors.length > 0 
-          ? data.errors.map(e => e.message || e.msg).join('. ')
-          : data?.message || 'Failed to send OTP. Please verify your email and phone number are correct.';
+        let errorMsg = data?.message || 'Failed to send OTP. Please verify your email and phone number are correct.';
+        
+        if (data?.errors && data.errors.length > 0) {
+          const errorMessages = data.errors.map(e => e.message || e.msg || `${e.field}: ${e.message || e.msg}`).join('. ');
+          errorMsg = errorMessages || errorMsg;
+        }
+        
+        console.error('OTP Request Failed:', {
+          status,
+          message: errorMsg,
+          errors: data?.errors,
+          fullData: data
+        });
+        
         setOtpError(errorMsg);
       }
     } catch (err) {

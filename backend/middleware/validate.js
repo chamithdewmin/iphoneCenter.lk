@@ -7,15 +7,22 @@ const { validationResult } = require('express-validator');
 const handleValidationErrors = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        const errList = errors.array().map((e) => ({ field: e.path || e.param, message: e.msg }));
+        const errList = errors.array().map((e) => ({ 
+            field: e.path || e.param || e.location, 
+            message: e.msg,
+            value: e.value
+        }));
         const firstMessage = errList[0]?.message || 'Validation failed';
         
         // Log validation errors for debugging
-        console.log('Validation errors:', {
+        console.error('Validation errors:', {
             errors: errList,
+            rawErrors: errors.array(),
             body: req.body,
+            bodyKeys: Object.keys(req.body || {}),
             method: req.method,
-            path: req.path
+            path: req.path,
+            contentType: req.headers['content-type']
         });
         
         return res.status(400).json({
