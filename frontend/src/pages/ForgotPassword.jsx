@@ -32,7 +32,7 @@ const publicFetch = async (path, options = {}) => {
 
 const ForgotPassword = () => {
   const [step, setStep] = useState('request'); // 'request' or 'verify'
-  const [username, setUsername] = useState('');
+  const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -48,8 +48,16 @@ const ForgotPassword = () => {
     setSuccess('');
     setFieldErrors({});
 
-    if (!username.trim()) {
-      setFieldErrors({ username: 'Username or email is required' });
+    // Normalize phone number (remove spaces, dashes, etc.)
+    const normalizedPhone = phone.replace(/[\s\-\(\)]/g, '').trim();
+
+    if (!normalizedPhone) {
+      setFieldErrors({ phone: 'Phone number is required' });
+      return;
+    }
+
+    if (normalizedPhone.length < 9) {
+      setFieldErrors({ phone: 'Please enter a valid phone number' });
       return;
     }
 
@@ -57,7 +65,7 @@ const ForgotPassword = () => {
     try {
       const { ok, data } = await publicFetch('/api/auth/forgot-password', {
         method: 'POST',
-        body: JSON.stringify({ username: username.trim() }),
+        body: JSON.stringify({ phone: normalizedPhone }),
       });
 
       if (ok) {
@@ -79,7 +87,11 @@ const ForgotPassword = () => {
     setSuccess('');
     setFieldErrors({});
 
+    // Normalize phone number
+    const normalizedPhone = phone.replace(/[\s\-\(\)]/g, '').trim();
+
     const errs = {};
+    if (!normalizedPhone) errs.phone = 'Phone number is required';
     if (!otp.trim()) errs.otp = 'OTP is required';
     if (!newPassword) errs.newPassword = 'New password is required';
     if (newPassword.length < 6) errs.newPassword = 'Password must be at least 6 characters';
@@ -95,9 +107,10 @@ const ForgotPassword = () => {
       const { ok, data } = await publicFetch('/api/auth/reset-password', {
         method: 'POST',
         body: JSON.stringify({
-          username: username.trim(),
+          phone: normalizedPhone,
           otp: otp.trim(),
           newPassword,
+          confirmPassword,
         }),
       });
 
@@ -176,33 +189,35 @@ const ForgotPassword = () => {
               {step === 'request' ? (
                 <form onSubmit={handleRequestOTP} className="space-y-5">
                   <div className="space-y-2">
-                    <Label htmlFor="username" className="text-white font-medium">
-                      Email or Username
+                    <Label htmlFor="phone" className="text-white font-medium">
+                      Phone Number
                     </Label>
                     <Input
-                      id="username"
-                      type="text"
-                      autoComplete="username"
-                      placeholder="Enter your email or username"
-                      value={username}
+                      id="phone"
+                      type="tel"
+                      autoComplete="tel"
+                      placeholder="Enter your registered phone number"
+                      value={phone}
                       onChange={(e) => {
-                        setUsername(e.target.value);
-                        setFieldErrors((p) => ({ ...p, username: undefined }));
+                        // Allow only digits, spaces, dashes, parentheses
+                        const value = e.target.value.replace(/[^\d\s\-\(\)]/g, '');
+                        setPhone(value);
+                        setFieldErrors((p) => ({ ...p, phone: undefined }));
                       }}
                       required
                       className={`bg-[#1a1a1a] border-[#404040] text-white placeholder:text-gray-500 focus:border-primary focus:ring-primary/20 ${
-                        fieldErrors.username ? 'border-red-500' : ''
+                        fieldErrors.phone ? 'border-red-500' : ''
                       }`}
                     />
-                    {fieldErrors.username && (
+                    {fieldErrors.phone && (
                       <p className="text-sm text-red-400" role="alert">
-                        {fieldErrors.username}
+                        {fieldErrors.phone}
                       </p>
                     )}
                   </div>
 
                   <p className="text-sm text-white/70">
-                    Enter your email or username. We'll send an OTP to your registered phone number.
+                    Enter your registered phone number. We'll send an OTP to verify your account and allow you to reset your password.
                   </p>
 
                   <Button

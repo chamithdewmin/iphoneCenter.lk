@@ -68,7 +68,7 @@ const Login = () => {
             {/* Brand: two-tone like MyAccounts */}
             <div className="text-center space-y-1">
               <h1 className="text-2xl font-bold tracking-tight">
-                <span className="text-orange-500">iphone</span>
+                <span className="text-white">iphone</span>
                 <span className="text-white"> center.lk</span>
               </h1>
               <p className="text-white/90 text-lg">Login to your Account</p>
@@ -103,7 +103,7 @@ const Login = () => {
                   required
                   aria-required="true"
                   aria-invalid={!!fieldErrors.email}
-                  className={`bg-[#1a1a1a] border-[#404040] text-white placeholder:text-gray-500 focus:border-orange-500 focus:ring-orange-500/20 ${fieldErrors.email ? 'border-red-500' : ''}`}
+                  className={`bg-[#1a1a1a] border-[#404040] text-white placeholder:text-gray-500 focus:border-white focus:ring-white/20 ${fieldErrors.email ? 'border-red-500' : ''}`}
                 />
                 {fieldErrors.email && (
                   <p className="text-sm text-red-400" role="alert">{fieldErrors.email}</p>
@@ -133,12 +133,12 @@ const Login = () => {
                     required
                     aria-required="true"
                     aria-invalid={!!fieldErrors.password}
-                    className={`bg-[#1a1a1a] border-[#404040] text-white placeholder:text-gray-500 pr-10 focus:border-orange-500 focus:ring-orange-500/20 ${fieldErrors.password ? 'border-red-500' : ''}`}
+                    className={`bg-[#1a1a1a] border-[#404040] text-white placeholder:text-gray-500 pr-10 focus:border-white focus:ring-white/20 ${fieldErrors.password ? 'border-red-500' : ''}`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((p) => !p)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/50"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                     tabIndex={0}
                   >
@@ -162,7 +162,7 @@ const Login = () => {
             {/* Footer like MyAccounts */}
             <div className="text-center space-y-2 pt-2">
               <p className="text-white/80 text-sm">
-                New here? Demo: <span className="font-mono text-orange-400">test</span> / <span className="font-mono text-orange-400">test</span>
+                New here? Demo: <span className="font-mono text-white">test</span> / <span className="font-mono text-white">test</span>
               </p>
               <p className="text-white/50 text-xs">Version: 1.0.0</p>
             </div>

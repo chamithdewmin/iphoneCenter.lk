@@ -56,7 +56,7 @@ const Reports = () => {
     setRevenueByBrand(revenueData);
   }, []);
 
-  const COLORS = ['var(--primary)', '#f97316', '#10b981', '#f59e0b', '#ef4444'];
+  const COLORS = ['var(--primary)', '#ffffff', '#10b981', '#f59e0b', '#ef4444'];
 
   const handleExport = () => {
     toast({
