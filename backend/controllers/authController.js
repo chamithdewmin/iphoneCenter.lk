@@ -428,8 +428,16 @@ const otpStore = new Map();
 
 /**
  * Request OTP for password reset
+ * IMPORTANT: This route does NOT use express-validator middleware
+ * All validation is done directly in this controller to avoid field name issues
  */
 const requestPasswordResetOTP = async (req, res, next) => {
+    // Log immediately to confirm this function is being called (not express-validator)
+    console.log('=== requestPasswordResetOTP FUNCTION CALLED ===');
+    console.log('This confirms express-validator is NOT being used');
+    console.log('Route: /forgot-password, Method:', req.method);
+    console.log('Raw body:', JSON.stringify(req.body, null, 2));
+    
     logger.info('Password reset OTP request received', { 
         email: req.body?.email,
         phone: req.body?.phone,
@@ -443,20 +451,21 @@ const requestPasswordResetOTP = async (req, res, next) => {
     });
     
     // Log raw request for debugging
-    console.log('Forgot Password Request:', {
-        body: req.body,
-        bodyKeys: Object.keys(req.body || {}),
-        email: req.body?.email,
-        phone: req.body?.phone,
-        emailType: typeof req.body?.email,
-        phoneType: typeof req.body?.phone
-    });
+    console.log('=== FORGOT PASSWORD REQUEST ===');
+    console.log('Body:', JSON.stringify(req.body, null, 2));
+    console.log('Body keys:', Object.keys(req.body || {}));
+    console.log('Email:', req.body?.email, 'Type:', typeof req.body?.email);
+    console.log('Phone:', req.body?.phone, 'Type:', typeof req.body?.phone);
+    console.log('===============================');
     
     try {
-        const { email, phone } = req.body || {};
+        // Get values from request body
+        const email = req.body?.email;
+        const phone = req.body?.phone;
 
-        // Validate email/username field
-        if (!email || (typeof email === 'string' && email.trim().length === 0)) {
+        // Validate email/username field - check for existence and non-empty
+        if (email === undefined || email === null || email === '') {
+            console.log('Validation failed: email is missing or empty');
             return res.status(400).json({
                 success: false,
                 message: 'Email or username is required',
@@ -464,8 +473,20 @@ const requestPasswordResetOTP = async (req, res, next) => {
             });
         }
 
-        // Validate phone field
-        if (!phone || (typeof phone === 'string' && phone.trim().length === 0)) {
+        // Check if email is a non-empty string after trimming
+        const emailStr = String(email).trim();
+        if (emailStr.length === 0) {
+            console.log('Validation failed: email is empty after trim');
+            return res.status(400).json({
+                success: false,
+                message: 'Email or username cannot be empty',
+                errors: [{ field: 'email', message: 'Email or username cannot be empty' }]
+            });
+        }
+
+        // Validate phone field - check for existence and non-empty
+        if (phone === undefined || phone === null || phone === '') {
+            console.log('Validation failed: phone is missing or empty');
             return res.status(400).json({
                 success: false,
                 message: 'Phone number is required',
@@ -473,14 +494,28 @@ const requestPasswordResetOTP = async (req, res, next) => {
             });
         }
 
+        // Check if phone is a non-empty string after trimming
+        const phoneStr = String(phone).trim();
+        if (phoneStr.length === 0) {
+            console.log('Validation failed: phone is empty after trim');
+            return res.status(400).json({
+                success: false,
+                message: 'Phone number cannot be empty',
+                errors: [{ field: 'phone', message: 'Phone number cannot be empty' }]
+            });
+        }
+
         // Normalize email (trim and lowercase) - allow username or email
-        const normalizedEmail = String(email).trim().toLowerCase();
+        const normalizedEmail = emailStr.toLowerCase();
         
         // Normalize phone number (remove spaces, dashes, etc.)
-        const normalizedPhone = String(phone).replace(/[\s\-\(\)]/g, '').trim();
+        const normalizedPhone = phoneStr.replace(/[\s\-\(\)]/g, '');
+        
+        console.log('Normalized values:', { normalizedEmail, normalizedPhone });
         
         // Validate email/username length
         if (normalizedEmail.length < 3) {
+            console.log('Validation failed: email too short');
             return res.status(400).json({
                 success: false,
                 message: 'Email or username must be at least 3 characters',
@@ -490,6 +525,7 @@ const requestPasswordResetOTP = async (req, res, next) => {
         
         // Validate phone number format
         if (normalizedPhone.length < 9) {
+            console.log('Validation failed: phone too short');
             return res.status(400).json({
                 success: false,
                 message: 'Phone number must be at least 9 digits',
@@ -498,6 +534,7 @@ const requestPasswordResetOTP = async (req, res, next) => {
         }
 
         if (!/^\d+$/.test(normalizedPhone)) {
+            console.log('Validation failed: phone contains non-digits');
             return res.status(400).json({
                 success: false,
                 message: 'Phone number must contain only digits',
@@ -505,6 +542,7 @@ const requestPasswordResetOTP = async (req, res, next) => {
             });
         }
 
+        console.log('Validation passed, proceeding to database lookup...');
         logger.info(`Looking up user by email: ${normalizedEmail} and phone: ${normalizedPhone}`);
 
         // Find user by BOTH email and phone number - must match the same user

@@ -37,7 +37,8 @@ router.post('/logout', authenticate, authController.logout);
 router.get('/profile', authenticate, authController.getProfile);
 
 // Password reset routes (no authentication required)
-// Skip express-validator and do validation in controller to avoid field name issues
+// IMPORTANT: Do NOT add express-validator middleware here - validation is done in the controller
+// This avoids field name confusion (e.g., "username" vs "email")
 router.post('/forgot-password', authController.requestPasswordResetOTP);
 router.post('/reset-password', [
     body('phone').trim().notEmpty().withMessage('Phone number is required'),
