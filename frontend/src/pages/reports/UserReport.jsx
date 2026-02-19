@@ -104,7 +104,7 @@ const UserReport = () => {
                 <p className="text-sm text-muted-foreground mb-1">Roles</p>
                 <p className="text-2xl font-bold">{Object.keys(roleBreakdown).length}</p>
               </div>
-              <Shield className="w-8 h-8 text-blue-500 opacity-50" />
+              <Shield className="w-8 h-8 text-primary opacity-50" />
             </div>
           </motion.div>
         </div>

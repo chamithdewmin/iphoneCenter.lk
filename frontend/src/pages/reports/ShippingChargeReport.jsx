@@ -76,7 +76,7 @@ const ShippingChargeReport = () => {
                   {orders.filter(o => (o.shippingCharge || 0) > 0).length}
                 </p>
               </div>
-              <Package className="w-8 h-8 text-blue-500 opacity-50" />
+              <Package className="w-8 h-8 text-primary opacity-50" />
             </div>
           </motion.div>
           <motion.div

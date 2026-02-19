@@ -78,7 +78,7 @@ const TaxReport = () => {
                 <p className="text-sm text-muted-foreground mb-1">Taxable Orders</p>
                 <p className="text-2xl font-bold">{orders.length}</p>
               </div>
-              <TrendingUp className="w-8 h-8 text-blue-500 opacity-50" />
+              <TrendingUp className="w-8 h-8 text-primary opacity-50" />
             </div>
           </motion.div>
           <motion.div

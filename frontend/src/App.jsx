@@ -106,6 +106,7 @@ import CustomMessage from './pages/sms/CustomMessage';
 // Per Order
 import AddPerOrder from './pages/per-order/AddPerOrder';
 import ListPerOrder from './pages/per-order/ListPerOrder';
+import Orders from './pages/per-order/Orders';
 
 function App() {
   const { isAuthenticated, loading } = useAuth();
@@ -227,6 +228,7 @@ function App() {
         {/* Per Order */}
         <Route path="per-order/add" element={<AddPerOrder />} />
         <Route path="per-order/list" element={<ListPerOrder />} />
+        <Route path="orders" element={<Orders />} />
       </Route>
     </Routes>
   );

@@ -110,8 +110,8 @@ const Sales = () => {
                   LKR {filteredSales.length > 0 ? (totalRevenue / filteredSales.length).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '0'}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                <Package className="w-6 h-6 text-blue-500" />
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Package className="w-6 h-6 text-primary" />
               </div>
             </div>
           </motion.div>

@@ -83,7 +83,7 @@ const ExpenseReport = () => {
                 <p className="text-sm text-muted-foreground mb-1">Total Records</p>
                 <p className="text-2xl font-bold">{expenses.length}</p>
               </div>
-              <Calendar className="w-8 h-8 text-blue-500 opacity-50" />
+              <Calendar className="w-8 h-8 text-primary opacity-50" />
             </div>
           </motion.div>
           <motion.div

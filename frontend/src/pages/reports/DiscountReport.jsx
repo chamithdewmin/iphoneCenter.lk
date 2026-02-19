@@ -95,7 +95,7 @@ const DiscountReport = () => {
                     : '0'}
                 </p>
               </div>
-              <DollarSign className="w-8 h-8 text-blue-500 opacity-50" />
+              <DollarSign className="w-8 h-8 text-primary opacity-50" />
             </div>
           </motion.div>
         </div>

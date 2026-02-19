@@ -57,7 +57,7 @@ const PurchaseReport = () => {
                 <p className="text-sm text-muted-foreground mb-1">Total Purchases</p>
                 <p className="text-2xl font-bold">{purchases.length}</p>
               </div>
-              <ShoppingCart className="w-8 h-8 text-blue-500 opacity-50" />
+              <ShoppingCart className="w-8 h-8 text-primary opacity-50" />
             </div>
           </motion.div>
           <motion.div

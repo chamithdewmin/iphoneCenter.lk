@@ -82,8 +82,8 @@ const Purchase = () => {
                 <p className="text-sm text-muted-foreground mb-1">Total Purchases</p>
                 <p className="text-2xl font-bold">{filteredPurchases.length}</p>
               </div>
-              <div className="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                <ShoppingCart className="w-6 h-6 text-blue-500" />
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <ShoppingCart className="w-6 h-6 text-primary" />
               </div>
             </div>
           </motion.div>
@@ -179,7 +179,7 @@ const Purchase = () => {
                             {purchase.supplierName || purchase.supplier?.name || 'Unknown Supplier'}
                           </p>
                         </div>
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-600 dark:text-blue-400">
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-primary/20 text-primary">
                           Received
                         </span>
                       </div>

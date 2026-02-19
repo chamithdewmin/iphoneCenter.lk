@@ -66,16 +66,7 @@ const menuItems = [
       { to: '/pos-billing/reprint-invoice', label: 'Reprint Invoice', icon: Printer },
     ],
   },
-  {
-    type: 'menu',
-    icon: FileText,
-    label: 'Orders',
-    permission: 'orders',
-    children: [
-      { to: '/per-order/add', label: 'Add Per Order', icon: Plus },
-      { to: '/per-order/list', label: 'List Per Order', icon: List },
-    ],
-  },
+  { type: 'link', to: '/orders', icon: FileText, label: 'Orders', permission: 'orders' },
   {
     type: 'menu',
     icon: ArrowRightLeft,

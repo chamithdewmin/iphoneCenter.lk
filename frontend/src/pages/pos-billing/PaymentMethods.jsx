@@ -15,7 +15,7 @@ const PaymentMethods = () => {
 
   const paymentMethods = [
     { id: 'cash', label: 'Cash', icon: Wallet, color: 'bg-green-500' },
-    { id: 'card', label: 'Card', icon: CreditCard, color: 'bg-blue-500' },
+    { id: 'card', label: 'Card', icon: CreditCard, color: 'bg-primary' },
     { id: 'qr', label: 'QR Code', icon: QrCode, color: 'bg-purple-500' },
   ];
 

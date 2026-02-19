@@ -47,7 +47,7 @@ const ViewUser = () => {
 
   const roleStyles = {
     admin: 'bg-red-500/20 text-red-600 dark:text-red-400',
-    manager: 'bg-blue-500/20 text-blue-600 dark:text-blue-400',
+    manager: 'bg-primary/20 text-primary',
     staff: 'bg-green-500/20 text-green-600 dark:text-green-400',
     cashier: 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',
   };

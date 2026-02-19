@@ -80,7 +80,7 @@ const CustomerReport = () => {
                 <p className="text-sm text-muted-foreground mb-1">Total Purchases</p>
                 <p className="text-2xl font-bold">{totalPurchases}</p>
               </div>
-              <ShoppingBag className="w-8 h-8 text-blue-500 opacity-50" />
+              <ShoppingBag className="w-8 h-8 text-primary opacity-50" />
             </div>
           </motion.div>
           <motion.div

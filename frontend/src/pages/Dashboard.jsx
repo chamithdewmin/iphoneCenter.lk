@@ -242,8 +242,8 @@ const Dashboard = () => {
                 <p className="text-sm text-muted-foreground mb-1">Active Customers</p>
                 <p className="text-2xl font-bold">{stats.totalCustomers}</p>
               </div>
-              <div className="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-blue-500" />
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Users className="w-6 h-6 text-primary" />
               </div>
             </div>
           </div>
