@@ -455,39 +455,53 @@ const requestPasswordResetOTP = async (req, res, next) => {
     try {
         const { email, phone } = req.body || {};
 
-        // Validate both email and phone are provided
-        if (!email || !phone) {
-            logger.warn('Password reset request missing required fields', { 
-                hasEmail: !!email, 
-                hasPhone: !!phone,
-                emailValue: email,
-                phoneValue: phone,
-                body: req.body
-            });
+        // Validate email/username field
+        if (!email || (typeof email === 'string' && email.trim().length === 0)) {
             return res.status(400).json({
                 success: false,
-                message: 'Email and phone number are both required'
+                message: 'Email or username is required',
+                errors: [{ field: 'email', message: 'Email or username is required' }]
+            });
+        }
+
+        // Validate phone field
+        if (!phone || (typeof phone === 'string' && phone.trim().length === 0)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Phone number is required',
+                errors: [{ field: 'phone', message: 'Phone number is required' }]
             });
         }
 
         // Normalize email (trim and lowercase) - allow username or email
-        const normalizedEmail = (email || '').trim().toLowerCase();
+        const normalizedEmail = String(email).trim().toLowerCase();
         
         // Normalize phone number (remove spaces, dashes, etc.)
-        const normalizedPhone = phone.replace(/[\s\-\(\)]/g, '').trim();
+        const normalizedPhone = String(phone).replace(/[\s\-\(\)]/g, '').trim();
         
-        // Email can be username or email format - don't require @ symbol
-        if (!normalizedEmail || normalizedEmail.length < 3) {
+        // Validate email/username length
+        if (normalizedEmail.length < 3) {
             return res.status(400).json({
                 success: false,
-                message: 'Email or username must be at least 3 characters'
+                message: 'Email or username must be at least 3 characters',
+                errors: [{ field: 'email', message: 'Email or username must be at least 3 characters' }]
             });
         }
         
-        if (!normalizedPhone || normalizedPhone.length < 9) {
+        // Validate phone number format
+        if (normalizedPhone.length < 9) {
             return res.status(400).json({
                 success: false,
-                message: 'Invalid phone number format'
+                message: 'Phone number must be at least 9 digits',
+                errors: [{ field: 'phone', message: 'Phone number must be at least 9 digits' }]
+            });
+        }
+
+        if (!/^\d+$/.test(normalizedPhone)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Phone number must contain only digits',
+                errors: [{ field: 'phone', message: 'Phone number must contain only digits' }]
             });
         }
 
