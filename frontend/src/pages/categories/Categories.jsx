@@ -3,7 +3,6 @@ import { Helmet } from 'react-helmet';
 import { 
   FolderTree, 
   Plus, 
-  List, 
   Search,
   Package,
   RefreshCw,
@@ -240,12 +239,6 @@ const Categories = () => {
           >
             <Plus className="w-4 h-4" />
             Add Category
-          </Button>
-          <Button
-            className="flex items-center gap-2 bg-primary text-primary-foreground"
-          >
-            <List className="w-4 h-4" />
-            Category List
           </Button>
           <Button variant="outline" size="sm" onClick={fetchCategories} disabled={loading}>
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />

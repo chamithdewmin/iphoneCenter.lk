@@ -3,7 +3,6 @@ import { Helmet } from 'react-helmet';
 import { 
   Warehouse, 
   Plus, 
-  List, 
   Search,
   Pencil,
   MapPin,
@@ -383,12 +382,6 @@ const Warehouses = () => {
           >
             <Plus className="w-4 h-4" />
             Add Warehouse
-          </Button>
-          <Button
-            className="flex items-center gap-2 bg-primary text-primary-foreground"
-          >
-            <List className="w-4 h-4" />
-            Warehouse List
           </Button>
         </div>
 

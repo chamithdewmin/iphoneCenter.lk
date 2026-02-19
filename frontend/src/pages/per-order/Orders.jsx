@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { 
   FileText, 
   Plus, 
-  List, 
   Search,
   Eye,
   Trash2,
@@ -460,12 +459,6 @@ const Orders = () => {
           >
             <Plus className="w-4 h-4" />
             Add Per Order
-          </Button>
-          <Button
-            className="flex items-center gap-2 bg-primary text-primary-foreground"
-          >
-            <List className="w-4 h-4" />
-            Per Order List
           </Button>
         </div>
 

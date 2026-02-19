@@ -72,7 +72,7 @@ const ViewUser = () => {
         <div className="bg-card rounded-xl border border-secondary shadow-sm overflow-hidden">
           <div className="p-6">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/70 rounded-full flex items-center justify-center text-white font-bold text-2xl">
+              <div className="w-16 h-16 icon-circle-gradient rounded-full flex items-center justify-center text-white font-bold text-2xl">
                 {(user.full_name || user.username || 'U').charAt(0).toUpperCase()}
               </div>
               <div>

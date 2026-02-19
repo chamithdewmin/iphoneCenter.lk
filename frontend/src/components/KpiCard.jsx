@@ -39,8 +39,8 @@ const KpiCard = ({ title, value, icon: Icon, trend, trendUp }) => {
       className="bg-card rounded-lg p-6 border border-secondary"
     >
       <div className="flex items-center justify-between mb-4">
-        <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-          <Icon className="w-6 h-6 text-primary" />
+        <div className="w-12 h-12 icon-circle-gradient rounded-lg flex items-center justify-center">
+          <Icon className="w-6 h-6 text-white" />
         </div>
         {trend && (
           <div className={`flex items-center gap-1 text-sm ${trendUp ? 'text-green-500' : 'text-red-500'}`}>

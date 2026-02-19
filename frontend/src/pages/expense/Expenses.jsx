@@ -3,7 +3,6 @@ import { Helmet } from 'react-helmet';
 import { 
   DollarSign, 
   Plus, 
-  List, 
   Search,
   Eye,
   Trash2,
@@ -342,12 +341,6 @@ const Expenses = () => {
           >
             <Plus className="w-4 h-4" />
             Add Expense
-          </Button>
-          <Button
-            className="flex items-center gap-2 bg-primary text-primary-foreground"
-          >
-            <List className="w-4 h-4" />
-            Expense List
           </Button>
         </div>
         

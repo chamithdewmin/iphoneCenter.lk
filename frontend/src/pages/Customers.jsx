@@ -97,7 +97,7 @@ const Customers = () => {
               className="bg-card rounded-lg p-6 border border-secondary"
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xl">
+                <div className="w-12 h-12 icon-circle-gradient rounded-full flex items-center justify-center text-white font-bold text-xl">
                   {customer.name.charAt(0)}
                 </div>
                 <button className="p-2 hover:bg-secondary rounded-lg transition-colors">

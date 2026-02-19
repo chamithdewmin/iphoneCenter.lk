@@ -451,10 +451,11 @@ export default function LoginPage() {
                 <div style={{
                   display:"inline-flex",alignItems:"center",justifyContent:"center",
                   width:62,height:62,borderRadius:20,
-                  background:"linear-gradient(135deg,rgba(255,120,40,.15),rgba(255,80,20,.06))",
-                  border:"1px solid rgba(255,120,40,.25)", marginBottom:18,
+                  background:"var(--primary-gradient)",
+                  boxShadow:"0 2px 8px rgba(255,128,64,0.25)",
+                  marginBottom:18,
                 }}>
-                  <Icon name="phone" size={26} color="var(--primary)"/></div>
+                  <Icon name="phone" size={26} color="#fff"/></div>
                 <h1 style={{color:"#fff",fontSize:24,fontWeight:600,letterSpacing:"-0.02em",marginBottom:6}}>Forgot Password?</h1>
                 <p style={{color:"rgba(255,255,255,.38)",fontSize:13,lineHeight:1.6}}>
                   Enter your registered email.<br/>We'll send a 6-digit OTP to your registered phone number.
@@ -529,10 +530,11 @@ export default function LoginPage() {
                 <div style={{
                   display:"inline-flex",alignItems:"center",justifyContent:"center",
                   width:62,height:62,borderRadius:20,
-                  background:"linear-gradient(135deg,rgba(255,120,40,.15),rgba(255,80,20,.06))",
-                  border:"1px solid rgba(255,120,40,.25)", marginBottom:16,
+                  background:"var(--primary-gradient)",
+                  boxShadow:"0 2px 8px rgba(255,128,64,0.25)",
+                  marginBottom:16,
                 }}>
-                  <Icon name="key" size={26} color="var(--primary)"/></div>
+                  <Icon name="key" size={26} color="#fff"/></div>
                 <h1 style={{color:"#fff",fontSize:22,fontWeight:600,letterSpacing:"-0.02em",marginBottom:6}}>Enter OTP Code</h1>
                 <p style={{color:"rgba(255,255,255,.38)",fontSize:13,lineHeight:1.6}}>
                   6-digit code sent to your registered phone number.

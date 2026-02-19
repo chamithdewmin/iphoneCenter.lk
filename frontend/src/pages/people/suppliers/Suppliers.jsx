@@ -3,7 +3,6 @@ import { Helmet } from 'react-helmet';
 import { 
   Building2, 
   Plus, 
-  List, 
   Search,
   Eye,
   Mail,
@@ -328,12 +327,6 @@ const Suppliers = () => {
           >
             <Plus className="w-4 h-4" />
             Add Supplier
-          </Button>
-          <Button
-            className="flex items-center gap-2 bg-primary text-primary-foreground"
-          >
-            <List className="w-4 h-4" />
-            Supplier List
           </Button>
           <Button variant="outline" size="sm" onClick={fetchSuppliers} disabled={loading}>
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />

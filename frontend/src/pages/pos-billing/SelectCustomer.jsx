@@ -82,7 +82,7 @@ const SelectCustomer = () => {
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold">
+                <div className="w-12 h-12 icon-circle-gradient rounded-full flex items-center justify-center text-white font-bold">
                   {selectedCustomer.name.charAt(0).toUpperCase()}
                 </div>
                 <div>

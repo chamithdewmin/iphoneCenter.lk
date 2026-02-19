@@ -189,6 +189,13 @@
   border-color: var(--primary);
 }
 
+/* Icon circles with mix orange gradient (like S/C icons) */
+.icon-circle-gradient {
+  background: var(--primary-gradient);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(255, 128, 64, 0.25);
+}
+
 @media print {
   body * {
     visibility: hidden;

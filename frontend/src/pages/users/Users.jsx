@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { 
   UserCog, 
   Plus, 
-  List, 
   Search,
   Eye,
   Mail,
@@ -327,7 +326,7 @@ const Users = () => {
       label: 'Name',
       render: (user) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white font-bold text-xs">
+          <div className="w-8 h-8 rounded-full icon-circle-gradient flex items-center justify-center text-white font-bold text-xs">
             {(user.full_name || user.username || 'U').charAt(0).toUpperCase()}
           </div>
           <div>
@@ -378,12 +377,6 @@ const Users = () => {
           >
             <Plus className="w-4 h-4" />
             Add User
-          </Button>
-          <Button
-            className="flex items-center gap-2 bg-primary text-primary-foreground"
-          >
-            <List className="w-4 h-4" />
-            User List
           </Button>
           <Button variant="outline" size="sm" onClick={fetchUsers} disabled={loading}>
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -607,7 +600,7 @@ const Users = () => {
             ) : selectedUser ? (
               <div className="space-y-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/70 rounded-full flex items-center justify-center text-white font-bold text-2xl">
+                  <div className="w-16 h-16 icon-circle-gradient rounded-full flex items-center justify-center text-white font-bold text-2xl">
                     {(selectedUser.full_name || selectedUser.username || 'U').charAt(0).toUpperCase()}
                   </div>
                   <div>

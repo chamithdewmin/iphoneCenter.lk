@@ -220,8 +220,8 @@ const Dashboard = () => {
                   LKR {stats.totalOrders > 0 ? (stats.totalRevenue / stats.totalOrders).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '0'}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-primary" />
+              <div className="w-12 h-12 icon-circle-gradient rounded-lg flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-white" />
               </div>
             </div>
           </div>
@@ -242,8 +242,8 @@ const Dashboard = () => {
                 <p className="text-sm text-muted-foreground mb-1">Active Customers</p>
                 <p className="text-2xl font-bold">{stats.totalCustomers}</p>
               </div>
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-primary" />
+              <div className="w-12 h-12 icon-circle-gradient rounded-lg flex items-center justify-center">
+                <Users className="w-6 h-6 text-white" />
               </div>
             </div>
           </div>

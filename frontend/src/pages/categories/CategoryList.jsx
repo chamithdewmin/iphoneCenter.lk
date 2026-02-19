@@ -193,8 +193,8 @@ const CategoryList = () => {
               >
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <FolderTree className="w-6 h-6 text-primary" />
+                    <div className="w-12 h-12 icon-circle-gradient rounded-lg flex items-center justify-center">
+                      <FolderTree className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex items-center gap-2">
                       <Button size="sm" variant="outline">
