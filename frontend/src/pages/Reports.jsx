@@ -160,9 +160,10 @@ const Reports = () => {
                 <YAxis stroke="currentColor" className="text-xs" />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
+                    backgroundColor: 'var(--card)',
+                    border: '1px solid var(--border)',
                     borderRadius: '0.5rem',
+                    color: 'var(--card-foreground)',
                   }}
                 />
                 <Bar dataKey="sales" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
@@ -200,9 +201,10 @@ const Reports = () => {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
+                      backgroundColor: 'var(--card)',
+                      border: '1px solid var(--border)',
                       borderRadius: '0.5rem',
+                      color: 'var(--card-foreground)',
                     }}
                     formatter={(value) => `LKR ${value.toLocaleString()}`}
                   />

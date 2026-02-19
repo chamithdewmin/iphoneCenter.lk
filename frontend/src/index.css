@@ -85,7 +85,7 @@
 @layer utilities {
   .glass-effect {
     backdrop-filter: blur(10px);
-    background: rgba(17, 19, 22, 0.8);
+    background: var(--topbar-bg);
   }
 }
 

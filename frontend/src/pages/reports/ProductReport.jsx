@@ -120,9 +120,10 @@ const ProductReport = () => {
                 <YAxis stroke="currentColor" className="text-xs" />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
+                    backgroundColor: 'var(--card)',
+                    border: '1px solid var(--border)',
                     borderRadius: '0.5rem',
+                    color: 'var(--card-foreground)',
                   }}
                   formatter={(value) => `LKR ${value.toLocaleString()}`}
                 />
