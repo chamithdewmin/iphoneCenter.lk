@@ -42,14 +42,25 @@ router.post('/forgot-password', [
         .trim()
         .notEmpty()
         .withMessage('Email or username is required')
+        .bail()
         .isLength({ min: 3 })
         .withMessage('Email or username must be at least 3 characters'),
     body('phone')
         .trim()
         .notEmpty()
         .withMessage('Phone number is required')
-        .isLength({ min: 9 })
-        .withMessage('Phone number must be at least 9 digits')
+        .bail()
+        .custom((value) => {
+            if (!value || typeof value !== 'string') {
+                throw new Error('Phone number is required');
+            }
+            // Remove spaces, dashes, parentheses for validation
+            const normalized = value.replace(/[\s\-\(\)]/g, '');
+            if (normalized.length < 9) {
+                throw new Error('Phone number must be at least 9 digits');
+            }
+            return true;
+        })
 ], handleValidationErrors, authController.requestPasswordResetOTP);
 router.post('/reset-password', [
     body('phone').trim().notEmpty().withMessage('Phone number is required'),

@@ -55,6 +55,17 @@ const publicFetch = async (path, options = {}) => {
       },
     });
     const data = await res.json().catch(() => ({}));
+    
+    // Log error responses for debugging
+    if (!res.ok) {
+      console.error('API Error:', {
+        url,
+        status: res.status,
+        data,
+        body: options.body
+      });
+    }
+    
     return { ok: res.ok, status: res.status, data };
   } catch (error) {
     console.error('Public fetch error:', error);
