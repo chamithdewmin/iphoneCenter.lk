@@ -80,6 +80,16 @@ const authLimiter = rateLimit({
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 
+// Stricter rate limit for password reset (OTP brute-force protection)
+const resetPasswordLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: { success: false, message: 'Too many reset attempts. Please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+app.use('/api/auth/reset-password', resetPasswordLimiter);
+
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));

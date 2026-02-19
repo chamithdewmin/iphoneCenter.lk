@@ -88,6 +88,17 @@ CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id)
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires_at ON refresh_tokens(expires_at);
 
+-- Optional: store OTP in DB for multi-instance / production (currently in-memory otpStore is used)
+CREATE TABLE IF NOT EXISTS password_resets (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    otp VARCHAR(10) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_password_resets_user_id ON password_resets(user_id);
+CREATE INDEX IF NOT EXISTS idx_password_resets_expires_at ON password_resets(expires_at);
+
 -- ============================================
 -- PRODUCTS & INVENTORY
 -- ============================================
