@@ -38,6 +38,7 @@ router.get('/profile', authenticate, authController.getProfile);
 
 // Password reset routes (no authentication required)
 router.post('/forgot-password', [
+    body('email').trim().notEmpty().withMessage('Email or username is required'),
     body('phone').trim().notEmpty().withMessage('Phone number is required')
 ], handleValidationErrors, authController.requestPasswordResetOTP);
 router.post('/reset-password', [

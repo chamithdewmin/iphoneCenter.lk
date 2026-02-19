@@ -431,6 +431,7 @@ const otpStore = new Map();
  */
 const requestPasswordResetOTP = async (req, res, next) => {
     logger.info('Password reset OTP request received', { 
+        email: req.body?.email,
         phone: req.body?.phone,
         hasBody: !!req.body,
         method: req.method,
@@ -438,18 +439,29 @@ const requestPasswordResetOTP = async (req, res, next) => {
     });
     
     try {
-        const { phone } = req.body;
+        const { email, phone } = req.body;
 
-        if (!phone) {
-            logger.warn('Password reset request missing phone number');
+        // Validate both email and phone are provided
+        if (!email || !phone) {
+            logger.warn('Password reset request missing required fields', { hasEmail: !!email, hasPhone: !!phone });
             return res.status(400).json({
                 success: false,
-                message: 'Phone number is required'
+                message: 'Email and phone number are both required'
             });
         }
 
+        // Normalize email (trim and lowercase)
+        const normalizedEmail = (email || '').trim().toLowerCase();
+        
         // Normalize phone number (remove spaces, dashes, etc.)
         const normalizedPhone = phone.replace(/[\s\-\(\)]/g, '').trim();
+        
+        if (!normalizedEmail || !normalizedEmail.includes('@')) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid email format'
+            });
+        }
         
         if (!normalizedPhone || normalizedPhone.length < 9) {
             return res.status(400).json({
@@ -458,16 +470,16 @@ const requestPasswordResetOTP = async (req, res, next) => {
             });
         }
 
-        logger.info(`Looking up user by phone: ${normalizedPhone}`);
+        logger.info(`Looking up user by email: ${normalizedEmail} and phone: ${normalizedPhone}`);
 
-        // Find user by phone number
+        // Find user by BOTH email and phone number - must match the same user
         let users;
         try {
-            // Query by phone number - check if account is active and has a role
-            logger.debug('Executing user lookup query by phone number');
+            // Query by both email and phone - check if account is active and has a role
+            logger.debug('Executing user lookup query by email and phone number');
             [users] = await executeQuery(
-                'SELECT id, username, email, full_name, phone, role, is_active FROM users WHERE phone = ? AND is_active = TRUE',
-                [normalizedPhone]
+                'SELECT id, username, email, full_name, phone, role, is_active FROM users WHERE (email = ? OR username = ?) AND phone = ? AND is_active = TRUE',
+                [normalizedEmail, normalizedEmail, normalizedPhone]
             );
             logger.debug(`Query returned ${users?.length || 0} users`);
         } catch (dbError) {
@@ -504,14 +516,34 @@ const requestPasswordResetOTP = async (req, res, next) => {
 
         if (!users || users.length === 0) {
             // Don't reveal if user exists for security
-            logger.warn(`No active user found with phone number: ${normalizedPhone}`);
-            return res.json({
-                success: true,
-                message: 'If the account exists, an OTP has been sent to the registered phone number'
+            logger.warn(`No active user found matching email: ${normalizedEmail} and phone: ${normalizedPhone}`);
+            return res.status(400).json({
+                success: false,
+                message: 'No account found with the provided email and phone number combination. Please verify both details are correct.'
             });
         }
 
         const user = users[0];
+
+        // Verify email matches (case-insensitive)
+        const userEmail = (user.email || '').trim().toLowerCase();
+        if (userEmail !== normalizedEmail && user.username !== normalizedEmail) {
+            logger.warn(`Email mismatch for user ${user.username} (ID: ${user.id}). Provided: ${normalizedEmail}, DB: ${userEmail}`);
+            return res.status(400).json({
+                success: false,
+                message: 'Email and phone number do not match. Please verify both details are correct.'
+            });
+        }
+
+        // Verify phone matches
+        const userPhone = (user.phone || '').replace(/[\s\-\(\)]/g, '').trim();
+        if (userPhone !== normalizedPhone) {
+            logger.warn(`Phone mismatch for user ${user.username} (ID: ${user.id}). Provided: ${normalizedPhone}, DB: ${userPhone}`);
+            return res.status(400).json({
+                success: false,
+                message: 'Email and phone number do not match. Please verify both details are correct.'
+            });
+        }
 
         // Verify account is active
         if (!user.is_active) {
