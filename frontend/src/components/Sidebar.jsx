@@ -111,15 +111,7 @@ const menuItems = [
       { to: '/inventory/transfer-stock', label: 'Transfer Stock (Warehouse → Shop)', icon: ArrowLeftRight },
     ],
   },
-  {
-    type: 'menu',
-    icon: Warehouse,
-    label: 'Warehouses',
-    permission: 'products',
-    children: [
-      { to: '/warehouses', label: 'Warehouses', icon: Warehouse },
-    ],
-  },
+  { type: 'link', to: '/warehouses', icon: Warehouse, label: 'Warehouses', permission: 'products' },
   {
     type: 'menu',
     icon: TrendingDown,
@@ -259,7 +251,7 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '' }) => {
             "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
             "hover:bg-secondary hover:translate-x-1",
             isActive
-              ? "bg-primary text-white shadow-lg"
+              ? "bg-primary text-primary-foreground shadow-lg"
               : "text-secondary-foreground"
           )
         }
@@ -423,7 +415,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                   type="button"
                   className="w-full flex items-center gap-3 py-2.5 rounded-lg hover:bg-secondary/50 transition-colors text-left"
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-black dark:bg-zinc-800 text-primary text-base font-semibold">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-secondary text-primary text-base font-semibold">
                     {(user?.name || user?.username || user?.email || 'U').charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
