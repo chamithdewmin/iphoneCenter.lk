@@ -7,23 +7,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertCircle, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { getApiUrl } from '@/lib/api';
+import loginBg from '@/assets/login-bg.jpg';
+import Loading from '@/components/Loading';
 
 // Helper function for non-authenticated requests
 const publicFetch = async (path, options = {}) => {
   const base = getApiUrl();
   const url = path.startsWith('http') ? path : `${base}${path.startsWith('/') ? path : `/${path}`}`;
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-  const data = await res.json().catch(() => ({}));
-  return { ok: res.ok, status: res.status, data };
+  try {
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, status: res.status, data };
+  } catch (error) {
+    console.error('Public fetch error:', error);
+    return { ok: false, status: 0, data: { message: 'Network error. Please check your connection.' } };
+  }
 };
-import loginBg from '@/assets/login-bg.jpg';
-import Loading from '@/components/Loading';
 
 const ForgotPassword = () => {
   const [step, setStep] = useState('request'); // 'request' or 'verify'

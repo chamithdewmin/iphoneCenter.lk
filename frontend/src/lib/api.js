@@ -103,7 +103,14 @@ async function refreshAccessToken() {
       setTokens(data.data.accessToken, refreshToken);
       return data.data.accessToken;
     }
-  } catch (_) {}
+    // If refresh fails, clear tokens silently (don't log as error)
+    if (res.status === 401) {
+      clearTokens();
+    }
+  } catch (error) {
+    // Silently fail - token refresh errors are expected when logged out
+    console.debug('Token refresh failed (expected when logged out):', error.message);
+  }
   return null;
 }
 
@@ -134,6 +141,12 @@ export const authFetch = async (path, options = {}, retried = false) => {
     return { ok: false, status: 401, data: null };
   }
   if (res.status === 401) {
+    clearTokens();
+    return { ok: false, status: 401, data: null };
+  }
+  
+  // Don't try to refresh token for refresh endpoint itself (avoid infinite loop)
+  if (path.includes('/auth/refresh') && res.status === 401) {
     clearTokens();
     return { ok: false, status: 401, data: null };
   }

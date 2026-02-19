@@ -439,29 +439,55 @@ const requestPasswordResetOTP = async (req, res, next) => {
         // Find user by username or email
         let users;
         try {
+            // Try with phone column first
             [users] = await executeQuery(
                 'SELECT id, username, email, full_name, phone FROM users WHERE (username = ? OR email = ?) AND is_active = TRUE',
                 [username.trim(), username.trim()]
             );
         } catch (dbError) {
-            logger.error('Database error in requestPasswordResetOTP:', dbError);
-            // If phone column doesn't exist, try without it
-            if (dbError.message && dbError.message.includes('phone')) {
+            logger.error('Database error in requestPasswordResetOTP:', {
+                message: dbError.message,
+                code: dbError.code,
+                sqlState: dbError.sqlState
+            });
+            
+            // Check if it's a column not found error (PostgreSQL: 42703, MySQL: 42S22)
+            const isColumnError = dbError.code === '42703' || 
+                                 dbError.code === '42S22' ||
+                                 (dbError.message && (
+                                     dbError.message.toLowerCase().includes('phone') || 
+                                     dbError.message.toLowerCase().includes('column') ||
+                                     dbError.message.toLowerCase().includes('does not exist')
+                                 ));
+            
+            if (isColumnError) {
                 logger.warn('Phone column may not exist, trying query without phone');
-                [users] = await executeQuery(
-                    'SELECT id, username, email, full_name FROM users WHERE (username = ? OR email = ?) AND is_active = TRUE',
-                    [username.trim(), username.trim()]
-                );
-                // Add phone as null if column doesn't exist
-                if (users && users.length > 0) {
-                    users = users.map(u => ({ ...u, phone: null }));
+                try {
+                    [users] = await executeQuery(
+                        'SELECT id, username, email, full_name FROM users WHERE (username = ? OR email = ?) AND is_active = TRUE',
+                        [username.trim(), username.trim()]
+                    );
+                    // Add phone as null if column doesn't exist
+                    if (users && users.length > 0) {
+                        users = users.map(u => ({ ...u, phone: null }));
+                    }
+                } catch (retryError) {
+                    logger.error('Retry query also failed:', retryError);
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Database error. Please contact administrator.'
+                    });
                 }
             } else {
-                throw dbError;
+                logger.error('Unexpected database error:', dbError);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Database error. Please try again later.'
+                });
             }
         }
 
-        if (users.length === 0) {
+        if (!users || users.length === 0) {
             // Don't reveal if user exists for security
             return res.json({
                 success: true,
@@ -472,11 +498,12 @@ const requestPasswordResetOTP = async (req, res, next) => {
         const user = users[0];
 
         // Check if user has phone number
-        if (!user.phone || user.phone.trim() === '') {
-            logger.warn(`User ${user.username} has no phone number registered`);
+        const userPhone = user.phone || '';
+        if (!userPhone || (typeof userPhone === 'string' && userPhone.trim() === '')) {
+            logger.warn(`User ${user.username} (ID: ${user.id}) has no phone number registered`);
             return res.status(400).json({
                 success: false,
-                message: 'No phone number registered for this account. Please contact administrator.'
+                message: 'No phone number registered for this account. Please contact administrator to add your phone number.'
             });
         }
 
@@ -494,34 +521,46 @@ const requestPasswordResetOTP = async (req, res, next) => {
         // Send OTP via SMS
         try {
             const message = `Your password reset OTP for iphone center.lk is: ${otp}. Valid for 10 minutes.`;
-            const smsResult = await sendSMS(user.phone, message);
+            const smsResult = await sendSMS(userPhone, message);
 
             if (!smsResult.success) {
-                logger.error(`Failed to send OTP SMS to ${user.phone}:`, smsResult.error);
-                // Still return success but log the error - OTP is stored, user can try again
-                logger.warn(`OTP ${otp} generated for user ${user.username} but SMS failed. User can contact admin.`);
+                logger.error(`Failed to send OTP SMS to ${userPhone}:`, smsResult.error);
+                // OTP is stored, but SMS failed - return error so user knows
                 return res.status(500).json({
                     success: false,
-                    message: 'Failed to send OTP SMS. Please contact administrator or try again later.'
+                    message: 'Failed to send OTP SMS. Please check your phone number or contact administrator.'
                 });
             }
         } catch (smsError) {
-            logger.error('SMS sending exception:', smsError);
+            logger.error('SMS sending exception:', {
+                message: smsError.message,
+                stack: smsError.stack,
+                phone: userPhone
+            });
+            // OTP is still stored, but SMS failed
             return res.status(500).json({
                 success: false,
-                message: 'Failed to send OTP. Please contact administrator.'
+                message: 'Failed to send OTP. Please contact administrator or verify your phone number is correct.'
             });
         }
 
-        logger.info(`Password reset OTP sent to user ${user.username} (${user.phone})`);
+        logger.info(`Password reset OTP sent to user ${user.username} (${userPhone})`);
 
         res.json({
             success: true,
             message: 'OTP has been sent to your registered phone number'
         });
     } catch (error) {
-        logger.error('Request password reset OTP error:', error);
-        next(error);
+        logger.error('Request password reset OTP error:', {
+            message: error.message,
+            stack: error.stack,
+            code: error.code
+        });
+        // Don't expose internal errors to user
+        return res.status(500).json({
+            success: false,
+            message: 'An error occurred while processing your request. Please try again later or contact administrator.'
+        });
     }
 };
 
