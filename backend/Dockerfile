@@ -11,7 +11,8 @@ RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 COPY package*.json ./
 
 # Install production dependencies (npm install tolerates outdated lock file; use npm ci if lock is in sync)
-RUN npm install --omit=dev && npm cache clean --force
+# To fix audit warnings before deploy: run "npm audit fix" in backend/ and commit package-lock.json
+RUN npm install --omit=dev && npm cache verify
 
 # Copy application (must include database/init.pg.sql for auto-create tables)
 COPY . .

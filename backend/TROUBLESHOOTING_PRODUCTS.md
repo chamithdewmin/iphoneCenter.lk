@@ -1,0 +1,212 @@
+# Troubleshooting: POST /api/inventory/products (500 or failure)
+
+Use these steps to find and fix why adding a product fails.
+
+**Quick reference:** Replace `<backend_container>` with your backend app name in Dokploy (or run `docker ps` to see the container name). Replace `<db_host>`, `<db_user>`, etc. with values from Dokploy → PostgreSQL → Internal Credentials.
+
+---
+
+## Step 1 — Check backend container logs
+
+See why the request is failing. Replace `<backend_container>` with your backend container name (Dokploy app name or run `docker ps` to see it):
+
+```bash
+dokploy logs <backend_container>
+```
+
+Or with Docker directly:
+
+```bash
+docker logs <backend_container> --tail 100
+```
+
+Look for:
+
+- **`BODY:`** — request payload (confirm `name`, `sku`, `base_price` are present).
+- **`CREATE PRODUCT ERROR:`** — full PostgreSQL error (e.g. missing column, null violation, invalid type).
+- **Database connection failed** — DB unreachable; check `DATABASE_URL` / DB container.
+- **Missing table/column** — schema not applied or out of date; apply schema (Step 4).
+- **Validation error** — missing/invalid `name`, `sku`, or `base_price`; fix request body.
+
+The API now returns the real error in the response body on 500: `message`, `code`, `detail`. Check the response JSON as well.
+
+---
+
+## Step 2 — Ensure the database is running
+
+Check that the Postgres container is up:
+
+```bash
+docker ps
+```
+
+You should see your database container (e.g. `iphone-center-database-...`). If not, start it:
+
+```bash
+docker start <db_container_name>
+```
+
+In Dokploy: open the PostgreSQL app and start it if stopped.
+
+---
+
+## Step 3 — Backend environment variables
+
+The backend needs a PostgreSQL connection. In the **backend** app (Dokploy → your backend app → Environment), set **one** of:
+
+**Option A — Single URL (recommended)**  
+Copy the **Internal Connection URL** from your PostgreSQL app’s **Internal Credentials** in Dokploy:
+
+```
+DATABASE_URL=postgresql://user_iphone_center:PASSWORD@iphone-center-database-xxxxx:5432/iphone-center-db
+```
+
+**Option B — Separate vars**
+
+```
+DB_HOST=iphone-center-database-xxxxx
+DB_PORT=5432
+DB_USER=user_iphone_center
+DB_PASSWORD=<password>
+DB_NAME=iphone-center-db
+```
+
+Use the **internal hostname** from the DB’s Internal Credentials (e.g. `iphone-center-database-ewasbn`), not `localhost`.
+
+Then restart the backend (replace `<backend_container>` with your backend app/container name):
+
+```bash
+dokploy restart <backend_container>
+```
+
+---
+
+## Step 4 — Apply database schema
+
+Tables are created automatically on backend startup from `backend/database/init.pg.sql`. If tables are missing or the error says “relation does not exist” or “column does not exist”, run the schema manually.
+
+**From your machine** (if you can reach the DB). Run from the **project root** (parent of `backend/`):
+
+```bash
+# If DATABASE_URL is set in your environment:
+psql "$DATABASE_URL" -f backend/database/init.pg.sql
+```
+
+Or with separate vars:
+
+```bash
+PGPASSWORD='YOUR_PASSWORD' psql -h <db_host> -p 5432 -U <db_user> -d <db_name> -f backend/database/init.pg.sql
+```
+
+Replace `<db_host>`, `<db_user>`, `<db_name>` with values from Dokploy → PostgreSQL → Internal Credentials.
+
+**From the Postgres container** (Dokploy → PostgreSQL app → Terminal):
+
+If the schema file is not inside the DB container, paste the contents of `backend/database/init.pg.sql` into the terminal, or use `wget`/`curl` from a public URL (see **RUN_SCHEMA.md**).
+
+**From the server (Docker)** — run from the **project root** so the path to the file is correct. Use the same Docker network as your backend (check with `docker network ls`; often `dokploy_default`):
+
+```bash
+cd /path/to/your/project   # project root (contains backend/)
+docker run --rm --network dokploy_default \
+  -v "$(pwd)/backend/database/init.pg.sql:/init.pg.sql" \
+  postgres:16-alpine \
+  psql "postgresql://USER:PASSWORD@DB_HOST:5432/DB_NAME" -f /init.pg.sql
+```
+
+Replace `USER`, `PASSWORD`, `DB_HOST`, `DB_NAME` with values from Dokploy → PostgreSQL → Internal Credentials.
+
+After applying the schema, **restart the backend**.
+
+---
+
+## Step 5 — Verify products table columns
+
+Confirm the `products` table has the expected columns (e.g. `base_price`). Run from **project root**:
+
+```bash
+psql "$DATABASE_URL" -f backend/database/verify_products_columns.sql
+```
+
+If `DATABASE_URL` is not set, use: `PGPASSWORD='...' psql -h <host> -p 5432 -U <user> -d <dbname> -f backend/database/verify_products_columns.sql`
+
+Or in `psql`:
+
+```sql
+SELECT column_name, data_type, is_nullable
+  FROM information_schema.columns
+ WHERE table_schema = 'public' AND table_name = 'products'
+ ORDER BY ordinal_position;
+```
+
+You should see: `id`, `name`, `sku`, `description`, `category`, `brand`, `base_price`, `is_active`, `created_at`, `updated_at`. If `base_price` (or others) are missing, run **Step 4** again with the latest `init.pg.sql`.
+
+---
+
+## Step 6 — Test the API manually
+
+The create-product endpoint **requires authentication** and expects **`name`**, **`sku`**, and **`base_price`** (not `price` or `quantity`).
+
+### 6a. Get a JWT token
+
+Login (replace URL and credentials with yours):
+
+```bash
+curl -s -X POST https://backend.iphonecenter.lk/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"YOUR_PASSWORD"}' | jq -r '.data.accessToken'
+```
+
+Or without `jq`:
+
+```bash
+curl -s -X POST https://backend.iphonecenter.lk/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"YOUR_PASSWORD"}'
+```
+
+Copy the `data.accessToken` value from the response.
+
+### 6b. Create a product (correct body)
+
+Use the token and the **correct** body fields:
+
+```bash
+curl -X POST https://backend.iphonecenter.lk/api/inventory/products \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "name": "Test Product",
+    "sku": "TEST-SKU-001",
+    "base_price": 100,
+    "description": "Optional description",
+    "category": "Phones",
+    "brand": "Test",
+    "initialQuantity": 10,
+    "branchId": 1
+  }'
+```
+
+- **Required:** `name` (string), `sku` (string), `base_price` (number).
+- **Optional:** `description`, `category`, `brand`, `initialQuantity`, `branchId` (admin must send `branchId` for initial stock).
+
+**Wrong (will fail):**
+
+- `"price": 100` — use **`base_price`**, not `price`.
+- `"quantity": 10` — use **`initialQuantity`** for stock; optionally **`branchId`** for which branch.
+- Missing **`Authorization: Bearer <token>`** — returns 401.
+
+If the request fails, the response body and backend logs (Step 1) will show the exact error (`message`, `code`, `detail`).
+
+---
+
+## Summary
+
+| Issue | What to do |
+|-------|------------|
+| 500 + logs show “column does not exist” | Run init.pg.sql (Step 4), verify columns (Step 5), restart backend. |
+| 500 + “null value in column” | Send all required fields: `name`, `sku`, `base_price`; ensure `base_price` is a number. |
+| 500 + “connection refused” / “ENOTFOUND” | DB not running (Step 2) or wrong `DATABASE_URL` / `DB_HOST` (Step 3). |
+| 401 on POST | Add header: `Authorization: Bearer <access_token>` (Step 6a). |
+| 400 “Product name is required” / “Valid base price…” | Fix body: use `name`, `sku`, `base_price` (number). |
+| 409 “SKU already exists” | Use a different `sku` value. |
