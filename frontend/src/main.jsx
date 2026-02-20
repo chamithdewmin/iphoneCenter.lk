@@ -6,6 +6,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { CartProvider } from "./contexts/CartContext";
 import { RolePermissionsProvider } from "./contexts/RolePermissionsContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { FinanceProvider } from "./contexts/FinanceContext";
 import { Toaster } from "./components/ui/toaster";
 import "./index.css";
 
@@ -16,8 +17,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <CartProvider>
           <RolePermissionsProvider>
             <ThemeProvider>
-              <App />
-              <Toaster />
+              <FinanceProvider>
+                <App />
+                <Toaster />
+              </FinanceProvider>
             </ThemeProvider>
           </RolePermissionsProvider>
         </CartProvider>

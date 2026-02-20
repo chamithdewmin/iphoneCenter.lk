@@ -127,6 +127,7 @@ const menuGroups = [
   {
     label: 'Finance',
     items: [
+      { type: 'link', to: '/cash-flow', icon: ArrowRightLeft, label: 'Cash Flow', permission: 'settings' },
       { type: 'link', to: '/expenses', icon: TrendingDown, label: 'Expenses', permission: 'settings' },
       {
         type: 'menu',

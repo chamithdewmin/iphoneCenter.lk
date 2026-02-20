@@ -70,16 +70,11 @@ const ProductImage = ({ product }) => {
   const { img, color } = product;
   return (
     <div style={{
-      width: "100%", height: 140,
+      width: "100%", height: "100%", minHeight: 180,
       display: "flex", alignItems: "center", justifyContent: "center",
-      background: `radial-gradient(ellipse at center, ${color}15 0%, transparent 70%)`,
-      borderRadius: 10, position: "relative", overflow: "hidden", padding: "6px",
+      background: "#0f1117",
+      position: "relative", overflow: "hidden",
     }}>
-      <div style={{
-        position: "absolute", bottom: -6, left: "50%", transform: "translateX(-50%)",
-        width: "55%", height: 22, background: color,
-        filter: "blur(20px)", opacity: 0.28, borderRadius: "50%", pointerEvents: "none",
-      }} />
       <img
         src={img}
         alt={product.name}
@@ -87,7 +82,7 @@ const ProductImage = ({ product }) => {
           e.target.src = `https://via.placeholder.com/200x200/1e2433/${color.replace('#', '')}?text=${encodeURIComponent(product.name)}`;
         }}
         style={{
-          width: "100%", height: "100%", objectFit: "contain", position: "relative", zIndex: 1,
+          width: "100%", height: "100%", objectFit: "cover", position: "relative", zIndex: 1,
         }}
       />
     </div>
@@ -226,32 +221,30 @@ export default function PhoneShopPOS() {
                     style={{
                       background: "#13161e",
                       border: isHovered ? `1px solid ${p.color}80` : "1px solid #1e2433",
-                      borderRadius: 14, padding: "0 0 14px 0", cursor: "pointer",
+                      borderRadius: 14, padding: 0, cursor: "pointer",
                       position: "relative", overflow: "hidden",
-                      display: "flex", flexDirection: "column", alignItems: "center", gap: 0,
+                      display: "flex", flexDirection: "column", alignItems: "stretch", gap: 0,
                       boxShadow: isHovered ? `0 6px 24px ${p.color}20` : "none",
                     }}>
-
-                    {/* Top accent bar */}
-                    <div style={{ width: "100%", height: 3, background: isHovered ? p.color : `${p.color}50`, borderRadius: "14px 14px 0 0", transition: "all 0.18s" }} />
 
                     {/* Cart qty badge — top left */}
                     {inCart && (
                       <div style={{
-                        position: "absolute", top: 10, left: 10,
+                        position: "absolute", top: 8, left: 8,
                         background: p.color, color: "#fff", borderRadius: "50%",
-                        width: 20, height: 20, fontSize: 11, fontWeight: 700,
-                        display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2,
+                        width: 22, height: 22, fontSize: 11, fontWeight: 700,
+                        display: "flex", alignItems: "center", justifyContent: "center", zIndex: 3,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
                       }}>{inCart.qty}</div>
                     )}
 
-                    {/* Product image */}
-                    <div style={{ width: "100%", padding: "8px 10px 0" }}>
+                    {/* Product image - full card size */}
+                    <div style={{ width: "100%", flex: 1, minHeight: 200 }}>
                       <ProductImage product={p} />
                     </div>
 
                     {/* Name & price + circle add button row */}
-                    <div style={{ width: "100%", padding: "10px 12px 0", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 6 }}>
+                    <div style={{ width: "100%", padding: "12px 14px", background: "#13161e", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 6 }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 12, fontWeight: 600, color: "#d1d9e6", lineHeight: 1.35, marginBottom: 4 }}>{p.name}</div>
                         <div style={{ fontSize: 15, fontWeight: 800, color: p.color }}>${p.price.toLocaleString()}</div>
