@@ -286,7 +286,8 @@ const getDailySalesSummary = async (req, res, next) => {
 
         query += ' GROUP BY DATE(s.created_at)';
 
-        const [results] = await executeQuery(query, params);
+        const [rawResults] = await executeQuery(query, params);
+        const results = Array.isArray(rawResults) ? rawResults : [];
 
         res.json({
             success: true,

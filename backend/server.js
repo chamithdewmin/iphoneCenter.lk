@@ -59,26 +59,35 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// General API rate limiting
+// General API rate limiting (profile checks, dashboard, add user, etc.)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 800,
     message: { success: false, message: 'Too many requests, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false
 });
 app.use('/api/', limiter);
 
-// Stricter rate limit for auth (login/register) to prevent brute force
+// Login: stricter limit to prevent brute force
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 10,
-    message: { success: false, message: 'Too many auth attempts, please try again later.' },
+    max: 30,
+    message: { success: false, message: 'Too many login attempts, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false
 });
 app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/register', authLimiter);
+
+// Register (Add User): higher limit so admins can create multiple staff users
+const registerLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: { success: false, message: 'Too many requests, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+app.use('/api/auth/register', registerLimiter);
 
 // Stricter rate limit for password reset (OTP brute-force protection)
 const resetPasswordLimiter = rateLimit({

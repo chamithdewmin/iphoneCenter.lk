@@ -25,7 +25,8 @@ const authenticate = async (req, res, next) => {
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({
                 success: false,
-                message: 'No token provided'
+                code: 'UNAUTHORIZED',
+                message: 'Session expired or invalid. Please sign in again.'
             });
         }
 
@@ -48,7 +49,8 @@ const authenticate = async (req, res, next) => {
             if (!users || users.length === 0 || !users[0].is_active) {
                 return res.status(401).json({
                     success: false,
-                    message: 'User not found or inactive'
+                    code: 'UNAUTHORIZED',
+                    message: 'Session expired or invalid. Please sign in again.'
                 });
             }
 
@@ -58,7 +60,8 @@ const authenticate = async (req, res, next) => {
             if (error.name === 'TokenExpiredError') {
                 return res.status(401).json({
                     success: false,
-                    message: 'Token expired'
+                    code: 'TOKEN_EXPIRED',
+                    message: 'Session expired or invalid. Please sign in again.'
                 });
             }
             throw error;
@@ -67,7 +70,8 @@ const authenticate = async (req, res, next) => {
         logger.error('Authentication error:', error);
         return res.status(401).json({
             success: false,
-            message: 'Invalid token'
+            code: 'UNAUTHORIZED',
+            message: 'Session expired or invalid. Please sign in again.'
         });
     }
 };
@@ -82,7 +86,8 @@ const verifyRefreshToken = async (req, res, next) => {
         if (!refreshToken) {
             return res.status(401).json({
                 success: false,
-                message: 'Refresh token required'
+                code: 'UNAUTHORIZED',
+                message: 'Session expired or invalid. Please sign in again.'
             });
         }
 
@@ -104,7 +109,8 @@ const verifyRefreshToken = async (req, res, next) => {
         if (!tokens || tokens.length === 0) {
             return res.status(401).json({
                 success: false,
-                message: 'Invalid or expired refresh token'
+                code: 'UNAUTHORIZED',
+                message: 'Session expired or invalid. Please sign in again.'
             });
         }
 
@@ -116,20 +122,23 @@ const verifyRefreshToken = async (req, res, next) => {
             logger.debug('Refresh token expired');
             return res.status(401).json({
                 success: false,
-                message: 'Refresh token expired'
+                code: 'TOKEN_EXPIRED',
+                message: 'Session expired or invalid. Please sign in again.'
             });
         }
         if (error.name === 'JsonWebTokenError') {
             logger.debug('Invalid refresh token format');
             return res.status(401).json({
                 success: false,
-                message: 'Invalid refresh token'
+                code: 'UNAUTHORIZED',
+                message: 'Session expired or invalid. Please sign in again.'
             });
         }
         logger.error('Refresh token verification error:', error);
         return res.status(401).json({
             success: false,
-            message: 'Invalid refresh token'
+            code: 'UNAUTHORIZED',
+            message: 'Session expired or invalid. Please sign in again.'
         });
     }
 };

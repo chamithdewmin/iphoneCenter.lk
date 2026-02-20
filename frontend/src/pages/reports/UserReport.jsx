@@ -222,7 +222,9 @@ const UserReport = () => {
                 <option value="all">All Users</option>
                 {users.map(user => (
                   <option key={user.id} value={user.id}>
-                    {user.full_name || user.username} ({user.role})
+                    {user.full_name === 'Deleted User' || (user.email && user.email.includes('@deleted.local'))
+                      ? (user.username || user.email)
+                      : `${user.full_name || user.username} (${user.role || ''})`}
                   </option>
                 ))}
               </select>
@@ -258,7 +260,11 @@ const UserReport = () => {
                       <td className="px-4 py-3 text-sm">
                         <div>
                           <p className="font-medium">{log.full_name || log.username}</p>
-                          <p className="text-xs text-muted-foreground">{log.email} • {log.role}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {(log.full_name === 'Deleted User' || (log.email && log.email.includes('@deleted.local')))
+                              ? (log.username || log.email)
+                              : `${log.email || ''} • ${log.role || ''}`}
+                          </p>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">

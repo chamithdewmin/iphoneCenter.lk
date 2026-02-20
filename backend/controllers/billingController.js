@@ -711,8 +711,11 @@ const processRefund = async (req, res, next) => {
  */
 const getAllSales = async (req, res, next) => {
     try {
-        const { startDate, endDate, paymentStatus, customerId, limit = 50, offset = 0 } = req.query;
+        const { startDate, endDate, paymentStatus, customerId, limit, offset } = req.query;
         const branchId = req.user.branch_id;
+
+        const limitNum = Math.min(Math.max(0, parseInt(limit, 10) || 50), 500);
+        const offsetNum = Math.max(0, parseInt(offset, 10) || 0);
 
         let query = `SELECT s.*, c.name as customer_name, u.full_name as cashier_name, b.name as branch_name
                      FROM sales s
@@ -748,13 +751,13 @@ const getAllSales = async (req, res, next) => {
         }
 
         query += ' ORDER BY s.created_at DESC LIMIT ? OFFSET ?';
-        params.push(parseInt(limit), parseInt(offset));
+        params.push(limitNum, offsetNum);
 
         const [sales] = await executeQuery(query, params);
 
         res.json({
             success: true,
-            data: sales
+            data: Array.isArray(sales) ? sales : []
         });
     } catch (error) {
         logger.error('Get all sales error:', error);
