@@ -226,7 +226,7 @@ const AddProduct = () => {
                       onChange={handleChange}
                       required
                       disabled={loadingBranches}
-                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
                     >
                       <option value="">-- Select branch --</option>
                       {branches.map((b) => (
@@ -264,7 +264,7 @@ const AddProduct = () => {
                       onChange={handleChange}
                       required
                       disabled={loadingBrands}
-                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
                     >
                       <option value="">-- Select brand --</option>
                       {brands.map((brand) => (
@@ -283,7 +283,7 @@ const AddProduct = () => {
                       value={formData.category}
                       onChange={handleChange}
                       disabled={loadingCategories}
-                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
                     >
                       <option value="">-- Select category --</option>
                       {categories.map((category) => (
@@ -302,7 +302,7 @@ const AddProduct = () => {
                       value={formData.model}
                       onChange={handleChange}
                       placeholder="e.g., iPhone 15 Pro"
-                      className="mt-1"
+                      className="mt-1 text-foreground bg-background"
                       required
                     />
                   </div>
@@ -316,7 +316,7 @@ const AddProduct = () => {
                       onChange={handleChange}
                       min="2010"
                       max={new Date().getFullYear() + 1}
-                      className="mt-1"
+                      className="mt-1 text-foreground bg-background"
                     />
                   </div>
                   <div>
@@ -326,7 +326,7 @@ const AddProduct = () => {
                       name="condition"
                       value={formData.condition}
                       onChange={handleChange}
-                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
                     >
                       <option value="new">New</option>
                       <option value="used">Used</option>
@@ -351,7 +351,7 @@ const AddProduct = () => {
                       placeholder="0.00"
                       min="0"
                       step="0.01"
-                      className="mt-1"
+                      className="mt-1 text-foreground bg-background"
                       required
                     />
                   </div>
@@ -365,7 +365,7 @@ const AddProduct = () => {
                       onChange={handleChange}
                       placeholder="0"
                       min="0"
-                      className="mt-1"
+                      className="mt-1 text-foreground bg-background"
                     />
                   </div>
                 </div>
@@ -383,7 +383,7 @@ const AddProduct = () => {
                       value={formData.imei}
                       onChange={handleChange}
                       placeholder="IMEI or Serial Number"
-                      className="mt-1"
+                      className="mt-1 text-foreground bg-background"
                     />
                   </div>
                   <div>
@@ -394,7 +394,7 @@ const AddProduct = () => {
                       value={formData.vin}
                       onChange={handleChange}
                       placeholder="Vehicle Identification Number"
-                      className="mt-1"
+                      className="mt-1 text-foreground bg-background"
                     />
                   </div>
                 </div>
@@ -413,7 +413,7 @@ const AddProduct = () => {
                       onChange={handleChange}
                       placeholder="Product description..."
                       rows="4"
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
                     />
                   </div>
                   <div>
@@ -424,7 +424,7 @@ const AddProduct = () => {
                       value={formData.colors}
                       onChange={handleChange}
                       placeholder="e.g., Black, White, Blue"
-                      className="mt-1"
+                      className="mt-1 text-foreground bg-background"
                     />
                   </div>
                   <div className="md:col-span-2">
@@ -435,7 +435,7 @@ const AddProduct = () => {
                       value={formData.images}
                       onChange={handleChange}
                       placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                      className="mt-1"
+                      className="mt-1 text-foreground bg-background"
                     />
                   </div>
                 </div>

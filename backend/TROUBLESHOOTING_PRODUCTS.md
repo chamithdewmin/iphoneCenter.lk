@@ -6,6 +6,63 @@ Use these steps to find and fix why adding a product fails.
 
 ---
 
+## Quick debug (500 on create product)
+
+**1. Check backend logs** — Dokploy → your backend app → **Logs**. The real error is there (e.g. `CREATE PRODUCT ERROR:`, missing env, SQL error).
+
+**2. Environment variables** — In Dokploy → backend app → **Environment**, set either:
+- **`DATABASE_URL`** = `postgresql://user:password@host:5432/dbname` (copy from PostgreSQL → Internal Credentials),  
+- or **`DB_HOST`**, **`DB_PORT`** (5432), **`DB_USER`**, **`DB_PASSWORD`**, **`DB_NAME`**.  
+Use the **internal** DB hostname (e.g. `iphone-center-database-xxxxx`), not `localhost`.
+
+**3. Database is auto-initialized** — The backend **runs** `database/init.pg.sql` on startup (see `server.js` → `applySchema()`). You do **not** need to run it manually unless tables are missing or init failed in logs. If you do run it manually:  
+`psql -h <db_host> -U <db_user> -d <db_name> -f backend/database/init.pg.sql`
+
+**4. Test the endpoint** — The API **requires auth** and **name, sku, base_price**. A body like `{"test": true}` returns 401 or 400, not the DB error. Use:
+
+```bash
+# Get token first
+TOKEN=$(curl -s -X POST https://backend.iphonecenter.lk/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"YOUR_PASSWORD"}' | jq -r '.data.accessToken')
+
+# Then create product (correct body)
+curl -s -X POST https://backend.iphonecenter.lk/api/inventory/products \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"Test","sku":"TEST-001","base_price":100,"branchId":1}'
+```
+
+The response body on 500 includes **message**, **code**, **detail** (the real error).
+
+**5. Check if DB is reachable from the backend container** — In Dokploy, open a **terminal** into the **backend** container and run:
+
+```bash
+node -e "const {Pool}=require('pg');const p=new Pool({connectionString:process.env.DATABASE_URL});p.query('SELECT 1').then(()=>console.log('DB OK')).catch(e=>console.error('DB Error:',e.message));p.end();"
+```
+
+If you use separate vars instead of `DATABASE_URL`, run this (replace placeholders):
+
+```bash
+node -e "
+const {Pool}=require('pg');
+const c=process.env.DB_HOST ? {
+  host:process.env.DB_HOST,
+  port:process.env.DB_PORT||5432,
+  user:process.env.DB_USER,
+  password:process.env.DB_PASSWORD,
+  database:process.env.DB_NAME
+} : {connectionString:process.env.DATABASE_URL};
+const p=new Pool(c);
+p.query('SELECT 1').then(()=>console.log('DB OK')).catch(e=>console.error('DB Error:',e.message));
+p.end();
+"
+```
+
+If you see **DB OK**, the app can reach Postgres. If you see **DB Error**, fix `DATABASE_URL` or `DB_*` and restart the backend.
+
+---
+
 ## Step 1 — Check backend container logs
 
 See why the request is failing. Replace `<backend_container>` with your backend container name (Dokploy app name or run `docker ps` to see it):
