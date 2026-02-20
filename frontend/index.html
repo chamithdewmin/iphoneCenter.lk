@@ -1,6 +1,12 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
 	<head>
+		<script>
+			(function() {
+				var theme = localStorage.getItem('iphone-center-theme');
+				document.documentElement.classList.add(theme === 'light' ? 'light' : 'dark');
+			})();
+		</script>
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/Apple_logo_white.svg" />
 		<meta name="generator" content="iphone center.lk POS" />

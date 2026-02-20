@@ -3,8 +3,9 @@
 @tailwind utilities;
 
 @layer base {
+  /* Default: dark theme (applied when html has class "dark" or no theme class) */
   :root,
-  .dark {
+  html.dark {
     --sidebar-width: 240px;
     /* Background Colors */
     --background: #0c0e14;               /* Page background */
@@ -71,6 +72,57 @@
     --scrollbar-thumb-hover: #444;       /* Scrollbar hover */
   }
 
+  /* Light theme (applied when html has class "light") */
+  html.light {
+    --sidebar-width: 240px;
+    --background: #f4f5f7;
+    --card: #ffffff;
+    --topbar-bg: #ffffff;
+    --secondary: #eef0f3;
+    --muted: #e4e6eb;
+    --accent: #e4e6eb;
+    --input: #ffffff;
+    --border: #d1d5db;
+    --table-border: #e5e7eb;
+    --button-border: #d1d5db;
+    --foreground: #111827;
+    --card-foreground: #111827;
+    --primary-foreground: #ffffff;
+    --secondary-foreground: #374151;
+    --muted-foreground: #6b7280;
+    --accent-foreground: #4b5563;
+    --destructive-foreground: #ffffff;
+    --primary: #ff8040;
+    --primary-mid: #e05010;
+    --primary-dark: #c03800;
+    --primary-darkest: #a03000;
+    --primary-gradient: linear-gradient(135deg, #ff8040 0%, #e05010 54%, #c03800 100%);
+    --sidebar-active-bg: #fef3eb;
+    --sidebar-active-accent: #ff8040;
+    --success: #16a34a;
+    --destructive: #dc2626;
+    --warning: #ca8a04;
+    --cyan: #0891b2;
+    --purple: #7c3aed;
+    --orange: #ff8040;
+    --ring: #ff8040;
+    --table-header-bg: #f9fafb;
+    --table-row-odd: #ffffff;
+    --table-row-even: #f9fafb;
+    --table-row-hover: #f3f4f6;
+    --table-divider: #e5e7eb;
+    --text-primary: #111827;
+    --text-body: #374151;
+    --text-label: #6b7280;
+    --text-muted: #4b5563;
+    --text-placeholder: #9ca3af;
+    --button-bg: #f3f4f6;
+    --button-border: #d1d5db;
+    --scrollbar-track: #e5e7eb;
+    --scrollbar-thumb: #9ca3af;
+    --scrollbar-thumb-hover: #6b7280;
+  }
+
   * {
     @apply border-border;
   }
@@ -84,10 +136,14 @@
     -moz-osx-font-smoothing: grayscale;
   }
   
-  /* Ensure all root elements use dark theme */
   html {
     background-color: var(--background);
+  }
+  html.dark {
     color-scheme: dark;
+  }
+  html.light {
+    color-scheme: light;
   }
   
   /* Force dark backgrounds for common elements */
