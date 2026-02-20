@@ -63,7 +63,7 @@
     --text-label: #8b9ab0;               /* Labels, secondary text */
     --text-muted: #6b7a99;               /* Muted text, notes */
     --text-placeholder: #4a5568;         /* Placeholder text, null values */
-    --input-text: #111827;               /* Text inside every input/select/textarea (all pages) */
+    --input-text: #b8c0cc;               /* Light gray: text inside every input/select/textarea (all pages) */
     
     /* UI Elements */
     --button-bg: #1c1e24;                /* Button background */
@@ -117,7 +117,7 @@
     --text-label: #6b7280;
     --text-muted: #4b5563;
     --text-placeholder: #9ca3af;
-    --input-text: #111827;               /* Text inside every input/select/textarea (all pages) */
+    --input-text: #9ca3af;               /* Light gray: text inside every input/select/textarea (all pages) */
     --button-bg: #f3f4f6;
     --button-border: #d1d5db;
     --scrollbar-track: #e5e7eb;
