@@ -58,10 +58,11 @@ const Layout = () => {
             </div>
           </div>
         )}
+        {/* Refresh button top-right on every page except dashboard */}
+        {pathname !== '/dashboard' && <RefreshButton />}
         <main className="p-4 lg:p-6">
           <Outlet />
         </main>
-        <RefreshButton />
       </div>
     </div>
   );
