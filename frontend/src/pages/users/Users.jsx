@@ -220,12 +220,12 @@ const Users = () => {
   const getRoleBadge = (role) => {
     const styles = {
       admin: 'bg-red-500/20 text-red-600 dark:text-red-400',
-      manager: 'bg-primary/20 text-primary',
+      manager: 'bg-orange-500/20 text-orange-600 dark:text-orange-400',
       staff: 'bg-green-500/20 text-green-600 dark:text-green-400',
       cashier: 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',
     };
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${styles[role] || 'bg-secondary text-secondary-foreground'}`}>
+      <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${styles[role] || 'bg-secondary text-secondary-foreground'}`}>
         {role?.charAt(0).toUpperCase() + role?.slice(1) || '—'}
       </span>
     );
