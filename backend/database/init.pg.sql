@@ -88,6 +88,21 @@ CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id)
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires_at ON refresh_tokens(expires_at);
 
+-- User login/logout logs table
+CREATE TABLE IF NOT EXISTS user_login_logs (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    login_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    logout_time TIMESTAMP NULL,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    session_duration_seconds INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_user_login_logs_user_id ON user_login_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_login_logs_login_time ON user_login_logs(login_time);
+CREATE INDEX IF NOT EXISTS idx_user_login_logs_logout_time ON user_login_logs(logout_time);
+
 -- Optional: store OTP in DB for multi-instance / production (currently in-memory otpStore is used)
 CREATE TABLE IF NOT EXISTS password_resets (
     id SERIAL PRIMARY KEY,

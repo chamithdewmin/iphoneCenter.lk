@@ -263,7 +263,23 @@ const login = async (req, res, next) => {
             [user.id]
         );
 
-        logger.info(`User logged in: ${user.username} (ID: ${user.id})`);
+        // Log login time
+        try {
+            const ipAddress = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'] || 'unknown';
+            const userAgent = req.headers['user-agent'] || 'unknown';
+            
+            const [loginLogResult] = await executeQuery(
+                `INSERT INTO user_login_logs (user_id, login_time, ip_address, user_agent) 
+                 VALUES (?, NOW(), ?, ?) RETURNING id`,
+                [user.id, ipAddress, userAgent]
+            );
+
+            const loginLogId = loginLogResult.insertId || (loginLogResult.rows && loginLogResult.rows[0] && loginLogResult.rows[0].id);
+            logger.info(`User logged in: ${user.username} (ID: ${user.id}, Login Log ID: ${loginLogId})`);
+        } catch (logError) {
+            // Don't fail login if logging fails, just log the error
+            logger.error('Failed to create login log:', logError);
+        }
 
         res.json({
             success: true,
@@ -345,17 +361,44 @@ const refreshToken = async (req, res, next) => {
 };
 
 /**
- * Logout user (revoke refresh token)
+ * Logout user (revoke refresh token and log logout time)
  */
 const logout = async (req, res, next) => {
     try {
         const { refreshToken } = req.body;
+        const userId = req.user?.id;
 
         if (refreshToken) {
             await executeQuery(
                 'UPDATE refresh_tokens SET is_revoked = TRUE WHERE token = ?',
                 [refreshToken]
             );
+        }
+
+        // Update logout time for the most recent login log without logout time
+        if (userId && userId !== TEST_USER_ID) {
+            const [loginLogs] = await executeQuery(
+                `SELECT id, login_time FROM user_login_logs 
+                 WHERE user_id = ? AND logout_time IS NULL 
+                 ORDER BY login_time DESC LIMIT 1`,
+                [userId]
+            );
+
+            if (loginLogs && loginLogs.length > 0) {
+                const loginLog = loginLogs[0];
+                const logoutTime = new Date();
+                const loginTime = new Date(loginLog.login_time);
+                const sessionDuration = Math.floor((logoutTime - loginTime) / 1000); // seconds
+
+                await executeQuery(
+                    `UPDATE user_login_logs 
+                     SET logout_time = NOW(), session_duration_seconds = ? 
+                     WHERE id = ?`,
+                    [sessionDuration, loginLog.id]
+                );
+
+                logger.info(`User logged out: ID ${userId}, Session duration: ${sessionDuration}s`);
+            }
         }
 
         res.json({

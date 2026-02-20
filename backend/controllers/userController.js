@@ -171,9 +171,74 @@ const deleteUser = async (req, res, next) => {
     }
 };
 
+/**
+ * Get user login/logout logs
+ */
+const getUserLoginLogs = async (req, res, next) => {
+    try {
+        const userId = req.params.userId ? parseInt(req.params.userId, 10) : null;
+        const limit = parseInt(req.query.limit, 10) || 50;
+        const offset = parseInt(req.query.offset, 10) || 0;
+
+        let query = `
+            SELECT 
+                ull.id,
+                ull.user_id,
+                ull.login_time,
+                ull.logout_time,
+                ull.ip_address,
+                ull.user_agent,
+                ull.session_duration_seconds,
+                ull.created_at,
+                u.username,
+                u.full_name,
+                u.email,
+                u.role
+            FROM user_login_logs ull
+            INNER JOIN users u ON ull.user_id = u.id
+        `;
+        const params = [];
+
+        if (userId) {
+            query += ' WHERE ull.user_id = ?';
+            params.push(userId);
+        }
+
+        query += ' ORDER BY ull.login_time DESC LIMIT ? OFFSET ?';
+        params.push(limit, offset);
+
+        const [logs] = await executeQuery(query, params);
+
+        // Get total count
+        let countQuery = 'SELECT COUNT(*) as total FROM user_login_logs';
+        const countParams = [];
+        if (userId) {
+            countQuery += ' WHERE user_id = ?';
+            countParams.push(userId);
+        }
+        const [countResult] = await executeQuery(countQuery, countParams);
+        const total = countResult[0]?.total || 0;
+
+        res.json({
+            success: true,
+            data: logs,
+            pagination: {
+                total,
+                limit,
+                offset,
+                hasMore: offset + limit < total
+            }
+        });
+    } catch (error) {
+        logger.error('Get user login logs error:', error);
+        next(error);
+    }
+};
+
 module.exports = {
     getAllUsers,
     getUserById,
     updateUser,
-    deleteUser
+    deleteUser,
+    getUserLoginLogs
 };
