@@ -14,5 +14,6 @@ router.get('/', authenticate, customerController.getAllCustomers);
 router.get('/:id', authenticate, customerController.getCustomerById);
 router.post('/', authenticate, createCustomerValidation, customerController.createCustomer);
 router.put('/:id', authenticate, customerController.updateCustomer);
+router.delete('/:id', authenticate, customerController.deleteCustomer);
 
 module.exports = router;

@@ -156,10 +156,10 @@ const createSale = async (req, res, next) => {
              discount, tax, paid, due, paymentStatus, notes || null]
         );
 
-        const saleId = saleResult.insertId;
-        if (saleId == null || saleId === undefined) {
+        const saleId = saleResult.insertId || (saleResult.rows && saleResult.rows[0] && saleResult.rows[0].id);
+        if (!saleId) {
             await connection.rollback();
-            logger.error('Create sale: INSERT did not return id', { saleResult });
+            logger.error('Create sale: INSERT did not return id', { saleResult, fullResult: JSON.stringify(saleResult) });
             return res.status(500).json({
                 success: false,
                 message: 'Could not create sale record. Check backend logs.'
@@ -233,7 +233,14 @@ const createSale = async (req, res, next) => {
         });
     } catch (error) {
         if (connection && connection.rollback) await connection.rollback().catch(() => {});
-        logger.error('Create sale error:', { message: error.message, code: error.code, stack: error.stack });
+        logger.error('Create sale error:', {
+            message: error.message,
+            stack: error.stack,
+            code: error.code,
+            detail: error.detail,
+            hint: error.hint,
+            body: req.body
+        });
         next(error);
     } finally {
         if (connection && connection.release) connection.release();

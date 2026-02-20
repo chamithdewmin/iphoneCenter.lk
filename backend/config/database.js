@@ -53,12 +53,15 @@ const getConnection = async () => {
     const execute = async (query, params = []) => {
         const pgQuery = toPgPlaceholders(query);
         const result = await client.query(pgQuery, params);
-        // Return [data] compatible with mysql2: SELECT -> [rows array], INSERT/UPDATE/DELETE -> [{ insertId?, affectedRows }]
+        // Return [data] compatible with mysql2: SELECT -> [rows array], INSERT/UPDATE/DELETE -> [{ insertId?, affectedRows, rows? }]
         if (result.command === 'SELECT') {
             return [result.rows];
         }
-        const out = { affectedRows: result.rowCount ?? 0 };
-        if (result.rows[0] && typeof result.rows[0].id !== 'undefined') {
+        const out = { 
+            affectedRows: result.rowCount ?? 0,
+            rows: result.rows // Include rows for RETURNING clause support
+        };
+        if (result.rows && result.rows[0] && typeof result.rows[0].id !== 'undefined') {
             out.insertId = result.rows[0].id;
         }
         return [out];

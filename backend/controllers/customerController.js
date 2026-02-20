@@ -83,15 +83,25 @@ const createCustomer = async (req, res, next) => {
             [name, phone || null, email || null, address || null]
         );
 
+        const customerId = result.insertId || (result.rows && result.rows[0] && result.rows[0].id);
+        if (!customerId) {
+            await connection.rollback();
+            logger.error('Create customer: INSERT did not return id', { result });
+            return res.status(500).json({
+                success: false,
+                message: 'Could not create customer record. Check backend logs.'
+            });
+        }
+
         await connection.commit();
 
-        logger.info(`Customer created: ${name} (ID: ${result.insertId})`);
+        logger.info(`Customer created: ${name} (ID: ${customerId})`);
 
         res.status(201).json({
             success: true,
             message: 'Customer created successfully',
             data: {
-                id: result.insertId,
+                id: customerId,
                 name
             }
         });
@@ -182,9 +192,77 @@ const updateCustomer = async (req, res, next) => {
     }
 };
 
+/**
+ * Delete customer
+ */
+const deleteCustomer = async (req, res, next) => {
+    const connection = await getConnection();
+    try {
+        await connection.beginTransaction();
+
+        const { id } = req.params;
+
+        // Check if customer exists
+        const [customers] = await connection.execute(
+            'SELECT id, name FROM customers WHERE id = ?',
+            [id]
+        );
+
+        if (customers.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({
+                success: false,
+                message: 'Customer not found'
+            });
+        }
+
+        // Check if customer has any sales (optional - you may want to prevent deletion if customer has sales)
+        const [sales] = await connection.execute(
+            'SELECT id FROM sales WHERE customer_id = ? LIMIT 1',
+            [id]
+        );
+
+        if (sales.length > 0) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot delete customer with existing sales. Consider deactivating instead.'
+            });
+        }
+
+        // Delete customer
+        await connection.execute(
+            'DELETE FROM customers WHERE id = ?',
+            [id]
+        );
+
+        await connection.commit();
+
+        logger.info(`Customer deleted: ID ${id} (${customers[0].name})`);
+
+        res.json({
+            success: true,
+            message: 'Customer deleted successfully'
+        });
+    } catch (error) {
+        await connection.rollback();
+        logger.error('Delete customer error:', {
+            message: error.message,
+            stack: error.stack,
+            code: error.code,
+            detail: error.detail,
+            hint: error.hint
+        });
+        next(error);
+    } finally {
+        connection.release();
+    }
+};
+
 module.exports = {
     getAllCustomers,
     getCustomerById,
     createCustomer,
-    updateCustomer
+    updateCustomer,
+    deleteCustomer
 };

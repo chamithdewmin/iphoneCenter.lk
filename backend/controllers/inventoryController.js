@@ -151,7 +151,15 @@ const createProduct = async (req, res, next) => {
             [name, sku, description || null, category || null, brand || null, basePrice]
         );
 
-        const productId = result.insertId;
+        const productId = result.insertId || (result.rows && result.rows[0] && result.rows[0].id);
+        if (!productId) {
+            await connection.rollback();
+            logger.error('Create product: INSERT did not return id', { result });
+            return res.status(500).json({
+                success: false,
+                message: 'Could not create product record. Check backend logs.'
+            });
+        }
 
         // Generate barcode
         const barcode = generateBarcode(productId, sku);
@@ -172,13 +180,13 @@ const createProduct = async (req, res, next) => {
 
         await connection.commit();
 
-        logger.info(`Product created: ${name} (ID: ${result.insertId})`);
+        logger.info(`Product created: ${name} (ID: ${productId})`);
 
         res.status(201).json({
             success: true,
             message: 'Product created successfully',
             data: {
-                id: result.insertId,
+                id: productId,
                 name,
                 sku,
                 barcode
@@ -186,7 +194,14 @@ const createProduct = async (req, res, next) => {
         });
     } catch (error) {
         await connection.rollback();
-        logger.error('Create product error:', error);
+        logger.error('Create product error:', {
+            message: error.message,
+            stack: error.stack,
+            code: error.code,
+            detail: error.detail,
+            hint: error.hint,
+            body: req.body
+        });
         next(error);
     } finally {
         connection.release();
