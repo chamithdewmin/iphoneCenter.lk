@@ -63,7 +63,7 @@ export const DEFAULT_ROLE_PERMISSIONS = {
   },
   cashier: {
     dashboard: true,
-    products: false,
+    products: true,
     orders: true,
     customers: true,
     inventory: false,
@@ -75,18 +75,20 @@ export const DEFAULT_ROLE_PERMISSIONS = {
 
 /**
  * Get permissions for a role. Admin always gets all true; others from localStorage or defaults.
+ * Role is normalized to lowercase for lookup.
  */
 export function getRolePermissions(roleId) {
   if (!roleId) return defaultPermissions();
-  if (roleId === 'admin') return { ...defaultPermissions() };
+  const role = String(roleId).toLowerCase();
+  if (role === 'admin') return { ...defaultPermissions() };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const saved = JSON.parse(raw);
-      if (saved[roleId]) return { ...DEFAULT_ROLE_PERMISSIONS[roleId], ...saved[roleId] };
+      if (saved[role]) return { ...DEFAULT_ROLE_PERMISSIONS[role], ...saved[role] };
     }
   } catch (_) {}
-  return { ...(DEFAULT_ROLE_PERMISSIONS[roleId] || defaultPermissions()) };
+  return { ...(DEFAULT_ROLE_PERMISSIONS[role] || defaultPermissions()) };
 }
 
 /**
