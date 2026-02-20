@@ -9,7 +9,8 @@ function jsonError(message, detail = null, extra = {}) {
  * Returns JSON: { message, detail: error.detail || null }
  */
 const errorHandler = (err, req, res, next) => {
-    // Always log to console in production so Dokploy/container logs show the real error
+    // Log full error so Dokploy/container logs show the real error (no blind 500s)
+    console.error(err);
     if (process.env.NODE_ENV === 'production') {
         console.error('API Error:', err.code || '', err.message, req.method, req.url);
         if (err.stack) console.error(err.stack);
@@ -102,17 +103,13 @@ const errorHandler = (err, req, res, next) => {
         return res.status(401).json(jsonError('Token expired', null));
     }
 
-    // Default error
+    // Default error: return real message/code/detail so 500s are never blind
     const statusCode = err.statusCode || 500;
-    const message = process.env.NODE_ENV === 'production'
-        ? 'Internal server error'
-        : err.message;
-    const hint = process.env.NODE_ENV === 'production' && statusCode === 500
-        ? ' Check backend server logs (e.g. Dokploy container logs) for details.'
-        : '';
-
     res.status(statusCode).json({
-        ...jsonError(message + hint, err.detail || null),
+        success: false,
+        message: err.message || 'Internal server error',
+        code: err.code || null,
+        detail: err.detail || null,
         ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
     });
 };

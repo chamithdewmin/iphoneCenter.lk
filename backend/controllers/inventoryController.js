@@ -93,8 +93,11 @@ const getProductById = async (req, res, next) => {
 
 /**
  * Create product
+ * DB columns (products table): name, sku, description, category, brand, base_price (no category_id/branch_id on products)
  */
 const createProduct = async (req, res, next) => {
+    console.log('BODY:', req.body);
+
     let connection;
     try {
         // Validate and normalize request body (required: name, sku, base_price)
@@ -162,6 +165,7 @@ const createProduct = async (req, res, next) => {
         }
 
         try {
+            // Insert only columns that exist: name, sku, description, category, brand, base_price (all match init.pg.sql)
             const [result] = await connection.execute(
                 `INSERT INTO products (name, sku, description, category, brand, base_price) 
                  VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
@@ -211,7 +215,7 @@ const createProduct = async (req, res, next) => {
             });
         } catch (insertError) {
             await connection.rollback().catch((err) => logger.error('Rollback error:', err));
-            console.error('Create product DB error:', insertError.message, insertError.code, insertError.detail);
+            console.error('CREATE PRODUCT ERROR:', insertError);
             logger.error('Create product error:', {
                 message: insertError.message,
                 stack: insertError.stack,
@@ -222,31 +226,33 @@ const createProduct = async (req, res, next) => {
             });
             // Postgres: unique violation (e.g. SKU)
             if (insertError.code === '23505') {
-                const msg = (insertError.constraint && insertError.constraint.includes('sku')) || (insertError.detail && String(insertError.detail).toLowerCase().includes('sku'))
-                    ? 'SKU already exists'
-                    : 'Duplicate entry. This record already exists.';
                 return res.status(409).json({
                     success: false,
-                    message: msg,
+                    message: 'SKU already exists',
                     detail: insertError.detail || null
                 });
             }
             // Postgres: NOT NULL violation
             if (insertError.code === '23502') {
-                const column = insertError.column ? ` (${insertError.column})` : '';
                 return res.status(400).json({
                     success: false,
-                    message: `Required field missing${column}. ${insertError.message || 'Check your input.'}`,
+                    message: 'Missing required field',
                     detail: insertError.detail || null
                 });
             }
-            next(insertError);
+            // Return real error so you see exact DB error (column does not exist, invalid syntax, etc.)
+            res.status(500).json({
+                success: false,
+                message: insertError.message,
+                detail: insertError.detail || null,
+                code: insertError.code || null
+            });
         }
     } catch (error) {
         if (connection && connection.rollback) {
             await connection.rollback().catch((err) => logger.error('Rollback error:', err));
         }
-        console.error('Create product error:', error.message, error.code, error.detail);
+        console.error('CREATE PRODUCT ERROR:', error);
         logger.error('Create product error:', {
             message: error.message,
             stack: error.stack,
