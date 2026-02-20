@@ -245,11 +245,11 @@
   border-color: var(--primary);
 }
 
-/* Icon circles: vibrant orange, brighter at center (matches avatar/orange circle style) */
+/* Icon circles with mix orange gradient (like S/C icons) */
 .icon-circle-gradient {
-  background: radial-gradient(circle at 32% 28%, #ffb366 0%, #ff8040 42%, #e55a20 100%);
+  background: var(--primary-gradient);
   color: #fff;
-  box-shadow: 0 2px 10px rgba(255, 128, 64, 0.35);
+  box-shadow: 0 2px 8px rgba(255, 128, 64, 0.25);
 }
 
 @media print {

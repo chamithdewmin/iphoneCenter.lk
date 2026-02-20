@@ -95,8 +95,9 @@ const getProductById = async (req, res, next) => {
  * Create product
  */
 const createProduct = async (req, res, next) => {
-    const connection = await getConnection();
+    let connection;
     try {
+        connection = await getConnection();
         await connection.beginTransaction();
 
         const { name, sku, description, category, brand, basePrice, initialQuantity, branchId: bodyBranchId } = req.body;
@@ -193,7 +194,9 @@ const createProduct = async (req, res, next) => {
             }
         });
     } catch (error) {
-        await connection.rollback();
+        if (connection && connection.rollback) {
+            await connection.rollback().catch((err) => logger.error('Rollback error:', err));
+        }
         logger.error('Create product error:', {
             message: error.message,
             stack: error.stack,
@@ -204,7 +207,9 @@ const createProduct = async (req, res, next) => {
         });
         next(error);
     } finally {
-        connection.release();
+        if (connection && connection.release) {
+            connection.release().catch((err) => logger.error('Release connection error:', err));
+        }
     }
 };
 

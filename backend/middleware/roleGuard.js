@@ -14,7 +14,7 @@ const requireRole = (...allowedRoles) => {
             });
         }
 
-        const userRole = req.user.role;
+        const userRole = req.user.role != null ? String(req.user.role).toLowerCase() : '';
 
         // Admin has access to everything
         if (userRole === ROLES.ADMIN) {
@@ -44,8 +44,14 @@ const requireAdmin = requireRole(ROLES.ADMIN);
  */
 const requireManager = requireRole(ROLES.ADMIN, ROLES.MANAGER);
 
+/**
+ * Middleware to check if user is admin, manager, or staff (e.g. add/edit products)
+ */
+const requireManagerOrStaff = requireRole(ROLES.ADMIN, ROLES.MANAGER, ROLES.STAFF);
+
 module.exports = {
     requireRole,
     requireAdmin,
-    requireManager
+    requireManager,
+    requireManagerOrStaff
 };

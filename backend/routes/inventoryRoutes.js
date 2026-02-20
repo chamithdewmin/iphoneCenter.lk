@@ -3,23 +3,30 @@ const router = express.Router();
 const { body } = require('express-validator');
 const inventoryController = require('../controllers/inventoryController');
 const { authenticate } = require('../middleware/auth');
-const { requireManager } = require('../middleware/roleGuard');
+const { requireManager, requireManagerOrStaff } = require('../middleware/roleGuard');
 const { branchGuard, setBranchContext } = require('../middleware/branchGuard');
+const { handleValidationErrors } = require('../middleware/validate');
 
-// Validation rules
+// Validation rules (basePrice can be number or string from JSON; 0 is valid)
 const createProductValidation = [
     body('name').trim().notEmpty().withMessage('Product name is required'),
     body('sku').trim().notEmpty().withMessage('SKU is required'),
-    body('basePrice').isFloat({ min: 0 }).withMessage('Base price must be a positive number')
+    body('basePrice').custom((v) => {
+        if (v === undefined || v === null || (typeof v === 'string' && v.trim() === ''))
+            throw new Error('Base price is required');
+        const n = parseFloat(v);
+        if (Number.isNaN(n) || n < 0) throw new Error('Base price must be 0 or greater');
+        return true;
+    })
 ];
 
 // Routes
 // Products
 router.get('/products', authenticate, inventoryController.getAllProducts);
 router.get('/products/:id', authenticate, inventoryController.getProductById);
-router.post('/products', authenticate, requireManager, createProductValidation, inventoryController.createProduct);
-router.put('/products/:id', authenticate, requireManager, inventoryController.updateProduct);
-router.delete('/products/:id', authenticate, requireManager, inventoryController.deleteProduct);
+router.post('/products', authenticate, requireManagerOrStaff, createProductValidation, handleValidationErrors, inventoryController.createProduct);
+router.put('/products/:id', authenticate, requireManagerOrStaff, inventoryController.updateProduct);
+router.delete('/products/:id', authenticate, requireManagerOrStaff, inventoryController.deleteProduct);
 
 // Stock
 router.get('/stock', authenticate, branchGuard, setBranchContext, inventoryController.getBranchStock);
