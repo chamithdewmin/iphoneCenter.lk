@@ -45,7 +45,8 @@ import {
   MessageSquare,
   Send,
   Mail,
-  LogOut
+  LogOut,
+  ShoppingCart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRolePermissions } from '@/constants/rolePermissions';
@@ -57,6 +58,7 @@ const menuGroups = [
     label: 'Core Operations',
     items: [
       { type: 'link', to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', permission: 'dashboard' },
+      { type: 'link', to: '/phone-shop-pos', icon: ShoppingCart, label: 'Phone Shop POS', permission: 'orders', excludeRoles: ['admin'] },
       { type: 'link', to: '/orders', icon: FileText, label: 'Orders', permission: 'orders' },
       {
         type: 'menu',
@@ -175,9 +177,13 @@ const menuGroups = [
 ];
 
 /** Filter menu by role permissions: show item only if user has the required permission (admin has all). */
-function filterMenuByPermissions(items, permissions) {
+function filterMenuByPermissions(items, permissions, userRole) {
   if (!permissions) return items;
   return items.filter((item) => {
+    // Exclude items for specific roles (e.g., exclude admin from Phone Shop POS)
+    if (item.excludeRoles && userRole && item.excludeRoles.includes(userRole.toLowerCase())) {
+      return false;
+    }
     const required = item.permission;
     if (!required) return true;
     return permissions[required] === true;
@@ -185,11 +191,11 @@ function filterMenuByPermissions(items, permissions) {
 }
 
 /** Filter menu groups: show group only if it has at least one visible item */
-function filterMenuGroups(groups, permissions) {
+function filterMenuGroups(groups, permissions, userRole) {
   return groups
     .map((group) => ({
       ...group,
-      items: filterMenuByPermissions(group.items, permissions),
+      items: filterMenuByPermissions(group.items, permissions, userRole),
     }))
     .filter((group) => group.items.length > 0);
 }
@@ -371,7 +377,7 @@ const Sidebar = ({ isOpen, onClose }) => {
   
   const displayGroups = useMemo(() => {
     const permissions = getRolePermissions(user?.role);
-    return filterMenuGroups(menuGroups, permissions);
+    return filterMenuGroups(menuGroups, permissions, user?.role);
   }, [user?.role, permissionsVersion]);
 
   const sidebarWidth = collapsed ? 56 : 240;

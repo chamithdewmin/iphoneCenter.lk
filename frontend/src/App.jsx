@@ -6,6 +6,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import Loading from './components/Loading';
 import POS from './pages/POS';
+import PhoneShopPOS from './pages/PhoneShopPOS';
 import Inventory from './pages/Inventory';
 import CustomersPage from './pages/Customers';
 import Reports from './pages/Reports';
@@ -119,6 +120,7 @@ function App() {
         <Route index element={<Navigate to="/dashboard" />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="pos" element={<POS />} />
+        <Route path="phone-shop-pos" element={<PhoneShopPOS />} />
         <Route path="inventory" element={<Inventory />} />
         <Route path="orders" element={<Orders />} />
         <Route path="customers" element={<CustomersPage />} />

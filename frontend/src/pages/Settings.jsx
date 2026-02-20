@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { RefreshCw, Building2, DollarSign, Globe, Save, AlertTriangle, Trash2, Moon, Sun } from 'lucide-react';
+import { RefreshCw, Building2, DollarSign, Globe, Save, AlertTriangle, Trash2, Moon, Sun, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { resetDemoData } from '@/utils/storage';
 import { useToast } from '@/components/ui/use-toast';
@@ -159,36 +160,25 @@ const Settings = () => {
           className="bg-card rounded-xl border border-secondary shadow-sm"
         >
           <div className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Sun className="w-5 h-5 text-primary" />
+            <div className="flex items-center gap-2 mb-2">
+              <Palette className="w-5 h-5 text-primary" />
               <h2 className="text-xl font-semibold">Appearance</h2>
             </div>
-            <p className="text-sm text-muted-foreground mb-4">Switch between dark and light mode. The whole app updates when you change this.</p>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setTheme('dark')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${
-                  theme === 'dark'
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border bg-background text-muted-foreground hover:border-muted-foreground/50'
-                }`}
-              >
-                <Moon className="w-5 h-5" />
-                <span className="font-medium">Dark</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setTheme('light')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${
-                  theme === 'light'
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border bg-background text-muted-foreground hover:border-muted-foreground/50'
-                }`}
-              >
-                <Sun className="w-5 h-5" />
-                <span className="font-medium">Light</span>
-              </button>
+            <p className="text-sm text-muted-foreground mb-6">Interface preferences.</p>
+            
+            {/* Theme Toggle Card */}
+            <div className="bg-secondary/50 rounded-lg border border-border p-4 flex items-center justify-between">
+              <div className="flex-1">
+                <Label htmlFor="theme-toggle" className="text-base font-semibold cursor-pointer">
+                  Theme
+                </Label>
+                <p className="text-sm text-muted-foreground mt-1">Light or dark mode</p>
+              </div>
+              <Switch
+                id="theme-toggle"
+                checked={theme === 'light'}
+                onCheckedChange={(checked) => setTheme(checked ? 'light' : 'dark')}
+              />
             </div>
           </div>
         </motion.div>
