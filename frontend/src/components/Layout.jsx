@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { CASHIER_ALLOWED_PATHS } from '@/constants/cashierPaths';
 import Sidebar from '@/components/Sidebar';
+import RefreshButton from '@/components/RefreshButton';
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -60,6 +61,7 @@ const Layout = () => {
         <main className="p-4 lg:p-6">
           <Outlet />
         </main>
+        <RefreshButton />
       </div>
     </div>
   );
