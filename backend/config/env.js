@@ -10,6 +10,12 @@ function validateEnv() {
             'In Dokploy/Docker set these in the app Environment tab (not in a file). Use long random strings.'
         );
     }
+    // Ensure DATABASE_URL (or DB_* vars) is set so DB is not undefined
+    const hasDbUrl = process.env.DATABASE_URL && String(process.env.DATABASE_URL).trim() !== '';
+    const hasDbHost = process.env.DB_HOST && String(process.env.DB_HOST).trim() !== '';
+    if (!hasDbUrl && !hasDbHost) {
+        console.warn('⚠️ DATABASE_URL and DB_HOST are not set. Database connections may fail. Set DATABASE_URL (e.g. postgresql://user:pass@host:5432/dbname) in your environment.');
+    }
     if (process.env.NODE_ENV === 'production') {
         const weak = [];
         if ((process.env.JWT_SECRET || '').length < 32) weak.push('JWT_SECRET');

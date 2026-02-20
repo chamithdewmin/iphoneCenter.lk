@@ -7,14 +7,17 @@ const { requireManager, requireManagerOrStaff } = require('../middleware/roleGua
 const { branchGuard, setBranchContext } = require('../middleware/branchGuard');
 const { handleValidationErrors } = require('../middleware/validate');
 
-// Validation rules (basePrice can be number or string from JSON; 0 is valid)
+// Validation rules: name, sku, base_price (or basePrice) required; converted to number in controller
 const createProductValidation = [
     body('name').trim().notEmpty().withMessage('Product name is required'),
     body('sku').trim().notEmpty().withMessage('SKU is required'),
-    body('basePrice').custom((v) => {
+    body('base_price').optional(),
+    body('basePrice').optional(),
+    body().custom((_, { req }) => {
+        const v = req.body.base_price ?? req.body.basePrice;
         if (v === undefined || v === null || (typeof v === 'string' && v.trim() === ''))
             throw new Error('Base price is required');
-        const n = parseFloat(v);
+        const n = Number(v);
         if (Number.isNaN(n) || n < 0) throw new Error('Base price must be 0 or greater');
         return true;
     })

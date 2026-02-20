@@ -135,13 +135,13 @@ const AddProduct = () => {
       return;
     }
     const sku = formData.sku?.trim() || formData.imei?.trim() || `SKU-${Date.now()}`;
-    const basePrice = parseFloat(formData.price);
-    if (isNaN(basePrice) || basePrice < 0) {
+    const basePrice = Number(formData.price);
+    if (Number.isNaN(basePrice) || basePrice < 0) {
       toast({ title: 'Validation Error', description: 'Valid base price is required', variant: 'destructive' });
       return;
     }
     setLoading(true);
-    
+
     if (isEditMode) {
       // Update existing product
       const { ok, data } = await authFetch(`/api/inventory/products/${id}`, {
@@ -152,7 +152,7 @@ const AddProduct = () => {
           description: formData.description || null,
           category: formData.category || null,
           brand: formData.brand || null,
-          basePrice,
+          basePrice: Number(basePrice),
         }),
       });
       setLoading(false);
@@ -173,7 +173,7 @@ const AddProduct = () => {
           description: formData.description || null,
           category: formData.category || null,
           brand: formData.brand || null,
-          basePrice,
+          basePrice: Number(basePrice),
           initialQuantity,
           ...(branchId ? { branchId } : {}),
         }),

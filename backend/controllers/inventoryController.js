@@ -97,18 +97,33 @@ const getProductById = async (req, res, next) => {
 const createProduct = async (req, res, next) => {
     let connection;
     try {
-        connection = await getConnection();
-        await connection.beginTransaction();
+        // Validate and normalize request body (required: name, sku, base_price)
+        const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
+        const sku = typeof req.body.sku === 'string' ? req.body.sku.trim() : '';
+        const base_price = Number(req.body.base_price ?? req.body.basePrice);
 
-        const { name, sku, description, category, brand, basePrice, initialQuantity, branchId: bodyBranchId } = req.body;
-
-        if (!name || !sku || !basePrice) {
-            await connection.rollback();
+        if (!name) {
             return res.status(400).json({
                 success: false,
-                message: 'Name, SKU, and base price are required'
+                message: 'Product name is required'
             });
         }
+        if (!sku) {
+            return res.status(400).json({
+                success: false,
+                message: 'SKU is required'
+            });
+        if (base_price === undefined || base_price === null || Number.isNaN(base_price) || base_price < 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Valid base price is required (0 or greater)'
+            });
+        }
+
+        const { description, category, brand, initialQuantity, branchId: bodyBranchId } = req.body;
+
+        connection = await getConnection();
+        await connection.beginTransaction();
 
         // Branch for initial stock: admin must send branchId (dropdown); manager/staff use their branch only
         let branchIdForStock = null;
@@ -146,57 +161,92 @@ const createProduct = async (req, res, next) => {
             });
         }
 
-        const [result] = await connection.execute(
-            `INSERT INTO products (name, sku, description, category, brand, base_price) 
-             VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
-            [name, sku, description || null, category || null, brand || null, basePrice]
-        );
-
-        const productId = result.insertId || (result.rows && result.rows[0] && result.rows[0].id);
-        if (!productId) {
-            await connection.rollback();
-            logger.error('Create product: INSERT did not return id', { result });
-            return res.status(500).json({
-                success: false,
-                message: 'Could not create product record. Check backend logs.'
-            });
-        }
-
-        // Generate barcode
-        const barcode = generateBarcode(productId, sku);
-        await connection.execute(
-            'INSERT INTO barcodes (product_id, barcode) VALUES (?, ?)',
-            [productId, barcode]
-        );
-
-        // Set initial stock quantity at the chosen branch
-        const qty = Math.max(0, parseInt(initialQuantity, 10) || 0);
-        if (qty >= 0 && branchIdForStock) {
-            await connection.execute(
-                `INSERT INTO branch_stock (branch_id, product_id, quantity) VALUES (?, ?, ?)
-                 ON CONFLICT (branch_id, product_id) DO UPDATE SET quantity = branch_stock.quantity + EXCLUDED.quantity`,
-                [branchIdForStock, productId, qty]
+        try {
+            const [result] = await connection.execute(
+                `INSERT INTO products (name, sku, description, category, brand, base_price) 
+                 VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
+                [name, sku, description || null, category || null, brand || null, base_price]
             );
-        }
 
-        await connection.commit();
-
-        logger.info(`Product created: ${name} (ID: ${productId})`);
-
-        res.status(201).json({
-            success: true,
-            message: 'Product created successfully',
-            data: {
-                id: productId,
-                name,
-                sku,
-                barcode
+            const productId = result.insertId || (result.rows && result.rows[0] && result.rows[0].id);
+            if (!productId) {
+                await connection.rollback();
+                logger.error('Create product: INSERT did not return id', { result });
+                return res.status(500).json({
+                    success: false,
+                    message: 'Could not create product record. Check backend logs.'
+                });
             }
-        });
+
+            // Generate barcode
+            const barcode = generateBarcode(productId, sku);
+            await connection.execute(
+                'INSERT INTO barcodes (product_id, barcode) VALUES (?, ?)',
+                [productId, barcode]
+            );
+
+            // Set initial stock quantity at the chosen branch
+            const qty = Math.max(0, parseInt(initialQuantity, 10) || 0);
+            if (qty >= 0 && branchIdForStock) {
+                await connection.execute(
+                    `INSERT INTO branch_stock (branch_id, product_id, quantity) VALUES (?, ?, ?)
+                     ON CONFLICT (branch_id, product_id) DO UPDATE SET quantity = branch_stock.quantity + EXCLUDED.quantity`,
+                    [branchIdForStock, productId, qty]
+                );
+            }
+
+            await connection.commit();
+
+            logger.info(`Product created: ${name} (ID: ${productId})`);
+
+            res.status(201).json({
+                success: true,
+                message: 'Product created successfully',
+                data: {
+                    id: productId,
+                    name,
+                    sku,
+                    barcode
+                }
+            });
+        } catch (insertError) {
+            await connection.rollback().catch((err) => logger.error('Rollback error:', err));
+            console.error('Create product DB error:', insertError.message, insertError.code, insertError.detail);
+            logger.error('Create product error:', {
+                message: insertError.message,
+                stack: insertError.stack,
+                code: insertError.code,
+                detail: insertError.detail,
+                hint: insertError.hint,
+                body: req.body
+            });
+            // Postgres: unique violation (e.g. SKU)
+            if (insertError.code === '23505') {
+                const msg = (insertError.constraint && insertError.constraint.includes('sku')) || (insertError.detail && String(insertError.detail).toLowerCase().includes('sku'))
+                    ? 'SKU already exists'
+                    : 'Duplicate entry. This record already exists.';
+                return res.status(409).json({
+                    success: false,
+                    message: msg,
+                    detail: insertError.detail || null
+                });
+            }
+            // Postgres: NOT NULL violation
+            if (insertError.code === '23502') {
+                const column = insertError.column ? ` (${insertError.column})` : '';
+                return res.status(400).json({
+                    success: false,
+                    message: `Required field missing${column}. ${insertError.message || 'Check your input.'}`,
+                    detail: insertError.detail || null
+                });
+            }
+            next(insertError);
+        }
     } catch (error) {
         if (connection && connection.rollback) {
             await connection.rollback().catch((err) => logger.error('Rollback error:', err));
         }
+        console.error('Create product error:', error.message, error.code, error.detail);
         logger.error('Create product error:', {
             message: error.message,
             stack: error.stack,

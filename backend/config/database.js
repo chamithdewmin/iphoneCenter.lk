@@ -2,12 +2,14 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 // Use DATABASE_URL (e.g. postgresql://user:pass@host:5432/dbname) or separate env vars
+// dotenv is loaded in server.js before this; ensure env is loaded
+require('dotenv').config();
 const connectionString = process.env.DATABASE_URL || (process.env.DB_HOST ? (
     `postgresql://${encodeURIComponent(process.env.DB_USER || 'postgres')}:${encodeURIComponent(process.env.DB_PASSWORD || '')}@${process.env.DB_HOST}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME || 'pos_system'}`
 ) : null);
 
 if (!connectionString) {
-    console.warn('⚠️ DATABASE_URL or DB_* env vars not set');
+    console.warn('⚠️ DATABASE_URL or DB_* env vars not set. Set DATABASE_URL so the database is not undefined.');
 }
 
 const pool = new Pool({
