@@ -14,7 +14,7 @@
     --secondary: #111419;                /* Table odd row */
     --muted: #1a1d27;                    /* Table hover */
     --accent: #1c1e24;                   /* Button background */
-    --input: #1e2433;                    /* Input background */
+    --input: #252535;                    /* Input/select/textarea field background (same as Add User modal) */
     
     /* Borders */
     --border: #1e2433;                   /* Border/divider */
@@ -62,7 +62,7 @@
     --text-body: #d1d9e6;                /* Body text, source names */
     --text-label: #8b9ab0;               /* Labels, secondary text */
     --text-muted: #6b7a99;               /* Muted text, notes */
-    --text-placeholder: #4a5568;         /* Placeholder text, null values */
+    --text-placeholder: #9ca3af;        /* Placeholder text (same as Add User modal) */
     
     /* UI Elements */
     --button-bg: #1c1e24;                /* Button background */
@@ -121,6 +121,23 @@
     --scrollbar-track: #e5e7eb;
     --scrollbar-thumb: #9ca3af;
     --scrollbar-thumb-hover: #6b7280;
+  }
+
+  /* Same field look on all pages: input, select, textarea use Add User modal colors */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    background-color: var(--input) !important;
+    color: var(--foreground) !important;
+    border-color: var(--border);
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--text-placeholder);
+  }
+  select option {
+    background-color: var(--input);
+    color: var(--foreground);
   }
 
   * {
