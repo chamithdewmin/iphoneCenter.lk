@@ -14,6 +14,9 @@ const Layout = () => {
     if (user?.role === 'cashier' && !CASHIER_ALLOWED_PATHS.has(pathname)) {
       navigate('/dashboard', { replace: true });
     }
+    if (user?.role === 'manager' && pathname.startsWith('/reports')) {
+      navigate('/dashboard', { replace: true });
+    }
   }, [user?.role, pathname, navigate]);
 
   return (

@@ -358,6 +358,11 @@ const Users = () => {
       label: 'Email address',
       render: (user) => <span className="text-muted-foreground text-sm">{user.email || '—'}</span>,
     },
+    {
+      key: 'branch',
+      label: 'Branch',
+      render: (user) => <span className="text-muted-foreground text-sm">{user.branch_name || user.branch_code || '—'}</span>,
+    },
   ];
 
   return (
@@ -400,7 +405,7 @@ const Users = () => {
 
           {/* Users Table */}
           <DataTable
-            title="Team members"
+            title="Active users"
             count={filteredUsers.length}
             data={paginatedUsers}
             columns={columns}

@@ -47,7 +47,7 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     orders: true,
     customers: true,
     inventory: true,
-    reports: true,
+    reports: false,
     settings: false,
     users: false,
   },

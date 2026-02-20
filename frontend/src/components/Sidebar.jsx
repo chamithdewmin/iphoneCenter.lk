@@ -134,6 +134,7 @@ const menuGroups = [
         icon: BarChart3,
         label: 'Reports',
         permission: 'reports',
+        excludeRoles: ['manager'],
         children: [
           { to: '/reports/sale', label: 'Sale Report', icon: FileText },
           { to: '/reports/purchase', label: 'Purchase Report', icon: FileText },
