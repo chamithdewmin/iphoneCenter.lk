@@ -156,12 +156,11 @@ const login = async (req, res, next) => {
             });
         }
 
-        // Test/demo login: no database – configured test credentials or hardcoded test/test
+        // Test/demo login: only when TEST_LOGIN_USERNAME and TEST_LOGIN_PASSWORD are set in env
         const un = String(username || '').trim();
         const pw = String(password || '');
         const testCreds = getTestLoginCredentials();
-        const isTestLogin = (testCreds && un === testCreds.username && pw === testCreds.password) ||
-            (un === 'test' && pw === 'test');
+        const isTestLogin = testCreds && un === testCreds.username && pw === testCreds.password;
         if (isTestLogin) {
             try {
                 const user = getTestUser();

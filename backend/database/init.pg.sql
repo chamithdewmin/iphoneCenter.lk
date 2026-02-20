@@ -88,10 +88,10 @@ CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id)
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires_at ON refresh_tokens(expires_at);
 
--- User login/logout logs table
+-- User login/logout logs table (user_id SET NULL on user delete so history is kept)
 CREATE TABLE IF NOT EXISTS user_login_logs (
     id SERIAL PRIMARY KEY,
-    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id INT NULL REFERENCES users(id) ON DELETE SET NULL,
     login_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     logout_time TIMESTAMP NULL,
     ip_address VARCHAR(45),
@@ -213,7 +213,7 @@ CREATE TABLE IF NOT EXISTS stock_transfers (
     quantity INT NOT NULL,
     imei VARCHAR(20) NULL,
     status transfer_status DEFAULT 'pending',
-    requested_by INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    requested_by INT NULL REFERENCES users(id) ON DELETE SET NULL,
     approved_by INT NULL REFERENCES users(id) ON DELETE SET NULL,
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -249,7 +249,7 @@ CREATE TABLE IF NOT EXISTS sales (
     invoice_number VARCHAR(50) UNIQUE NOT NULL,
     branch_id INT NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
     customer_id INT NULL REFERENCES customers(id) ON DELETE SET NULL,
-    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id INT NULL REFERENCES users(id) ON DELETE SET NULL,
     total_amount DECIMAL(10, 2) NOT NULL,
     discount_amount DECIMAL(10, 2) DEFAULT 0,
     tax_amount DECIMAL(10, 2) DEFAULT 0,
@@ -297,7 +297,7 @@ CREATE TABLE IF NOT EXISTS payments (
     payment_reference VARCHAR(100),
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by INT NOT NULL REFERENCES users(id) ON DELETE CASCADE
+    created_by INT NULL REFERENCES users(id) ON DELETE SET NULL
 );
 CREATE INDEX IF NOT EXISTS idx_payments_sale_id ON payments(sale_id);
 CREATE INDEX IF NOT EXISTS idx_payments_created_at ON payments(created_at);

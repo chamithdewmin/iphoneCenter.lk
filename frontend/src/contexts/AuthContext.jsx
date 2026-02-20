@@ -48,6 +48,21 @@ export const AuthProvider = ({ children }) => {
     return () => setOnUnauthorized(null);
   }, []);
 
+  // Periodic session check: if admin deletes this user (or user deactivated), get 401 and redirect to login without refresh
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+    const intervalMs = 30 * 1000; // 30 seconds
+    const interval = setInterval(async () => {
+      const { ok, status } = await authFetch('/api/auth/profile');
+      if (!ok && status === 401) {
+        clearTokens();
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+    }, intervalMs);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, user]);
+
   const login = async (emailOrUsername, password) => {
     try {
       const base = getApiUrl();

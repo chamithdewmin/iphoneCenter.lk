@@ -142,6 +142,8 @@ const updateUser = async (req, res, next) => {
 
 /**
  * Delete user (Admin only). Cannot delete self.
+ * Only removes the user record and their refresh tokens. Other data is preserved:
+ * - Login/logout logs, sales, stock transfers, payments, audit logs keep their rows with user_id set to NULL.
  */
 const deleteUser = async (req, res, next) => {
     try {
@@ -160,6 +162,7 @@ const deleteUser = async (req, res, next) => {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
 
+        // Remove tokens so the user is logged out; then delete user. Related data (login logs, sales, etc.) is preserved via ON DELETE SET NULL.
         await executeQuery('DELETE FROM refresh_tokens WHERE user_id = ?', [id]);
         await executeQuery('DELETE FROM users WHERE id = ?', [id]);
 

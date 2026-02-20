@@ -38,10 +38,10 @@ function getJwtRefreshSecret() {
     return secret;
 }
 
-/** Test/demo login (not in DB). If set, login with this pair returns success without database. */
+/** Test/demo login (not in DB). Only active when BOTH TEST_LOGIN_USERNAME and TEST_LOGIN_PASSWORD are set. */
 function getTestLoginCredentials() {
-    const user = (process.env.TEST_LOGIN_USERNAME || 'test').trim();
-    const pass = (process.env.TEST_LOGIN_PASSWORD || 'test').trim();
+    const user = (process.env.TEST_LOGIN_USERNAME ?? '').trim();
+    const pass = (process.env.TEST_LOGIN_PASSWORD ?? '').trim();
     if (!user || !pass) return null;
     return { username: user, password: pass };
 }
