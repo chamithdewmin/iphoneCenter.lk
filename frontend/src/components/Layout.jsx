@@ -58,8 +58,12 @@ const Layout = () => {
             </div>
           </div>
         )}
-        {/* Refresh button top-right on every page except dashboard */}
-        {pathname !== '/dashboard' && <RefreshButton />}
+        {/* Refresh button in its own row top-right (every page except dashboard) */}
+        {pathname !== '/dashboard' && (
+          <div className="flex justify-end px-4 pt-4 lg:px-6 lg:pt-6 pb-1">
+            <RefreshButton />
+          </div>
+        )}
         <main className="p-4 lg:p-6">
           <Outlet />
         </main>
