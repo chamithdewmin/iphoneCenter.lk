@@ -294,15 +294,27 @@ const UserReport = () => {
                         {log.ip_address || '—'}
                       </td>
                       <td className="px-4 py-3">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                            log.logout_time
-                              ? 'bg-gray-500/20 text-gray-400'
-                              : 'bg-green-500/20 text-green-500'
-                          }`}
-                        >
-                          {log.logout_time ? 'Completed' : 'Active'}
-                        </span>
+                        {(() => {
+                          const isDeleted = log.full_name === 'Deleted User' || (log.email && log.email.includes('@deleted.local'));
+                          if (isDeleted) {
+                            return (
+                              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-400">
+                                Deleted
+                              </span>
+                            );
+                          }
+                          return (
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                log.logout_time
+                                  ? 'bg-gray-500/20 text-gray-400'
+                                  : 'bg-green-500/20 text-green-500'
+                              }`}
+                            >
+                              {log.logout_time ? 'Completed' : 'Active'}
+                            </span>
+                          );
+                        })()}
                       </td>
                     </motion.tr>
                   ))}

@@ -30,11 +30,13 @@ function getTestUser() {
  * Register a new user (Admin only)
  */
 const register = async (req, res, next) => {
-    const connection = await getConnection();
+    let connection;
     try {
+        connection = await getConnection();
         await connection.beginTransaction();
 
-        const { username, email, password, fullName, role, branchId, phone } = req.body;
+        const { username, email, password, fullName, role: roleRaw, branchId, phone } = req.body;
+        const role = roleRaw != null ? String(roleRaw).toLowerCase().trim() : '';
 
         // Validate required fields
         if (!username || !email || !password || !fullName || !role) {
@@ -95,7 +97,7 @@ const register = async (req, res, next) => {
             });
         }
 
-        // Insert user
+        // Insert user (role already normalized to lowercase above)
         const [result] = await connection.execute(
             `INSERT INTO users (username, email, password_hash, full_name, phone, role, branch_id) 
              VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id`,
@@ -104,27 +106,30 @@ const register = async (req, res, next) => {
 
         await connection.commit();
 
-        logger.info(`User registered: ${username} (ID: ${result.insertId})`);
+        const userId = result.insertId ?? (result.rows && result.rows[0] && result.rows[0].id);
+        logger.info(`User registered: ${username} (ID: ${userId})`);
 
         res.status(201).json({
             success: true,
             message: 'User registered successfully',
             data: {
-                userId: result.insertId,
+                userId,
                 username,
                 email,
                 role
             }
         });
     } catch (error) {
-        await connection.rollback();
-        logger.error('Registration error:', error);
+        if (connection && connection.rollback) {
+            await connection.rollback().catch((err) => logger.error('Rollback error:', err));
+        }
+        logger.error('Registration error:', { message: error.message, code: error.code, stack: error.stack });
         
-        // Check if it's an enum value error
+        // Check if it's an enum value error (e.g. role case mismatch in PostgreSQL)
         if (error.message && error.message.includes('invalid input value for enum')) {
             return res.status(400).json({
                 success: false,
-                message: `Invalid role "${role}". The 'staff' role may not be available in your database. Please run the migration to add it, or use 'cashier' instead.`
+                message: `Invalid role "${req.body?.role}". Use one of: admin, manager, cashier, staff (lowercase).`
             });
         }
         
@@ -138,7 +143,9 @@ const register = async (req, res, next) => {
         
         next(error);
     } finally {
-        connection.release();
+        if (connection && connection.release) {
+            connection.release().catch((err) => logger.error('Release connection error:', err));
+        }
     }
 };
 
