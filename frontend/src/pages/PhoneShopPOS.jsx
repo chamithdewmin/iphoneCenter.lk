@@ -45,55 +45,55 @@ const IconTag = () => (
   </svg>
 );
 
-// ── Product Images (Apple official CDN / well-known public URLs) ──────────────
+// ── Product Images (Sample placeholder images - replace with actual product images later) ──────────────
 const products = [
   {
     id: 1, name: "iPhone 15 Pro Max", price: 1199, category: "iPhone", color: "#ff8040",
-    img: "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone15-pro-finish-select-202309-6-7inch-naturaltitanium?wid=200&hei=200&fmt=png-alpha&.v=1692846341754",
+    img: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=200&h=200&fit=crop",
   },
   {
     id: 2, name: "iPhone 15 Pro", price: 999, category: "iPhone", color: "#a78bfa",
-    img: "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone15-pro-finish-select-202309-6-1inch-bluetitanium?wid=200&hei=200&fmt=png-alpha&.v=1692846348411",
+    img: "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=200&h=200&fit=crop",
   },
   {
     id: 3, name: "iPhone 15", price: 799, category: "iPhone", color: "#22d3ee",
-    img: "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone15-finish-select-202309-6-1inch-blue?wid=200&hei=200&fmt=png-alpha&.v=1693085706635",
+    img: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200&h=200&fit=crop",
   },
   {
     id: 4, name: "iPhone 14", price: 699, category: "iPhone", color: "#22c55e",
-    img: "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone14-finish-select-202209-6-1inch-midnight?wid=200&hei=200&fmt=png-alpha&.v=1660735419276",
+    img: "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=200&h=200&fit=crop",
   },
   {
     id: 5, name: "AirPods Pro 2", price: 249, category: "AirPods", color: "#ff8040",
-    img: "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/MQD83?wid=200&hei=200&fmt=png-alpha&.v=1660803914028",
+    img: "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=200&h=200&fit=crop",
   },
   {
     id: 6, name: "AirPods 3rd Gen", price: 179, category: "AirPods", color: "#a78bfa",
-    img: "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/MME73?wid=200&hei=200&fmt=png-alpha&.v=1629469574000",
+    img: "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=200&h=200&fit=crop",
   },
   {
     id: 7, name: "AirPods Max", price: 549, category: "AirPods", color: "#22d3ee",
-    img: "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/airpods-max-select-starlight-202309?wid=200&hei=200&fmt=png-alpha&.v=1693410157537",
+    img: "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=200&h=200&fit=crop",
   },
   {
     id: 8, name: "Apple Watch Ultra 2", price: 799, category: "Watch", color: "#eab308",
-    img: "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/watch-ultra2-digitalcrown-202309?wid=200&hei=200&fmt=png-alpha&.v=1694014996437",
+    img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200&h=200&fit=crop",
   },
   {
     id: 9, name: "Apple Watch S9", price: 399, category: "Watch", color: "#22c55e",
-    img: "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/MQDY3ref_VW_34-s_VW_34-202309?wid=200&hei=200&fmt=png-alpha&.v=1694034656440",
+    img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200&h=200&fit=crop",
   },
   {
     id: 10, name: 'iPad Pro 12.9"', price: 1099, category: "iPad", color: "#ff8040",
-    img: "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/ipad-pro-12-select-cell-spacegray-202210?wid=200&hei=200&fmt=png-alpha&.v=1664411913526",
+    img: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=200&h=200&fit=crop",
   },
   {
     id: 11, name: "iPad Air", price: 599, category: "iPad", color: "#22d3ee",
-    img: "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/ipad-air-select-wifi-blue-202203?wid=200&hei=200&fmt=png-alpha&.v=1645065732688",
+    img: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=200&h=200&fit=crop",
   },
   {
     id: 12, name: "MacBook Air M3", price: 1299, category: "Mac", color: "#a78bfa",
-    img: "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/mbp-spacegray-select-202206?wid=200&hei=200&fmt=png-alpha&.v=1654693703886",
+    img: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=200&h=200&fit=crop",
   },
 ];
 
@@ -229,19 +229,16 @@ export default function PhoneShopPOS() {
 
                   {/* Product image */}
                   <div style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", height: 90, background: "#0f1117", borderRadius: 10, overflow: "hidden" }}>
-                    {!imgErrors[p.id] ? (
-                      <img
-                        src={p.img}
-                        alt={p.name}
-                        onError={() => handleImgError(p.id)}
-                        style={{ width: "100%", height: "100%", objectFit: "contain", padding: 8 }}
-                      />
-                    ) : (
-                      // Fallback colored placeholder
-                      <div style={{ width: 56, height: 56, borderRadius: 10, background: `${p.color}22`, border: `2px solid ${p.color}44`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <div style={{ width: 20, height: 36, borderRadius: 4, border: `2px solid ${p.color}`, background: `${p.color}33` }} />
-                      </div>
-                    )}
+                    <img
+                      src={p.img}
+                      alt={p.name}
+                      onError={(e) => {
+                        // Fallback to a generic placeholder image if the main image fails
+                        e.target.src = `https://via.placeholder.com/200x200/1e2433/${p.color.replace('#', '')}?text=${encodeURIComponent(p.name)}`;
+                        handleImgError(p.id);
+                      }}
+                      style={{ width: "100%", height: "100%", objectFit: "contain", padding: 8 }}
+                    />
                   </div>
 
                   {/* Info */}
@@ -289,7 +286,7 @@ export default function PhoneShopPOS() {
                   key={t}
                   onClick={() => setTab(t)}
                   style={{
-                    flex: 1, padding: "10px 0", textAlign: "center", fontSize: 11, fontWeight: tab === t ? 700 : 400,
+                    flex: 1, padding: "10px 16px", textAlign: "center", fontSize: 11, fontWeight: tab === t ? 700 : 400,
                     color: tab === t ? "#ff8040" : "#6b7a99",
                     borderBottom: tab === t ? "2px solid #ff8040" : "2px solid transparent",
                     cursor: "pointer", background: "transparent", border: "none", fontFamily: SYS_FONT, transition: "all 0.15s",
@@ -312,11 +309,14 @@ export default function PhoneShopPOS() {
                 <div key={item.id} style={{ display: "flex", alignItems: "center", padding: "10px 14px", gap: 10, borderBottom: "1px solid #1e2433" }}>
                   {/* Thumbnail */}
                   <div style={{ width: 38, height: 38, borderRadius: 8, background: "#0f1117", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {!imgErrors[item.id] ? (
-                      <img src={item.img} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: 3 }} />
-                    ) : (
-                      <div style={{ width: 16, height: 26, border: `1.5px solid ${item.color}`, borderRadius: 3, background: `${item.color}22` }} />
-                    )}
+                    <img 
+                      src={item.img} 
+                      alt={item.name} 
+                      onError={(e) => {
+                        e.target.src = `https://via.placeholder.com/38x38/1e2433/${item.color.replace('#', '')}?text=${encodeURIComponent(item.name.charAt(0))}`;
+                      }}
+                      style={{ width: "100%", height: "100%", objectFit: "contain", padding: 3 }} 
+                    />
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
