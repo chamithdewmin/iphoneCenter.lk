@@ -241,9 +241,9 @@ const createProduct = async (req, res, next) => {
                 });
             }
             // Return real error so you see exact DB error (column does not exist, invalid syntax, etc.)
-            res.status(500).json({
+            return res.status(500).json({
                 success: false,
-                message: insertError.message,
+                message: insertError.message || 'Could not add product',
                 detail: insertError.detail || null,
                 code: insertError.code || null
             });
@@ -264,7 +264,7 @@ const createProduct = async (req, res, next) => {
         next(error);
     } finally {
         if (connection && connection.release) {
-            connection.release().catch((err) => logger.error('Release connection error:', err));
+            await connection.release().catch((err) => logger.error('Release connection error:', err));
         }
     }
 };

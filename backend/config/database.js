@@ -74,7 +74,8 @@ const getConnection = async () => {
         execute,
         commit: () => client.query('COMMIT'),
         rollback: () => client.query('ROLLBACK'),
-        release: () => client.release(),
+        // Return a Promise so callers can use release().catch(...); pg's client.release() is void
+        release: () => Promise.resolve(client.release()),
     };
 };
 

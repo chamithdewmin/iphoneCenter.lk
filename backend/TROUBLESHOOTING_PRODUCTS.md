@@ -33,7 +33,7 @@ curl -s -X POST https://backend.iphonecenter.lk/api/inventory/products \
   -d '{"name":"Test","sku":"TEST-001","base_price":100,"branchId":1}'
 ```
 
-The response body on 500 includes **message**, **code**, **detail** (the real error).
+The response body on 500 includes **message**, **code**, **detail** (the real error). In the browser, open DevTools → Network, retry adding a product, and inspect the failed request’s **Response** tab to see the exact error.
 
 **5. Check if DB is reachable from the backend container** — In Dokploy, open a **terminal** into the **backend** container and run:
 
