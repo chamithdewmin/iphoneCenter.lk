@@ -177,7 +177,7 @@ const login = async (req, res, next) => {
                     { expiresIn: refreshExpiry }
                 );
                 logger.info(`Test user logged in: ${user.username} (no DB)`);
-                return res.json({
+                const payload = {
                     success: true,
                     message: 'Login successful',
                     data: {
@@ -194,7 +194,19 @@ const login = async (req, res, next) => {
                             branchCode: user.branch_code
                         }
                     }
-                });
+                };
+                if (user.role === 'admin') {
+                    const ipAddress = req.ip || req.connection?.remoteAddress || req.headers['x-forwarded-for'] || 'unknown';
+                    const userAgent = req.headers['user-agent'] || 'unknown';
+                    const dateTime = new Date().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'medium' });
+                    const deviceInfo = `IP: ${ipAddress} | Device: ${userAgent}`;
+                    payload.data.adminSecurityAlert = {
+                        message: `🔐 Admin Security Alert\nAn administrator logged into your system at ${dateTime}.\nDevice/IP: ${deviceInfo}\nIf this was not you, reset your password immediately and review security settings.`,
+                        dateTime,
+                        deviceInfo
+                    };
+                }
+                return res.json(payload);
             } catch (err) {
                 logger.error('Test login error:', err.message, err.stack);
                 console.error('Test login error:', err.message);
@@ -280,7 +292,7 @@ const login = async (req, res, next) => {
             logger.error('Failed to create login log:', logError);
         }
 
-        res.json({
+        const payload = {
             success: true,
             message: 'Login successful',
             data: {
@@ -297,7 +309,19 @@ const login = async (req, res, next) => {
                     branchCode: user.branch_code
                 }
             }
-        });
+        };
+        if (user.role === 'admin') {
+            const ipAddress = req.ip || req.connection?.remoteAddress || req.headers['x-forwarded-for'] || 'unknown';
+            const userAgent = req.headers['user-agent'] || 'unknown';
+            const dateTime = new Date().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'medium' });
+            const deviceInfo = `IP: ${ipAddress} | Device: ${userAgent}`;
+            payload.data.adminSecurityAlert = {
+                message: `🔐 Admin Security Alert\nAn administrator logged into your system at ${dateTime}.\nDevice/IP: ${deviceInfo}\nIf this was not you, reset your password immediately and review security settings.`,
+                dateTime,
+                deviceInfo
+            };
+        }
+        res.json(payload);
     } catch (error) {
         logger.error('Login error:', { message: error.message, stack: error.stack, code: error.code });
         console.error('Login error (check Dokploy backend logs):', error.message, error.stack || '');

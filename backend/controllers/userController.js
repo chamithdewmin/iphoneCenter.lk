@@ -13,6 +13,7 @@ const getAllUsers = async (req, res, next) => {
                     b.name as branch_name, b.code as branch_code
              FROM users u
              LEFT JOIN branches b ON u.branch_id = b.id
+             WHERE u.is_active = TRUE
              ORDER BY u.id`
         );
         res.json({
@@ -142,8 +143,8 @@ const updateUser = async (req, res, next) => {
 
 /**
  * Delete user (Admin only). Cannot delete self.
- * Only removes the user record and their refresh tokens. Other data is preserved:
- * - Login/logout logs, sales, stock transfers, payments, audit logs keep their rows with user_id set to NULL.
+ * Soft delete: only clear user details and deactivate. User row is kept so that
+ * last login logs, sales, reports, etc. still reference this user and are not removed.
  */
 const deleteUser = async (req, res, next) => {
     try {
@@ -162,11 +163,27 @@ const deleteUser = async (req, res, next) => {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
 
-        // Remove tokens so the user is logged out; then delete user. Related data (login logs, sales, etc.) is preserved via ON DELETE SET NULL.
+        // Log out: remove refresh tokens
         await executeQuery('DELETE FROM refresh_tokens WHERE user_id = ?', [id]);
-        await executeQuery('DELETE FROM users WHERE id = ?', [id]);
+        await executeQuery('DELETE FROM password_resets WHERE user_id = ?', [id]);
 
-        logger.info(`User deleted: id=${id}`);
+        // Soft delete: clear only user details, keep the row so last login / reports / sales keep user_id
+        const deletedUsername = `deleted_${id}_${Date.now()}`;
+        const deletedEmail = `deleted_${id}@deleted.local`;
+        await executeQuery(
+            `UPDATE users SET 
+             username = ?, 
+             email = ?, 
+             full_name = 'Deleted User', 
+             phone = NULL, 
+             password_hash = ?, 
+             is_active = FALSE, 
+             updated_at = CURRENT_TIMESTAMP 
+             WHERE id = ?`,
+            [deletedUsername, deletedEmail, '$2a$10$deleted.user.hash.placeholder.no.login', id]
+        );
+
+        logger.info(`User soft-deleted: id=${id} (details cleared, reports/login logs kept)`);
         res.json({ success: true, message: 'User deleted' });
     } catch (error) {
         logger.error('Delete user error:', error);
