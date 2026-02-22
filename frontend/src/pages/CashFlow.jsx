@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import {
   ArrowUpCircle,
   ArrowDownCircle,
-  TrendingUp,
   Plus,
   Search,
   Download,
@@ -455,32 +454,40 @@ const CashFlow = () => {
   const showAlert =
     upcomingTotal > 0 && summary.currentCash < upcomingTotal;
 
-  // Chart data (by day/week/month)
+  // Chart data: monthly Income vs Expenses vs Net Profit (last 7 months)
   const chartData = useMemo(() => {
-    const map = new Map();
-    const addToMap = (dateIso, inflow, outflow) => {
-      const d = new Date(dateIso);
-      if (Number.isNaN(d.getTime())) return;
-      const key = d.toISOString().slice(0, 10);
-      const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      const existing = map.get(key) || { date: label, inflow: 0, outflow: 0 };
-      existing.inflow += inflow;
-      existing.outflow += outflow;
-      map.set(key, existing);
-    };
+    const now = new Date();
+    const months = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      months.push({
+        key,
+        month: d.toLocaleDateString('en-US', { month: 'short' }),
+        income: 0,
+        expenses: 0,
+        profit: 0,
+        yearMonth: d.getTime(),
+      });
+    }
 
     filteredTransactions.forEach((tx) => {
+      const d = new Date(tx.date);
+      if (Number.isNaN(d.getTime())) return;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const row = months.find((m) => m.key === key);
+      if (!row) return;
       if (tx.type === 'inflow' && tx.status === 'received') {
-        addToMap(tx.date, tx.amount, 0);
+        row.income += tx.amount;
       } else if (tx.type === 'outflow' && (tx.status === 'paid' || tx.sourceType === 'expense')) {
-        addToMap(tx.date, 0, tx.amount);
+        row.expenses += tx.amount;
       }
     });
 
-    return Array.from(map.entries())
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .slice(-14)
-      .map(([, v]) => v);
+    months.forEach((row) => {
+      row.profit = row.income - row.expenses;
+    });
+    return months;
   }, [filteredTransactions]);
 
   const allCategories = useMemo(() => {
@@ -729,14 +736,9 @@ const CashFlow = () => {
             animate={{ opacity: 1, y: 0 }}
             className="bg-card rounded-xl border border-border p-5 flex flex-col gap-3"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                {summary.hasBranch ? 'Total Income (Branch)' : 'Total Income'}
-              </span>
-              <div className="w-11 h-11 rounded-xl bg-green-500/20 flex items-center justify-center ring-2 ring-green-500/30">
-                <ArrowUpCircle className="w-6 h-6 text-green-500" />
-              </div>
-            </div>
+            <span className="text-sm text-muted-foreground">
+              {summary.hasBranch ? 'Total Income (Branch)' : 'Total Income'}
+            </span>
             <p className="text-xs font-medium text-green-500/90 bg-green-500/10 inline-flex w-fit px-2 py-0.5 rounded-md">
               —
             </p>
@@ -750,14 +752,9 @@ const CashFlow = () => {
             transition={{ delay: 0.05 }}
             className="bg-card rounded-xl border border-border p-5 flex flex-col gap-3"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                {summary.hasBranch ? 'Total Expenses (Branch)' : 'Total Outcome'}
-              </span>
-              <div className="w-11 h-11 rounded-xl bg-red-500/20 flex items-center justify-center ring-2 ring-red-500/30">
-                <ArrowDownCircle className="w-6 h-6 text-red-500" />
-              </div>
-            </div>
+            <span className="text-sm text-muted-foreground">
+              {summary.hasBranch ? 'Total Expenses (Branch)' : 'Total Outcome'}
+            </span>
             <p className="text-xs font-medium text-red-500/90 bg-red-500/10 inline-flex w-fit px-2 py-0.5 rounded-md">
               —
             </p>
@@ -771,20 +768,9 @@ const CashFlow = () => {
             transition={{ delay: 0.1 }}
             className="bg-card rounded-xl border border-border p-5 flex flex-col gap-3"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                {summary.hasBranch ? 'Net Profit (Branch)' : 'Net Profit'}
-              </span>
-              <div className={`w-11 h-11 rounded-xl flex items-center justify-center ring-2 ${
-                (summary.hasBranch ? summary.netProfitBranch : summary.netCashFlow) >= 0
-                  ? 'bg-green-500/20 ring-green-500/30'
-                  : 'bg-red-500/20 ring-red-500/30'
-              }`}>
-                <TrendingUp className={`w-6 h-6 ${
-                  (summary.hasBranch ? summary.netProfitBranch : summary.netCashFlow) >= 0 ? 'text-green-500' : 'text-red-500'
-                }`} />
-              </div>
-            </div>
+            <span className="text-sm text-muted-foreground">
+              {summary.hasBranch ? 'Net Profit (Branch)' : 'Net Profit'}
+            </span>
             <p className={`text-xs font-medium inline-flex w-fit px-2 py-0.5 rounded-md ${
               (summary.hasBranch ? summary.netProfitBranch : summary.netCashFlow) >= 0
                 ? 'text-green-500/90 bg-green-500/10'
@@ -797,17 +783,6 @@ const CashFlow = () => {
             </p>
           </motion.div>
         </div>
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="bg-card rounded-xl border border-border p-5 flex items-center justify-between"
-        >
-          <span className="text-sm text-muted-foreground">Current Cash</span>
-          <p className={`text-xl font-bold ${summary.currentCash >= 0 ? 'text-primary' : 'text-red-500'}`}>
-            {settings.currency} {summary.currentCash.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-          </p>
-        </motion.div>
 
         {/* Alert */}
         {showAlert && (
@@ -824,33 +799,41 @@ const CashFlow = () => {
           </motion.div>
         )}
 
-        {/* Mini chart */}
-        {chartData.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-lg p-6 border border-secondary"
-          >
-            <h2 className="text-lg font-bold mb-4">Inflow vs Outflow</h2>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" className="text-xs" />
-                <YAxis className="text-xs" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '0.5rem',
-                  }}
-                />
-                <Legend />
-                <Bar dataKey="inflow" fill="#22c55e" name="Inflow" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="outflow" fill="#ef4444" name="Outflow" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </motion.div>
-        )}
+        {/* Monthly chart: Income vs Expenses vs Net Profit */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-card rounded-xl p-6 border border-border"
+        >
+          <h2 className="text-lg font-bold text-foreground mb-1">Income vs Expenses vs Net Profit</h2>
+          <p className="text-sm text-muted-foreground mb-4">Monthly breakdown — {settings.currency}</p>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis dataKey="month" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+              <YAxis
+                className="text-xs"
+                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                tickFormatter={(v) => `${Number(v) / 1000}K`}
+                domain={['auto', 'auto']}
+                allowDataOverflow
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '0.5rem',
+                }}
+                formatter={(value) => [value?.toLocaleString(undefined, { maximumFractionDigits: 0 }), undefined]}
+                labelFormatter={(label) => label}
+              />
+              <Legend />
+              <Bar dataKey="income" fill="#22c55e" name="Income" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="expenses" fill="#ef4444" name="Expenses" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="profit" fill="#3b82f6" name="Profit" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </motion.div>
 
         {/* Search */}
         <div className="max-w-xl">
