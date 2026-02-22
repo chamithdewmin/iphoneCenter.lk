@@ -250,6 +250,15 @@
   background-color: var(--scrollbar-thumb-hover);
 }
 
+/* Sidebar: hide scrollbar but keep scroll behavior */
+.sidebar-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.sidebar-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 /* Primary gradient for buttons and icons (mix orange: Bright 0% → Deep 54% → Burnt 100%) */
 .bg-primary-gradient {
   background: var(--primary-gradient);
