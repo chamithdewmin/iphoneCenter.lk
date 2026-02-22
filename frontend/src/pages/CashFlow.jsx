@@ -12,6 +12,8 @@ import {
   Repeat,
   AlertTriangle,
   Eye,
+  HelpCircle,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -31,6 +33,12 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  Legend,
 } from 'recharts';
 
 const SORT_OPTIONS = [
@@ -39,6 +47,35 @@ const SORT_OPTIONS = [
   { value: 'amount-desc', label: 'Amount (highest first)' },
   { value: 'amount-asc', label: 'Amount (lowest first)' },
 ];
+
+const PERIOD_PRESETS = [
+  { id: 'this_month', label: 'This month' },
+  { id: 'last_month', label: 'Last month' },
+  { id: 'last_3_months', label: 'Last 3 months' },
+  { id: 'this_year', label: 'This year' },
+];
+
+function getPresetDateRange(presetId) {
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  let dateFrom = '';
+  let dateTo = '';
+  if (presetId === 'this_month') {
+    dateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    dateTo = today;
+  } else if (presetId === 'last_month') {
+    dateFrom = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 10);
+    dateTo = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0, 10);
+  } else if (presetId === 'last_3_months') {
+    const from = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    dateFrom = from.toISOString().slice(0, 10);
+    dateTo = today;
+  } else if (presetId === 'this_year') {
+    dateFrom = new Date(now.getFullYear(), 0, 1).toISOString().slice(0, 10);
+    dateTo = today;
+  }
+  return { dateFrom, dateTo };
+}
 
 const CashFlow = () => {
   const {
@@ -79,6 +116,7 @@ const CashFlow = () => {
   const [apiSales, setApiSales] = useState([]);
   const [apiSalesLoading, setApiSalesLoading] = useState(false);
   const [branchExpenses, setBranchExpenses] = useState([]); // expenses from Expenses page (have branchId)
+  const [profitTarget, setProfitTarget] = useState(''); // optional monthly/yearly target (number as string)
   const [form, setForm] = useState({
     source: '',
     category: '',
@@ -414,14 +452,25 @@ const CashFlow = () => {
     expenses.forEach((e) => (currentCash -= e.amount));
     apiSales.forEach((s) => (currentCash += parseFloat(s.paid_amount) || 0));
 
-    // Per-branch: total income (sales), total expenses (from Expenses page), net profit = income - expenses
+    // Per-branch: total income (sales), total expenses (from Expenses page), net profit = income - expenses (respect date filter)
     const hasBranch = selectedBranchId != null && selectedBranchId !== '';
+    const dateFrom = filters.dateFrom ? new Date(filters.dateFrom + 'T00:00:00') : null;
+    const dateTo = filters.dateTo ? new Date(filters.dateTo + 'T23:59:59') : null;
+    const inDateRange = (d) => {
+      if (!dateFrom && !dateTo) return true;
+      const t = new Date(d).getTime();
+      if (dateFrom && t < dateFrom.getTime()) return false;
+      if (dateTo && t > dateTo.getTime()) return false;
+      return true;
+    };
     const totalIncomeBranch = hasBranch
-      ? apiSales.reduce((s, sale) => s + (parseFloat(sale.paid_amount) || 0), 0)
+      ? apiSales
+          .filter((sale) => inDateRange(sale.created_at))
+          .reduce((s, sale) => s + (parseFloat(sale.paid_amount) || 0), 0)
       : 0;
     const totalExpensesBranch = hasBranch
       ? branchExpenses
-          .filter((e) => String(e.branchId) === String(selectedBranchId))
+          .filter((e) => String(e.branchId) === String(selectedBranchId) && inDateRange(e.date))
           .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)
       : 0;
     const netProfitBranch = totalIncomeBranch - totalExpensesBranch;
@@ -436,7 +485,7 @@ const CashFlow = () => {
       netProfitBranch,
       hasBranch,
     };
-  }, [filteredTransactions, incomes, expenses, apiSales, selectedBranchId, branchExpenses]);
+  }, [filteredTransactions, incomes, expenses, apiSales, selectedBranchId, branchExpenses, filters.dateFrom, filters.dateTo]);
 
   // Profit at a glance: margin % and one-line insight (uses same totals as summary cards)
   const profitInsight = useMemo(() => {
@@ -458,6 +507,121 @@ const CashFlow = () => {
     }
     return { margin, text, profit };
   }, [summary, settings.currency]);
+
+  // Period label and active preset (from current date filters)
+  const { periodLabel, activePresetId } = useMemo(() => {
+    const from = filters.dateFrom;
+    const to = filters.dateTo;
+    if (!from && !to) return { periodLabel: 'All time', activePresetId: '' };
+    const preset = PERIOD_PRESETS.find((p) => {
+      const { dateFrom, dateTo } = getPresetDateRange(p.id);
+      return dateFrom === from && dateTo === to;
+    });
+    if (preset) return { periodLabel: preset.label, activePresetId: preset.id };
+    const fromStr = from ? new Date(from + 'T00:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    const toStr = to ? new Date(to + 'T00:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    return { periodLabel: fromStr && toStr ? `Custom: ${fromStr} – ${toStr}` : fromStr || toStr || 'Custom', activePresetId: 'custom' };
+  }, [filters.dateFrom, filters.dateTo]);
+
+  // Previous period (same length, ending day before current period start) for comparison
+  const previousPeriodSummary = useMemo(() => {
+    const from = filters.dateFrom;
+    const to = filters.dateTo;
+    if (!from || !to) return null;
+    const start = new Date(from + 'T00:00:00').getTime();
+    const end = new Date(to + 'T23:59:59').getTime();
+    const days = Math.round((end - start) / (24 * 60 * 60 * 1000)) + 1;
+    const prevEnd = new Date(start - 24 * 60 * 60 * 1000);
+    const prevStart = new Date(prevEnd.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
+    const prevFrom = prevStart.toISOString().slice(0, 10);
+    const prevTo = prevEnd.toISOString().slice(0, 10);
+    let totalIn = 0;
+    let totalOut = 0;
+    const hasBranch = selectedBranchId != null && selectedBranchId !== '';
+    const prevStartT = prevStart.getTime();
+    const prevEndT = prevEnd.getTime() + 24 * 60 * 60 * 1000;
+    if (hasBranch) {
+      apiSales.forEach((sale) => {
+        const t = new Date(sale.created_at).getTime();
+        if (t >= prevStartT && t < prevEndT) totalIn += parseFloat(sale.paid_amount) || 0;
+      });
+      branchExpenses
+        .filter((e) => String(e.branchId) === String(selectedBranchId))
+        .forEach((e) => {
+          const t = new Date(e.date).getTime();
+          if (t >= prevStartT && t < prevEndT) totalOut += parseFloat(e.amount) || 0;
+        });
+    } else {
+      sortedTransactions.forEach((tx) => {
+        const d = new Date(tx.date).getTime();
+        if (d < prevStartT || d > prevEndT) return;
+        if (tx.type === 'inflow' && tx.status === 'received') totalIn += tx.amount;
+        if (tx.type === 'outflow' && (tx.status === 'paid' || tx.sourceType === 'expense')) totalOut += tx.amount;
+      });
+    }
+    return { totalIn, totalOut, profit: totalIn - totalOut };
+  }, [filters.dateFrom, filters.dateTo, selectedBranchId, apiSales, branchExpenses, sortedTransactions]);
+
+  // Year-to-date totals (from Jan 1 to today)
+  const ytdSummary = useMemo(() => {
+    const now = new Date();
+    const ytdFrom = new Date(now.getFullYear(), 0, 1).toISOString().slice(0, 10);
+    const ytdTo = now.toISOString().slice(0, 10);
+    const startT = new Date(ytdFrom + 'T00:00:00').getTime();
+    const endT = new Date(ytdTo + 'T23:59:59').getTime() + 1;
+    let totalIn = 0;
+    let totalOut = 0;
+    const hasBranch = selectedBranchId != null && selectedBranchId !== '';
+    if (hasBranch) {
+      apiSales.forEach((sale) => {
+        const t = new Date(sale.created_at).getTime();
+        if (t >= startT && t < endT) totalIn += parseFloat(sale.paid_amount) || 0;
+      });
+      branchExpenses
+        .filter((e) => String(e.branchId) === String(selectedBranchId))
+        .forEach((e) => {
+          const t = new Date(e.date).getTime();
+          if (t >= startT && t < endT) totalOut += parseFloat(e.amount) || 0;
+        });
+    } else {
+      sortedTransactions.forEach((tx) => {
+        const d = new Date(tx.date).getTime();
+        if (d < startT || d > endT) return;
+        if (tx.type === 'inflow' && tx.status === 'received') totalIn += tx.amount;
+        if (tx.type === 'outflow' && (tx.status === 'paid' || tx.sourceType === 'expense')) totalOut += tx.amount;
+      });
+    }
+    const profit = totalIn - totalOut;
+    const margin = totalIn > 0 ? (profit / totalIn) * 100 : 0;
+    return { totalIn, totalOut, profit, margin };
+  }, [selectedBranchId, apiSales, branchExpenses, sortedTransactions]);
+
+  // Branch comparison (when no branch selected, for admins): per-branch income, expenses, profit
+  const branchComparisonData = useMemo(() => {
+    if (selectedBranchId != null && selectedBranchId !== '' || !isAdmin || branches.length === 0) return [];
+    const dateFrom = filters.dateFrom ? new Date(filters.dateFrom + 'T00:00:00').getTime() : null;
+    const dateTo = filters.dateTo ? new Date(filters.dateTo + 'T23:59:59').getTime() + 1 : null;
+    const inRange = (t) => (!dateFrom && !dateTo) || (t >= (dateFrom || 0) && t < (dateTo || Infinity));
+    const byBranch = new Map();
+    branches.forEach((b) => byBranch.set(String(b.id), { branchId: b.id, name: b.name || b.code || `Branch ${b.id}`, income: 0, expenses: 0 }));
+    apiSales.forEach((sale) => {
+      if (!inRange(new Date(sale.created_at).getTime())) return;
+      const bid = sale.branch_id != null ? String(sale.branch_id) : null;
+      if (bid && byBranch.has(bid)) {
+        const row = byBranch.get(bid);
+        row.income += parseFloat(sale.paid_amount) || 0;
+      }
+    });
+    branchExpenses.forEach((e) => {
+      if (!inRange(new Date(e.date).getTime())) return;
+      const bid = e.branchId != null ? String(e.branchId) : null;
+      if (bid && byBranch.has(bid)) {
+        const row = byBranch.get(bid);
+        row.expenses += parseFloat(e.amount) || 0;
+      }
+    });
+    return Array.from(byBranch.values()).map((r) => ({ ...r, profit: r.income - r.expenses, margin: r.income > 0 ? ((r.income - r.expenses) / r.income) * 100 : 0 }));
+  }, [selectedBranchId, isAdmin, branches, apiSales, branchExpenses, filters.dateFrom, filters.dateTo]);
 
   // Income and expense breakdown by category (branch-aware when a branch is selected)
   const incomeByCategory = useMemo(() => {
@@ -781,6 +945,63 @@ const CashFlow = () => {
   const formatDate = (d) =>
     new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
+  const applyPeriodPreset = (presetId) => {
+    const { dateFrom, dateTo } = getPresetDateRange(presetId);
+    setFilters((p) => ({ ...p, dateFrom, dateTo }));
+  };
+
+  const exportProfitSummary = () => {
+    const income = summary.hasBranch ? summary.totalIncomeBranch : summary.totalIn;
+    const expenses = summary.hasBranch ? summary.totalExpensesBranch : summary.totalOut;
+    const profit = summary.hasBranch ? summary.netProfitBranch : summary.netCashFlow;
+    const margin = income > 0 ? (profit / income) * 100 : 0;
+    const lines = [
+      ['Profit Summary', ''],
+      ['Period', periodLabel],
+      ['Branch', summary.hasBranch ? branches.find((b) => String(b.id) === selectedBranchId)?.name || selectedBranchId : 'All'],
+      ['Income', income],
+      ['Expenses', expenses],
+      ['Net Profit', profit],
+      ['Profit Margin %', margin.toFixed(1)],
+      [''],
+      ['Top income categories', ''],
+      ...incomeByCategory.slice(0, 5).map(({ name, amount }) => [name, amount]),
+      [''],
+      ['Top expense categories', ''],
+      ...expensesByCategory.slice(0, 5).map(({ name, amount }) => [name, amount]),
+    ];
+    const csv = lines.map((row) => row.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = window.URL.createObjectURL(blob);
+    a.download = `profit-summary-${periodLabel.replace(/\s+/g, '-')}.csv`;
+    a.click();
+    toast({ title: 'Profit summary exported', description: 'Downloaded as CSV.' });
+  };
+
+  const currentProfit = summary.hasBranch ? summary.netProfitBranch : summary.netCashFlow;
+  const currentIncome = summary.hasBranch ? summary.totalIncomeBranch : summary.totalIn;
+  const comparisonText = previousPeriodSummary != null && (currentIncome > 0 || previousPeriodSummary.totalIn > 0 || currentProfit !== 0 || previousPeriodSummary.profit !== 0)
+    ? (() => {
+        const prev = previousPeriodSummary.profit;
+        const diff = currentProfit - prev;
+        const pct = prev !== 0 ? (diff / Math.abs(prev)) * 100 : (currentProfit !== 0 ? 100 : 0);
+        if (diff > 0) return { text: `↑ ${settings.currency} ${Math.abs(diff).toLocaleString(undefined, { maximumFractionDigits: 0 })} vs previous period (${pct.toFixed(0)}%)`, positive: true };
+        if (diff < 0) return { text: `↓ ${settings.currency} ${Math.abs(diff).toLocaleString(undefined, { maximumFractionDigits: 0 })} vs previous period (${pct.toFixed(0)}%)`, positive: false };
+        return { text: 'No change vs previous period', positive: null };
+      })()
+    : null;
+  const targetNum = profitTarget.trim() ? parseFloat(profitTarget) : null;
+  const targetStatus = targetNum != null && !Number.isNaN(targetNum) && targetNum > 0
+    ? (() => {
+        const pct = (currentProfit / targetNum) * 100;
+        const over = currentProfit - targetNum;
+        if (over >= 0) return { text: `Above target by ${settings.currency} ${over.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, pct, hit: true };
+        return { text: `At ${pct.toFixed(0)}% of target (${settings.currency} ${Math.abs(over).toLocaleString(undefined, { maximumFractionDigits: 0 })} to go)`, pct, hit: false };
+      })()
+    : null;
+  const cashAfterUpcoming = summary.currentCash - upcomingTotal;
+
   return (
     <>
       <Helmet>
@@ -815,6 +1036,89 @@ const CashFlow = () => {
               ))}
             </select>
           </div>
+        </div>
+
+        {/* Period presets + period label */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground mr-1">Period:</span>
+          {PERIOD_PRESETS.map((p) => (
+            <Button
+              key={p.id}
+              variant={activePresetId === p.id ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => applyPeriodPreset(p.id)}
+            >
+              {p.label}
+            </Button>
+          ))}
+          <span className="text-sm font-medium text-foreground ml-2 px-2 py-1 rounded bg-muted/50">
+            {periodLabel}
+          </span>
+        </div>
+
+        {/* Hero: big profit number + subtitle + sparkline + comparison + target */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl border-2 border-primary/30 bg-primary/5 p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+        >
+          <div>
+            <p className="text-sm font-medium text-muted-foreground mb-1">{periodLabel} — Net profit</p>
+            <p className={`text-4xl font-bold ${currentProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {settings.currency} {currentProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </p>
+            {comparisonText && (
+              <p className={`text-sm mt-1 ${comparisonText.positive === true ? 'text-green-600 dark:text-green-400' : comparisonText.positive === false ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
+                {comparisonText.text}
+              </p>
+            )}
+            {targetStatus && (
+              <p className={`text-sm mt-1 ${targetStatus.hit ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                {targetStatus.text}
+              </p>
+            )}
+          </div>
+          <div className="flex flex-col sm:flex-row items-start gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-bold text-primary">
+                {currentIncome > 0 ? `${profitInsight.margin.toFixed(0)}%` : '—'}
+              </span>
+              <span className="text-sm text-muted-foreground">margin</span>
+              <span
+                className="text-muted-foreground cursor-help"
+                title="Profit as % of income (profit ÷ income × 100)"
+              >
+                <HelpCircle className="w-4 h-4 inline" />
+              </span>
+            </div>
+            {chartData.length > 0 && (
+              <div className="w-full md:w-48 h-12">
+                <ResponsiveContainer width="100%" height={48}>
+                  <LineChart data={chartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+                    <Line type="monotone" dataKey="profit" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} isAnimationActive={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+                <p className="text-xs text-muted-foreground mt-0.5">Profit trend (last 7 months)</p>
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Optional profit target */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Label htmlFor="profit-target" className="text-sm text-muted-foreground">Profit target ({settings.currency})</Label>
+          <Input
+            id="profit-target"
+            type="number"
+            placeholder="e.g. 50000"
+            value={profitTarget}
+            onChange={(e) => setProfitTarget(e.target.value)}
+            className="w-32"
+          />
+          <Button variant="ghost" size="sm" onClick={exportProfitSummary}>
+            <FileSpreadsheet className="w-4 h-4 mr-1" />
+            Export profit summary
+          </Button>
         </div>
 
         {/* Summary cards: TOTAL MONEY IN / OUT, NET CASH FLOW, CURRENT CASH */}
@@ -882,6 +1186,47 @@ const CashFlow = () => {
           </motion.div>
         </div>
 
+        {/* Year-to-date */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-3 rounded-xl border border-border bg-muted/30 p-4"
+        >
+          <span className="col-span-2 md:col-span-4 text-sm font-semibold text-muted-foreground">Year to date</span>
+          <div>
+            <p className="text-xs text-muted-foreground">YTD Income</p>
+            <p className="font-bold text-green-500">{settings.currency} {ytdSummary.totalIn.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">YTD Expenses</p>
+            <p className="font-bold text-red-500">{settings.currency} {ytdSummary.totalOut.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">YTD Profit</p>
+            <p className={`font-bold ${ytdSummary.profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>{settings.currency} {ytdSummary.profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">YTD Margin</p>
+            <p className="font-bold">{ytdSummary.margin.toFixed(0)}%</p>
+          </div>
+        </motion.div>
+
+        {/* After upcoming payments */}
+        {upcomingTotal > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3"
+          >
+            <p className="text-sm font-medium text-foreground">
+              Expected cash after upcoming payments: {settings.currency} {cashAfterUpcoming.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Current cash {settings.currency} {summary.currentCash.toLocaleString(undefined, { maximumFractionDigits: 0 })} − {settings.currency} {upcomingTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })} due
+            </p>
+          </motion.div>
+        )}
+
         {/* Profit at a glance: margin % + one-line insight */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -904,6 +1249,9 @@ const CashFlow = () => {
                 {profitInsight.margin >= 0 ? `${profitInsight.margin.toFixed(0)}%` : '—'}
               </span>
               <span className="text-sm text-muted-foreground">profit margin</span>
+              <span className="text-muted-foreground cursor-help" title="Profit as % of income (profit ÷ income × 100)">
+                <HelpCircle className="w-4 h-4 inline" />
+              </span>
             </div>
           )}
         </motion.div>
@@ -918,6 +1266,29 @@ const CashFlow = () => {
           >
             <div className="bg-card rounded-xl border border-border p-5">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Where income comes from</h3>
+              {incomeByCategory.length > 0 && (
+                <div className="mb-4 h-40">
+                  <ResponsiveContainer width="100%" height={160}>
+                    <PieChart>
+                      <Pie
+                        data={incomeByCategory.map(({ name, amount }) => ({ name, value: amount }))}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={60}
+                        paddingAngle={2}
+                        dataKey="value"
+                        nameKey="name"
+                      >
+                        {incomeByCategory.map((_, i) => (
+                          <Cell key={i} fill={['#22c55e', '#16a34a', '#15803d', '#166534', '#14532d', '#052e16'][i % 6]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(v) => [settings.currency + ' ' + Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 }), undefined]} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
               <ul className="space-y-2">
                 {incomeByCategory.map(({ name, amount }) => (
                   <li key={name} className="flex justify-between items-center text-sm">
@@ -931,6 +1302,29 @@ const CashFlow = () => {
             </div>
             <div className="bg-card rounded-xl border border-border p-5">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Where money goes</h3>
+              {expensesByCategory.length > 0 && (
+                <div className="mb-4 h-40">
+                  <ResponsiveContainer width="100%" height={160}>
+                    <PieChart>
+                      <Pie
+                        data={expensesByCategory.map(({ name, amount }) => ({ name, value: amount }))}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={60}
+                        paddingAngle={2}
+                        dataKey="value"
+                        nameKey="name"
+                      >
+                        {expensesByCategory.map((_, i) => (
+                          <Cell key={i} fill={['#ef4444', '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d', '#450a0a'][i % 6]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(v) => [settings.currency + ' ' + Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 }), undefined]} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
               <ul className="space-y-2">
                 {expensesByCategory.map(({ name, amount }) => (
                   <li key={name} className="flex justify-between items-center text-sm">
@@ -942,6 +1336,39 @@ const CashFlow = () => {
                 ))}
               </ul>
             </div>
+          </motion.div>
+        )}
+
+        {/* Branch comparison (admins, when no branch selected) */}
+        {branchComparisonData.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card rounded-xl border border-border p-5 overflow-x-auto"
+          >
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Branch comparison</h3>
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-2 font-medium">Branch</th>
+                  <th className="text-right py-2 font-medium">Income</th>
+                  <th className="text-right py-2 font-medium">Expenses</th>
+                  <th className="text-right py-2 font-medium">Net profit</th>
+                  <th className="text-right py-2 font-medium">Margin %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {branchComparisonData.map((row) => (
+                  <tr key={row.branchId} className="border-b border-border/50">
+                    <td className="py-2 text-foreground">{row.name}</td>
+                    <td className="py-2 text-right text-green-500">{settings.currency} {row.income.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                    <td className="py-2 text-right text-red-500">{settings.currency} {row.expenses.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                    <td className={`py-2 text-right font-medium ${row.profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>{settings.currency} {row.profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                    <td className="py-2 text-right">{row.margin.toFixed(0)}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </motion.div>
         )}
 
