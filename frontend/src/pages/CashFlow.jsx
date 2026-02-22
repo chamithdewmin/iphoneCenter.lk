@@ -644,8 +644,8 @@ const CashFlow = () => {
     }
     const msg =
       tx.sourceType === 'income'
-        ? `Delete income of ${settings.currency} ${tx.amount.toLocaleString()}?`
-        : `Delete expense of ${settings.currency} ${tx.amount.toLocaleString()}?`;
+        ? `Delete income of ${settings.currency} ${tx.amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}?`
+        : `Delete expense of ${settings.currency} ${tx.amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}?`;
     if (window.confirm(msg)) {
       if (tx.sourceType === 'income') deleteIncome(tx.id);
       else deleteExpense(tx.id);
@@ -734,7 +734,7 @@ const CashFlow = () => {
               </p>
               <p className="text-2xl font-bold text-green-500">
                 {settings.currency}{' '}
-                {(summary.hasBranch ? summary.totalIncomeBranch : summary.totalIn).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {(summary.hasBranch ? summary.totalIncomeBranch : summary.totalIn).toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
@@ -753,7 +753,7 @@ const CashFlow = () => {
               </p>
               <p className="text-2xl font-bold text-red-500">
                 {settings.currency}{' '}
-                {(summary.hasBranch ? summary.totalExpensesBranch : summary.totalOut).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {(summary.hasBranch ? summary.totalExpensesBranch : summary.totalOut).toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
@@ -776,7 +776,24 @@ const CashFlow = () => {
                 }`}
               >
                 {settings.currency}{' '}
-                {(summary.hasBranch ? summary.netProfitBranch : summary.netCashFlow).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {(summary.hasBranch ? summary.netProfitBranch : summary.netCashFlow).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="bg-card rounded-lg border border-secondary p-4 flex items-center justify-between"
+          >
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Current Cash</p>
+              <p
+                className={`text-2xl font-bold ${
+                  summary.currentCash >= 0 ? 'text-primary' : 'text-red-500'
+                }`}
+              >
+                {settings.currency} {summary.currentCash.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </p>
+            </div>
+          </motion.div>
               </p>
             </div>
           </motion.div>
@@ -791,8 +808,8 @@ const CashFlow = () => {
           >
             <AlertTriangle className="w-5 h-5 flex-shrink-0" />
             <p className="text-sm font-medium">
-              You have {settings.currency} {upcomingTotal.toLocaleString()} going out in upcoming payments but only{' '}
-              {settings.currency} {summary.currentCash.toLocaleString()} available.
+              You have {settings.currency} {upcomingTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })} going out in upcoming payments but only{' '}
+              {settings.currency} {summary.currentCash.toLocaleString(undefined, { maximumFractionDigits: 0 })} available.
             </p>
           </motion.div>
         )}
@@ -948,7 +965,7 @@ const CashFlow = () => {
                     <td className="px-4 py-3 text-sm font-semibold text-right">
                       <span className={tx.type === 'inflow' ? 'text-green-500' : 'text-red-500'}>
                         {tx.type === 'inflow' ? '+' : '-'}
-                        {settings.currency} {tx.amount.toLocaleString()}
+                        {settings.currency} {tx.amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -968,7 +985,7 @@ const CashFlow = () => {
                     </td>
                     <td className="px-4 py-3 text-sm font-medium text-right">
                       {tx.runningBalance !== null
-                        ? `${settings.currency} ${tx.runningBalance.toLocaleString()}`
+                        ? `${settings.currency} ${tx.runningBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
                         : '—'}
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground max-w-[180px] truncate">
