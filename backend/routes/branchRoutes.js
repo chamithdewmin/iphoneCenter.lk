@@ -3,7 +3,7 @@ const router = express.Router();
 const { body } = require('express-validator');
 const branchController = require('../controllers/branchController');
 const { authenticate } = require('../middleware/auth');
-const { requireManager } = require('../middleware/roleGuard');
+const { requireManager, requireAdmin } = require('../middleware/roleGuard');
 const { branchGuard } = require('../middleware/branchGuard');
 
 // Validation rules
@@ -17,6 +17,6 @@ router.get('/', authenticate, branchGuard, branchController.getAllBranches);
 router.get('/:id', authenticate, branchGuard, branchController.getBranchById);
 router.post('/', authenticate, requireManager, createBranchValidation, branchController.createBranch);
 router.put('/:id', authenticate, requireManager, branchController.updateBranch);
-router.delete('/:id', authenticate, requireManager, branchController.disableBranch);
+router.delete('/:id', authenticate, requireAdmin, branchController.disableBranch);
 
 module.exports = router;

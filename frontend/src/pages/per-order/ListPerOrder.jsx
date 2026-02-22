@@ -2,59 +2,66 @@ import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Search, Eye, Trash2, Calendar, User, Package, DollarSign } from 'lucide-react';
-import { getStorageData, setStorageData } from '@/utils/storage';
+import { authFetch } from '@/lib/api';
+import { useBranchFilter } from '@/hooks/useBranchFilter';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 
 const ListPerOrder = () => {
+  const { isAdmin, selectedBranchId } = useBranchFilter();
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const { toast } = useToast();
 
+  const fetchOrders = React.useCallback(async () => {
+    setLoading(true);
+    const url = isAdmin && selectedBranchId ? `/api/per-orders?branchId=${selectedBranchId}` : '/api/per-orders';
+    const { ok, data } = await authFetch(url);
+    setLoading(false);
+    const list = (ok && Array.isArray(data?.data)) ? data.data : [];
+    setOrders(list);
+    setFilteredOrders(list);
+  }, [isAdmin, selectedBranchId]);
+
   useEffect(() => {
-    const loadedOrders = getStorageData('perOrders', []);
-    setOrders(loadedOrders);
-    setFilteredOrders(loadedOrders);
-  }, []);
+    fetchOrders();
+  }, [fetchOrders]);
 
   useEffect(() => {
     let filtered = [...orders];
 
-    // Search filter
     if (searchQuery) {
-      const searchLower = searchQuery.toLowerCase();
-      filtered = filtered.filter(order =>
-        order.id.toLowerCase().includes(searchLower) ||
-        order.customer.name.toLowerCase().includes(searchLower) ||
-        order.customer.phone.includes(searchQuery) ||
-        order.customer.email?.toLowerCase().includes(searchLower)
-      );
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter((order) => {
+        const ordNum = (order.order_number || order.id || '').toString().toLowerCase();
+        const name = (order.customer_name || order.customer?.name || '').toLowerCase();
+        const phone = (order.customer_phone || order.customer?.phone || '').toString();
+        const email = (order.customer_email || order.customer?.email || '').toLowerCase();
+        return ordNum.includes(q) || name.includes(q) || phone.includes(searchQuery) || email.includes(q);
+      });
     }
 
-    // Status filter
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(order => order.status === statusFilter);
+      filtered = filtered.filter((order) => order.status === statusFilter);
     }
 
-    // Sort by date (newest first)
-    filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
+    filtered.sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
     setFilteredOrders(filtered);
   }, [searchQuery, statusFilter, orders]);
 
-  const handleDeleteOrder = (orderId) => {
-    if (window.confirm('Are you sure you want to delete this order?')) {
-      const updatedOrders = orders.filter(order => order.id !== orderId);
-      setOrders(updatedOrders);
-      setStorageData('perOrders', updatedOrders);
-      toast({
-        title: "Order Deleted",
-        description: "The order has been deleted successfully",
-      });
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm('Are you sure you want to delete this order?')) return;
+    const { ok, data } = await authFetch(`/api/per-orders/${orderId}`, { method: 'DELETE' });
+    if (!ok) {
+      toast({ title: 'Delete failed', description: data?.message || 'Could not delete order', variant: 'destructive' });
+      return;
     }
+    toast({ title: 'Order Deleted', description: 'The order has been deleted successfully' });
+    fetchOrders();
   };
 
   const formatDate = (dateString) => {
@@ -118,7 +125,11 @@ const ListPerOrder = () => {
 
         {/* Orders List */}
         <div className="bg-card rounded-lg border border-secondary overflow-hidden">
-          {filteredOrders.length === 0 ? (
+          {loading ? (
+            <div className="p-12 text-center">
+              <p className="text-muted-foreground">Loading orders...</p>
+            </div>
+          ) : filteredOrders.length === 0 ? (
             <div className="p-12 text-center">
               <Package className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground text-lg">
@@ -140,65 +151,46 @@ const ListPerOrder = () => {
                       <div className="flex-1 space-y-3">
                         <div className="flex items-center justify-between">
                           <div>
-                            <h3 className="font-bold text-lg">{order.id}</h3>
+                            <h3 className="font-bold text-lg">{order.order_number || order.id}</h3>
                             <div className="flex items-center gap-2 mt-1">
                               <User className="w-4 h-4 text-muted-foreground" />
-                              <span className="font-medium">{order.customer.name}</span>
-                              <span className="text-sm text-muted-foreground">• {order.customer.phone}</span>
+                              <span className="font-medium">{order.customer_name || order.customer?.name || '—'}</span>
+                              <span className="text-sm text-muted-foreground">• {order.customer_phone || order.customer?.phone || '—'}</span>
                             </div>
                           </div>
                           {getStatusBadge(order.status)}
                         </div>
-                        
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                           <div>
-                            <p className="text-muted-foreground">Items</p>
-                            <p className="font-medium flex items-center gap-1">
-                              <Package className="w-4 h-4" />
-                              {order.items.length} item(s)
-                            </p>
-                          </div>
-                          <div>
                             <p className="text-muted-foreground">Subtotal</p>
-                            <p className="font-medium">LKR {order.subtotal.toLocaleString()}</p>
+                            <p className="font-medium">LKR {(order.subtotal ?? 0).toLocaleString()}</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground">Advance Payment</p>
-                            <p className="font-medium">LKR {order.advancePayment.toLocaleString()}</p>
+                            <p className="font-medium">LKR {(order.advance_payment ?? order.advancePayment ?? 0).toLocaleString()}</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground">Due Amount</p>
-                            <p className={`font-semibold ${order.dueAmount > 0 ? 'text-primary' : 'text-green-600 dark:text-green-400'}`}>
-                              LKR {order.dueAmount.toLocaleString()}
+                            <p className={`font-semibold ${(order.due_amount ?? order.dueAmount ?? 0) > 0 ? 'text-primary' : 'text-green-600 dark:text-green-400'}`}>
+                              LKR {(order.due_amount ?? order.dueAmount ?? 0).toLocaleString()}
                             </p>
                           </div>
                         </div>
-                        
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="w-4 h-4" />
-                          <span>{formatDate(order.createdAt)}</span>
+                          <span>{formatDate(order.created_at || order.createdAt)}</span>
                         </div>
                       </div>
-                      
                       <div className="flex items-center gap-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => {
-                            toast({
-                              title: "View Order",
-                              description: `Viewing details for order ${order.id}`,
-                            });
-                          }}
+                          onClick={() => toast({ title: 'View Order', description: `Order ${order.order_number || order.id}. Open Orders page for full view.` })}
                         >
                           <Eye className="w-4 h-4 mr-2" />
                           View
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDeleteOrder(order.id)}
-                        >
+                        <Button size="sm" variant="destructive" onClick={() => handleDeleteOrder(order.id)}>
                           <Trash2 className="w-4 h-4 mr-2" />
                           Delete
                         </Button>
@@ -222,19 +214,19 @@ const ListPerOrder = () => {
               <div className="text-center p-4 bg-secondary/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">Total Amount</p>
                 <p className="text-2xl font-bold">
-                  LKR {filteredOrders.reduce((sum, order) => sum + order.subtotal, 0).toLocaleString()}
+                  LKR {filteredOrders.reduce((sum, o) => sum + (parseFloat(o.subtotal) || 0), 0).toLocaleString()}
                 </p>
               </div>
               <div className="text-center p-4 bg-secondary/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">Total Advance</p>
                 <p className="text-2xl font-bold">
-                  LKR {filteredOrders.reduce((sum, order) => sum + order.advancePayment, 0).toLocaleString()}
+                  LKR {filteredOrders.reduce((sum, o) => sum + (parseFloat(o.advance_payment ?? o.advancePayment) || 0), 0).toLocaleString()}
                 </p>
               </div>
               <div className="text-center p-4 bg-secondary/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">Total Due</p>
                 <p className="text-2xl font-bold text-primary">
-                  LKR {filteredOrders.reduce((sum, order) => sum + order.dueAmount, 0).toLocaleString()}
+                  LKR {filteredOrders.reduce((sum, o) => sum + (parseFloat(o.due_amount ?? o.dueAmount) || 0), 0).toLocaleString()}
                 </p>
               </div>
             </div>

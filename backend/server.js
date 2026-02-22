@@ -34,6 +34,7 @@ const userRoutes = require('./routes/userRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const smsRoutes = require('./routes/smsRoutes');
 const auditRoutes = require('./routes/auditRoutes');
+const perOrderRoutes = require('./routes/perOrderRoutes');
 
 // Initialize Express app
 const app = express();
@@ -168,6 +169,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/sms', smsRoutes);
 app.use('/api/audit-logs', auditRoutes);
+app.use('/api/per-orders', perOrderRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
