@@ -46,9 +46,6 @@ const DataTable = ({
     );
   };
 
-  const allSelected = selected.length === data.length && data.length > 0;
-  const someSelected = selected.length > 0 && selected.length < data.length;
-
   return (
     <div className="w-full bg-card rounded-2xl border border-secondary shadow-sm overflow-hidden">
       {/* Header */}
@@ -83,19 +80,6 @@ const DataTable = ({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-secondary text-muted-foreground text-xs uppercase tracking-wide">
-                  {onSelectAll && (
-                    <th className="w-10 px-4 py-3 text-left">
-                      <input
-                        type="checkbox"
-                        checked={allSelected}
-                        ref={(input) => {
-                          if (input) input.indeterminate = someSelected;
-                        }}
-                        onChange={onSelectAll}
-                        className="rounded border-input bg-background accent-primary cursor-pointer"
-                      />
-                    </th>
-                  )}
                   {columns.map((column) => (
                     <th
                       key={column.key}
@@ -114,26 +98,13 @@ const DataTable = ({
                 </tr>
               </thead>
               <tbody>
-                {data.map((row, idx) => {
+                {data.map((row) => {
                   const rowId = getRowId(row);
-                  const isSelected = selected.includes(rowId);
                   return (
                     <tr
                       key={rowId}
-                      className={`border-b border-secondary hover:bg-secondary/50 transition-colors ${
-                        isSelected ? 'bg-secondary/30' : ''
-                      }`}
+                      className="border-b border-secondary hover:bg-secondary/50 transition-colors"
                     >
-                      {onSelectAll && (
-                        <td className="px-4 py-3">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => onSelect(rowId)}
-                            className="rounded border-input bg-background accent-primary cursor-pointer"
-                          />
-                        </td>
-                      )}
                       {columns.map((column) => (
                         <td key={column.key} className="px-4 py-3">
                           {column.render ? column.render(row) : row[column.key]}
