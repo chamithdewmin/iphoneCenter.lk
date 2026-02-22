@@ -165,7 +165,7 @@ const AddProduct = () => {
       // Create new product
       const initialQuantity = Math.max(0, parseInt(formData.stock, 10) || 0);
       const branchId = isAdmin ? formData.branchId : (user?.branchId ?? '');
-      const { ok, data } = await authFetch('/api/inventory/products', {
+      const { ok, data, status } = await authFetch('/api/inventory/products', {
         method: 'POST',
         body: JSON.stringify({
           name,
@@ -180,7 +180,11 @@ const AddProduct = () => {
       });
       setLoading(false);
       if (!ok) {
-        toast({ title: 'Could not add product', description: data?.message || 'Please try again', variant: 'destructive' });
+        const msg = data?.message || 'Please try again';
+        const hint = (status === 500 && msg === 'Internal server error')
+          ? ' Check backend/Dokploy container logs for the real error, or set EXPOSE_500_ERROR=1 in backend env to see it here.'
+          : '';
+        toast({ title: 'Could not add product', description: msg + hint, variant: 'destructive' });
         return;
       }
       toast({ title: 'Product Added', description: `${name} has been saved to the database` });

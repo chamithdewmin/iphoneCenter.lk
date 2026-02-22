@@ -8,6 +8,8 @@ Use these steps to find and fix why adding a product fails.
 
 ## Quick debug (500 on create product)
 
+**0. Production startup** — When `NODE_ENV=production` (e.g. on Dokploy), the backend **waits for PostgreSQL and runs init.pg.sql before accepting requests**, so "tables missing" (503) or blind 500s from missing schema should not occur after a successful deploy. If you see 500, set **`EXPOSE_500_ERROR=1`** in the backend environment, redeploy, and add a product again; the API response body will include the real error message so you can fix it (or check backend logs).
+
 **1. Check backend logs** — Dokploy → your backend app → **Logs**. The real error is there (e.g. `CREATE PRODUCT ERROR:`, missing env, SQL error).
 
 **2. Environment variables** — In Dokploy → backend app → **Environment**, set either:

@@ -82,6 +82,13 @@ const errorHandler = (err, req, res, next) => {
             err.detail || null
         ));
     }
+    // PostgreSQL: authentication failed (wrong password / invalid user)
+    if (err.code === '28P01') {
+        return res.status(503).json(jsonError(
+            'Database authentication failed. Check DB_USER and DB_PASSWORD (or DATABASE_URL) in backend environment.',
+            err.detail || null
+        ));
+    }
 
     // MySQL errors
     if (err.code === 'ER_DUP_ENTRY') {
@@ -129,13 +136,13 @@ const errorHandler = (err, req, res, next) => {
         return res.status(401).json(jsonError('Token expired', null));
     }
 
-    // Default: 500 or custom status. In production hide internal details from client.
+    // Default: 500 or custom status. In production hide internal details unless EXPOSE_500_ERROR=1 (debug).
+    const exposeError = process.env.EXPOSE_500_ERROR === '1' || !isProd;
     const payload = {
         success: false,
-        message: err.message || 'Internal server error',
-        ...(isProd && statusCode === 500
-            ? { message: 'Internal server error', code: null, detail: null }
-            : { code: err.code || null, detail: err.detail || null, ...(statusCode === 500 && { stack: err.stack }) })
+        message: (isProd && statusCode === 500 && !exposeError) ? 'Internal server error' : (err.message || 'Internal server error'),
+        ...(exposeError ? { code: err.code || null, detail: err.detail || err.message || null } : {}),
+        ...(statusCode === 500 && exposeError && err.stack ? { stack: err.stack } : {})
     };
     res.status(statusCode).json(payload);
 };

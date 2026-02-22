@@ -177,9 +177,11 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 const HOST = '0.0.0.0';
 
-// When set (e.g. WAIT_FOR_DB=1), verify PostgreSQL and run init.pg.sql before listening.
-// Use in Docker/Dokploy when DB is available at startup to avoid 500s from missing tables.
-const WAIT_FOR_DB = process.env.WAIT_FOR_DB === '1' || process.env.RUN_INIT_BEFORE_LISTEN === '1';
+// In production (Docker/Dokploy), wait for PostgreSQL and run init.pg.sql before listening
+// so tables exist on first request. Set RUN_INIT_AFTER_LISTEN=1 to keep old behavior (init in background).
+const WAIT_FOR_DB = process.env.WAIT_FOR_DB === '1' ||
+    process.env.RUN_INIT_BEFORE_LISTEN === '1' ||
+    (process.env.NODE_ENV === 'production' && process.env.RUN_INIT_AFTER_LISTEN !== '1');
 
 function start() {
     const listen = () => new Promise((resolve, reject) => {
@@ -220,7 +222,7 @@ function start() {
 
     if (WAIT_FOR_DB) {
         const { verifyConnection, applySchema } = require('./config/initDatabase');
-        console.log('WAIT_FOR_DB=1: verifying PostgreSQL and running init.pg.sql before starting server...');
+        console.log('Database: verifying PostgreSQL and running init.pg.sql before starting server...');
         return verifyConnection()
             .then(() => applySchema())
             .then(() => {
