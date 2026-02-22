@@ -176,7 +176,9 @@ const CashFlow = () => {
   }, [isAdmin, user?.branch_id]);
 
   useEffect(() => {
-    refreshApiSales(selectedBranchId || undefined);
+    // When "All Branches" or no selection, fetch all sales; otherwise fetch for selected branch
+    const branchParam = selectedBranchId && selectedBranchId !== 'all' ? selectedBranchId : undefined;
+    refreshApiSales(branchParam);
   }, [selectedBranchId, refreshApiSales]);
 
   // Load branch expenses (Expenses page data with branchId) for per-branch net profit
@@ -452,8 +454,9 @@ const CashFlow = () => {
     expenses.forEach((e) => (currentCash -= e.amount));
     apiSales.forEach((s) => (currentCash += parseFloat(s.paid_amount) || 0));
 
-    // Per-branch: total income (sales), total expenses (from Expenses page), net profit = income - expenses (respect date filter)
+    // Per-branch or all-branches: total income (sales), total expenses, net profit (respect date filter)
     const hasBranch = selectedBranchId != null && selectedBranchId !== '';
+    const isAllBranches = selectedBranchId === 'all';
     const dateFrom = filters.dateFrom ? new Date(filters.dateFrom + 'T00:00:00') : null;
     const dateTo = filters.dateTo ? new Date(filters.dateTo + 'T23:59:59') : null;
     const inDateRange = (d) => {
@@ -469,9 +472,11 @@ const CashFlow = () => {
           .reduce((s, sale) => s + (parseFloat(sale.paid_amount) || 0), 0)
       : 0;
     const totalExpensesBranch = hasBranch
-      ? branchExpenses
-          .filter((e) => String(e.branchId) === String(selectedBranchId) && inDateRange(e.date))
-          .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)
+      ? isAllBranches
+        ? branchExpenses.filter((e) => inDateRange(e.date)).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)
+        : branchExpenses
+            .filter((e) => String(e.branchId) === String(selectedBranchId) && inDateRange(e.date))
+            .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)
       : 0;
     const netProfitBranch = totalIncomeBranch - totalExpensesBranch;
 
@@ -538,6 +543,7 @@ const CashFlow = () => {
     let totalIn = 0;
     let totalOut = 0;
     const hasBranch = selectedBranchId != null && selectedBranchId !== '';
+    const isAllBranches = selectedBranchId === 'all';
     const prevStartT = prevStart.getTime();
     const prevEndT = prevEnd.getTime() + 24 * 60 * 60 * 1000;
     if (hasBranch) {
@@ -545,12 +551,11 @@ const CashFlow = () => {
         const t = new Date(sale.created_at).getTime();
         if (t >= prevStartT && t < prevEndT) totalIn += parseFloat(sale.paid_amount) || 0;
       });
-      branchExpenses
-        .filter((e) => String(e.branchId) === String(selectedBranchId))
-        .forEach((e) => {
-          const t = new Date(e.date).getTime();
-          if (t >= prevStartT && t < prevEndT) totalOut += parseFloat(e.amount) || 0;
-        });
+      const expList = isAllBranches ? branchExpenses : branchExpenses.filter((e) => String(e.branchId) === String(selectedBranchId));
+      expList.forEach((e) => {
+        const t = new Date(e.date).getTime();
+        if (t >= prevStartT && t < prevEndT) totalOut += parseFloat(e.amount) || 0;
+      });
     } else {
       sortedTransactions.forEach((tx) => {
         const d = new Date(tx.date).getTime();
@@ -572,17 +577,17 @@ const CashFlow = () => {
     let totalIn = 0;
     let totalOut = 0;
     const hasBranch = selectedBranchId != null && selectedBranchId !== '';
+    const isAllBranches = selectedBranchId === 'all';
     if (hasBranch) {
       apiSales.forEach((sale) => {
         const t = new Date(sale.created_at).getTime();
         if (t >= startT && t < endT) totalIn += parseFloat(sale.paid_amount) || 0;
       });
-      branchExpenses
-        .filter((e) => String(e.branchId) === String(selectedBranchId))
-        .forEach((e) => {
-          const t = new Date(e.date).getTime();
-          if (t >= startT && t < endT) totalOut += parseFloat(e.amount) || 0;
-        });
+      const expList = isAllBranches ? branchExpenses : branchExpenses.filter((e) => String(e.branchId) === String(selectedBranchId));
+      expList.forEach((e) => {
+        const t = new Date(e.date).getTime();
+        if (t >= startT && t < endT) totalOut += parseFloat(e.amount) || 0;
+      });
     } else {
       sortedTransactions.forEach((tx) => {
         const d = new Date(tx.date).getTime();
@@ -598,7 +603,9 @@ const CashFlow = () => {
 
   // Branch comparison (when no branch selected, for admins): per-branch income, expenses, profit
   const branchComparisonData = useMemo(() => {
-    if (selectedBranchId != null && selectedBranchId !== '' || !isAdmin || branches.length === 0) return [];
+    if (branches.length === 0) return [];
+    if (selectedBranchId !== '' && selectedBranchId !== 'all') return []; // single branch selected
+    if (selectedBranchId === '' && !isAdmin) return []; // "Select the branch" and not admin: hide table
     const dateFrom = filters.dateFrom ? new Date(filters.dateFrom + 'T00:00:00').getTime() : null;
     const dateTo = filters.dateTo ? new Date(filters.dateTo + 'T23:59:59').getTime() + 1 : null;
     const inRange = (t) => (!dateFrom && !dateTo) || (t >= (dateFrom || 0) && t < (dateTo || Infinity));
@@ -623,7 +630,7 @@ const CashFlow = () => {
     return Array.from(byBranch.values()).map((r) => ({ ...r, profit: r.income - r.expenses, margin: r.income > 0 ? ((r.income - r.expenses) / r.income) * 100 : 0 }));
   }, [selectedBranchId, isAdmin, branches, apiSales, branchExpenses, filters.dateFrom, filters.dateTo]);
 
-  // Income and expense breakdown by category (branch-aware when a branch is selected)
+  // Income and expense breakdown by category (branch-aware when a branch is selected; all when "All Branches")
   const incomeByCategory = useMemo(() => {
     const map = new Map();
     const hasBranch = selectedBranchId != null && selectedBranchId !== '';
@@ -646,13 +653,13 @@ const CashFlow = () => {
   const expensesByCategory = useMemo(() => {
     const map = new Map();
     const hasBranch = selectedBranchId != null && selectedBranchId !== '';
+    const isAllBranches = selectedBranchId === 'all';
     if (hasBranch) {
-      branchExpenses
-        .filter((e) => String(e.branchId) === String(selectedBranchId))
-        .forEach((e) => {
-          const cat = e.category || 'Other';
-          map.set(cat, (map.get(cat) || 0) + (parseFloat(e.amount) || 0));
-        });
+      const expList = isAllBranches ? branchExpenses : branchExpenses.filter((e) => String(e.branchId) === String(selectedBranchId));
+      expList.forEach((e) => {
+        const cat = e.category || 'Other';
+        map.set(cat, (map.get(cat) || 0) + (parseFloat(e.amount) || 0));
+      });
     } else {
       filteredTransactions.forEach((tx) => {
         if (tx.type !== 'outflow' || !(tx.status === 'paid' || tx.sourceType === 'expense')) return;
@@ -700,10 +707,13 @@ const CashFlow = () => {
     }
 
     const hasBranch = selectedBranchId != null && selectedBranchId !== '';
+    const isAllBranches = selectedBranchId === 'all';
 
     if (hasBranch) {
-      // Branch view: income from apiSales (already filtered by branch), expenses from branchExpenses
-      const branchExpForChart = branchExpenses.filter((e) => String(e.branchId) === String(selectedBranchId));
+      // Branch view or all branches: income from apiSales, expenses from branchExpenses
+      const branchExpForChart = isAllBranches
+        ? branchExpenses
+        : branchExpenses.filter((e) => String(e.branchId) === String(selectedBranchId));
       apiSales.forEach((sale) => {
         const d = new Date(sale.created_at);
         if (Number.isNaN(d.getTime())) return;
@@ -958,7 +968,7 @@ const CashFlow = () => {
     const lines = [
       ['Profit Summary', ''],
       ['Period', periodLabel],
-      ['Branch', summary.hasBranch ? branches.find((b) => String(b.id) === selectedBranchId)?.name || selectedBranchId : 'All'],
+      ['Branch', summary.hasBranch ? (selectedBranchId === 'all' ? 'All Branches' : (branches.find((b) => String(b.id) === selectedBranchId)?.name || selectedBranchId)) : 'All'],
       ['Income', income],
       ['Expenses', expenses],
       ['Net Profit', profit],
@@ -1029,6 +1039,7 @@ const CashFlow = () => {
               className="min-w-[180px] px-3 py-2 bg-card border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <option value="">Select the branch</option>
+              {isAdmin && <option value="all">All Branches</option>}
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name || b.code || `Branch ${b.id}`}
@@ -1238,8 +1249,11 @@ const CashFlow = () => {
             <p className="text-sm font-medium text-muted-foreground mb-1">Profit at a glance</p>
             <p className="text-foreground font-medium">
               {profitInsight.text}
-              {summary.hasBranch && (
+              {summary.hasBranch && selectedBranchId !== 'all' && (
                 <span className="text-muted-foreground font-normal"> (this branch)</span>
+              )}
+              {selectedBranchId === 'all' && (
+                <span className="text-muted-foreground font-normal"> (all branches)</span>
               )}
             </p>
           </div>
@@ -1339,14 +1353,17 @@ const CashFlow = () => {
           </motion.div>
         )}
 
-        {/* Branch comparison (admins, when no branch selected) */}
+        {/* Branch comparison (when "All Branches" selected, or admins with no selection) */}
         {branchComparisonData.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-card rounded-xl border border-border p-5 overflow-x-auto"
           >
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Branch comparison</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">Branch comparison</h3>
+            {selectedBranchId === 'all' && (
+              <p className="text-xs text-muted-foreground mb-3">Net income, net expense, and net profit per branch for the selected period.</p>
+            )}
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="border-b border-border">

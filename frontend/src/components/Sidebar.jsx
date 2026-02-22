@@ -100,7 +100,7 @@ const menuGroups = [
           { to: '/inventory/transfer-stock', label: 'Transfer Stock (Warehouse → Shop)', icon: ArrowLeftRight },
         ],
       },
-      { type: 'link', to: '/warehouses', icon: Warehouse, label: 'Warehouses', permission: 'products' },
+      { type: 'link', to: '/warehouses', icon: Warehouse, label: 'Warehouses', permission: 'products', includeRoles: ['admin'] },
     ],
   },
   {
