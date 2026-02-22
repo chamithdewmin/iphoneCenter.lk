@@ -454,6 +454,7 @@ const CashFlow = () => {
     upcomingTotal > 0 && summary.currentCash < upcomingTotal;
 
   // Chart data: monthly Income vs Expenses vs Net Profit (last 7 months)
+  // When a branch is selected, use branch-specific apiSales + branchExpenses so expenses show correctly
   const chartData = useMemo(() => {
     const now = new Date();
     const months = [];
@@ -470,24 +471,48 @@ const CashFlow = () => {
       });
     }
 
-    filteredTransactions.forEach((tx) => {
-      const d = new Date(tx.date);
-      if (Number.isNaN(d.getTime())) return;
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      const row = months.find((m) => m.key === key);
-      if (!row) return;
-      if (tx.type === 'inflow' && tx.status === 'received') {
-        row.income += tx.amount;
-      } else if (tx.type === 'outflow' && (tx.status === 'paid' || tx.sourceType === 'expense')) {
-        row.expenses += tx.amount;
-      }
-    });
+    const hasBranch = selectedBranchId != null && selectedBranchId !== '';
+
+    if (hasBranch) {
+      // Branch view: income from apiSales (already filtered by branch), expenses from branchExpenses
+      const branchExpForChart = branchExpenses.filter((e) => String(e.branchId) === String(selectedBranchId));
+      apiSales.forEach((sale) => {
+        const d = new Date(sale.created_at);
+        if (Number.isNaN(d.getTime())) return;
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const row = months.find((m) => m.key === key);
+        if (!row) return;
+        row.income += parseFloat(sale.paid_amount) || 0;
+      });
+      branchExpForChart.forEach((e) => {
+        const d = new Date(e.date);
+        if (Number.isNaN(d.getTime())) return;
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const row = months.find((m) => m.key === key);
+        if (!row) return;
+        row.expenses += parseFloat(e.amount) || 0;
+      });
+    } else {
+      // No branch: use full transaction list (inflows + outflows/expenses)
+      filteredTransactions.forEach((tx) => {
+        const d = new Date(tx.date);
+        if (Number.isNaN(d.getTime())) return;
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const row = months.find((m) => m.key === key);
+        if (!row) return;
+        if (tx.type === 'inflow' && tx.status === 'received') {
+          row.income += tx.amount;
+        } else if (tx.type === 'outflow' && (tx.status === 'paid' || tx.sourceType === 'expense')) {
+          row.expenses += tx.amount;
+        }
+      });
+    }
 
     months.forEach((row) => {
       row.profit = row.income - row.expenses;
     });
     return months;
-  }, [filteredTransactions]);
+  }, [filteredTransactions, selectedBranchId, apiSales, branchExpenses]);
 
   const allCategories = useMemo(() => {
     const cats = new Set(['Sales', 'Invoice']);
