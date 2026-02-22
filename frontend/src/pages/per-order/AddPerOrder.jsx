@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Plus, Minus, Trash2, User, Save, X, Package } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, User, Save, X, Package, Download } from 'lucide-react';
 import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +42,7 @@ const AddPerOrder = () => {
   const [customPrice, setCustomPrice] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [lastSavedOrder, setLastSavedOrder] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -83,7 +84,15 @@ const AddPerOrder = () => {
   }, [searchQuery, products]);
 
   const handleSelectCustomer = (customerId) => {
-    const customer = customers.find((c) => c.id === parseInt(customerId, 10) || c.id === customerId);
+    const id = customerId === '' || customerId == null ? null : customerId;
+    if (id === null) {
+      setSelectedCustomer(null);
+      setCustomerDetails({ name: '', phone: '', email: '', address: '' });
+      return;
+    }
+    const customer = customers.find(
+      (c) => String(c.id) === String(id) || c.id === parseInt(id, 10)
+    );
     if (customer) {
       setSelectedCustomer(customer);
       setCustomerDetails({
@@ -233,12 +242,10 @@ const AddPerOrder = () => {
 
     toast({
       title: 'Order Saved',
-      description: `Per order ${data.data?.order_number || 'created'} has been saved successfully`,
+      description: `Per order ${data.data?.order_number || 'created'} saved. Invoice data and customer are stored.`,
     });
 
-    if (data.data && (parseFloat(data.data.advance_payment) || 0) > 0) {
-      downloadAdvancePaymentInvoicePdf(data.data);
-    }
+    setLastSavedOrder(data.data || null);
 
     setSelectedCustomer(null);
     setCustomerDetails({ name: '', phone: '', email: '', address: '' });
@@ -296,13 +303,13 @@ const AddPerOrder = () => {
                 <div>
                   <Label>Select Customer</Label>
                   <select
-                    value={selectedCustomer?.id ?? ''}
+                    value={selectedCustomer ? String(selectedCustomer.id) : ''}
                     onChange={(e) => handleSelectCustomer(e.target.value)}
                     className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <option value="">Select existing customer or enter new details</option>
                     {customers.map((customer) => (
-                      <option key={customer.id} value={customer.id}>
+                      <option key={customer.id} value={String(customer.id)}>
                         {customer.name} - {customer.phone}
                       </option>
                     ))}
@@ -513,6 +520,21 @@ const AddPerOrder = () => {
                   <Save className="w-5 h-5 mr-2" />
                   {saving ? 'Saving…' : 'Save Per Order'}
                 </Button>
+                {lastSavedOrder && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full mt-2"
+                    size="sm"
+                    onClick={() => {
+                      downloadAdvancePaymentInvoicePdf(lastSavedOrder);
+                      toast({ title: 'Invoice', description: 'Advance payment invoice downloaded.' });
+                    }}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download advance invoice
+                  </Button>
+                )}
               </div>
             </div>
           </div>

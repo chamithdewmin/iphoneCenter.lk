@@ -17,7 +17,8 @@ import {
   Pencil,
   Mail,
   Phone,
-  MapPin
+  MapPin,
+  Download
 } from 'lucide-react';
 import { authFetch } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -79,6 +80,7 @@ const Orders = () => {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState([]);
+  const [viewedOrderFull, setViewedOrderFull] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -151,7 +153,15 @@ const Orders = () => {
   }, [productSearchQuery, products]);
 
   const handleSelectCustomer = (customerId) => {
-    const customer = customers.find(c => c.id === customerId);
+    const id = customerId === '' || customerId == null ? null : customerId;
+    if (id === null) {
+      setSelectedCustomer(null);
+      setCustomerDetails({ name: '', phone: '', email: '', address: '' });
+      return;
+    }
+    const customer = customers.find(
+      (c) => String(c.id) === String(id) || c.id === parseInt(id, 10)
+    );
     if (customer) {
       setSelectedCustomer(customer);
       setCustomerDetails({
@@ -364,6 +374,7 @@ const Orders = () => {
       return;
     }
     const o = data.data;
+    setViewedOrderFull(o);
     setSelectedOrder({
       id: o.id,
       order_number: o.order_number,
@@ -591,7 +602,7 @@ const Orders = () => {
         {/* Summary */}
         {filteredOrders.length > 0 && (
           <div className="bg-card rounded-lg p-6 border border-secondary px-4">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="text-center p-4 bg-secondary/50 rounded-lg">
                       <p className="text-sm text-muted-foreground">Total Orders</p>
                       <p className="text-2xl font-bold">{filteredOrders.length}</p>
@@ -599,19 +610,13 @@ const Orders = () => {
                     <div className="text-center p-4 bg-secondary/50 rounded-lg">
                       <p className="text-sm text-muted-foreground">Total Amount</p>
                       <p className="text-2xl font-bold">
-                        LKR {filteredOrders.reduce((sum, order) => sum + order.subtotal, 0).toLocaleString()}
+                        LKR {filteredOrders.reduce((sum, order) => sum + (parseFloat(order.subtotal) || 0), 0).toLocaleString()}
                       </p>
                     </div>
                     <div className="text-center p-4 bg-secondary/50 rounded-lg">
                       <p className="text-sm text-muted-foreground">Total Advance</p>
                       <p className="text-2xl font-bold">
-                        LKR {filteredOrders.reduce((sum, order) => sum + order.advancePayment, 0).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="text-center p-4 bg-secondary/50 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Total Due</p>
-                      <p className="text-2xl font-bold text-primary">
-                        LKR {filteredOrders.reduce((sum, order) => sum + order.dueAmount, 0).toLocaleString()}
+                        LKR {filteredOrders.reduce((sum, order) => sum + (parseFloat(order.advance_payment ?? order.advancePayment) || 0), 0).toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -656,13 +661,13 @@ const Orders = () => {
                       <div>
                         <Label>Select Customer</Label>
                         <select
-                          value={selectedCustomer?.id || ''}
+                          value={selectedCustomer ? String(selectedCustomer.id) : ''}
                           onChange={(e) => handleSelectCustomer(e.target.value)}
                           className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
                         >
                           <option value="">Select existing customer or enter new details</option>
                           {customers.map(customer => (
-                            <option key={customer.id} value={customer.id}>
+                            <option key={customer.id} value={String(customer.id)}>
                               {customer.name} - {customer.phone}
                             </option>
                           ))}
@@ -867,7 +872,13 @@ const Orders = () => {
         </Dialog>
 
         {/* View Order Modal */}
-        <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <Dialog
+          open={isViewModalOpen}
+          onOpenChange={(open) => {
+            if (!open) setViewedOrderFull(null);
+            setIsViewModalOpen(open);
+          }}
+        >
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>View Order</DialogTitle>
@@ -969,10 +980,22 @@ const Orders = () => {
                   </div>
                 )}
 
-                <div className="flex justify-end gap-3">
+                <div className="flex justify-end gap-3 flex-wrap">
                   <Button variant="outline" onClick={() => setIsViewModalOpen(false)}>
                     Close
                   </Button>
+                  {viewedOrderFull && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        downloadAdvancePaymentInvoicePdf(viewedOrderFull);
+                        toast({ title: 'Invoice', description: 'Advance payment invoice downloaded.' });
+                      }}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download invoice
+                    </Button>
+                  )}
                   <Button onClick={() => {
                     setIsViewModalOpen(false);
                     handleEdit(selectedOrder);

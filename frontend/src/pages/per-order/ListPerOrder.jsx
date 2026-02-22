@@ -206,7 +206,7 @@ const ListPerOrder = () => {
         {/* Summary */}
         {filteredOrders.length > 0 && (
           <div className="bg-card rounded-lg p-6 border border-secondary">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center p-4 bg-secondary/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">Total Orders</p>
                 <p className="text-2xl font-bold">{filteredOrders.length}</p>
@@ -221,12 +221,6 @@ const ListPerOrder = () => {
                 <p className="text-sm text-muted-foreground">Total Advance</p>
                 <p className="text-2xl font-bold">
                   LKR {filteredOrders.reduce((sum, o) => sum + (parseFloat(o.advance_payment ?? o.advancePayment) || 0), 0).toLocaleString()}
-                </p>
-              </div>
-              <div className="text-center p-4 bg-secondary/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">Total Due</p>
-                <p className="text-2xl font-bold text-primary">
-                  LKR {filteredOrders.reduce((sum, o) => sum + (parseFloat(o.due_amount ?? o.dueAmount) || 0), 0).toLocaleString()}
                 </p>
               </div>
             </div>
