@@ -8,8 +8,8 @@
   html.dark {
     --sidebar-width: 240px;
     /* Background Colors */
-    --background: #090b10;               /* Page background */
-    --card: #0f1117;                     /* Card background */
+    --background: #0c0e14;               /* Page background */
+    --card: #13161e;                     /* Card background */
     --topbar-bg: #0f1117;                /* Topbar & table header */
     --secondary: #111419;                /* Table odd row */
     --muted: #1a1d27;                    /* Table hover */
