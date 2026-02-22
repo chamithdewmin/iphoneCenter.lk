@@ -7,6 +7,8 @@ export const CASHIER_ALLOWED_PATHS = new Set([
   '/pos-billing/reprint-invoice',
   '/per-order/add',
   '/per-order/list',
+  '/products/add',
+  '/products/list',
   '/products/barcode',
   '/inventory/low-stock-alert',
   '/inventory/transfer-stock',

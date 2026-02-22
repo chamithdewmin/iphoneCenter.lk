@@ -136,14 +136,16 @@ const errorHandler = (err, req, res, next) => {
         return res.status(401).json(jsonError('Token expired', null));
     }
 
-    // Default: 500 – always return real message so frontend/Network tab shows the cause (no blind 500s).
+    // Default: 500 – always return real message so Postman/frontend see the cause (no blind 500s).
+    const safeMessage = err.message || (err.code && `Error: ${err.code}`) || (err.detail && String(err.detail).slice(0, 300)) || (typeof err === 'string' ? err : 'Internal server error');
     const payload = {
         success: false,
-        message: err.message || 'Internal server error',
+        message: safeMessage,
         code: err.code || null,
         detail: err.detail || null
     };
     if (!isProd && statusCode === 500 && err.stack) payload.stack = err.stack;
+    res.setHeader('X-Error-Source', 'iphone-center-api');
     res.status(statusCode).json(payload);
 };
 

@@ -181,7 +181,8 @@ const AddProduct = () => {
       setLoading(false);
       if (!ok) {
         const msg = data?.message || 'Please try again';
-        toast({ title: 'Could not add product', description: msg, variant: 'destructive' });
+        const detail = data?.detail ? ` (${data.detail})` : '';
+        toast({ title: 'Could not add product', description: msg + detail, variant: 'destructive' });
         return;
       }
       toast({ title: 'Product Added', description: `${name} has been saved to the database` });

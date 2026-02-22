@@ -256,8 +256,16 @@ const getDuePaymentsReport = async (req, res, next) => {
 const getDailySalesSummary = async (req, res, next) => {
     try {
         const { date, branchId } = req.query;
-        const userBranchId = req.user.branch_id;
+        const userBranchId = req.user && req.user.branch_id != null ? req.user.branch_id : null;
         const targetDate = date || new Date().toISOString().split('T')[0];
+
+        // Non-admin must have branch_id
+        if (!isAdmin(req) && (userBranchId == null || userBranchId === '')) {
+            return res.status(403).json({
+                success: false,
+                message: 'User must be assigned to a branch to view reports.'
+            });
+        }
 
         let query = `SELECT 
                         DATE(s.created_at) as sale_date,

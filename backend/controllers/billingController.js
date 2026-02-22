@@ -712,7 +712,15 @@ const processRefund = async (req, res, next) => {
 const getAllSales = async (req, res, next) => {
     try {
         const { startDate, endDate, paymentStatus, customerId, limit, offset } = req.query;
-        const branchId = req.user.branch_id;
+        const branchId = req.user && req.user.branch_id != null ? req.user.branch_id : null;
+
+        // Non-admin must have branch_id (branchGuard should enforce; avoid pushing undefined into query)
+        if (!isAdmin(req) && (branchId == null || branchId === '')) {
+            return res.status(403).json({
+                success: false,
+                message: 'User must be assigned to a branch to view sales.'
+            });
+        }
 
         const limitNum = Math.min(Math.max(0, parseInt(limit, 10) || 50), 500);
         const offsetNum = Math.max(0, parseInt(offset, 10) || 0);

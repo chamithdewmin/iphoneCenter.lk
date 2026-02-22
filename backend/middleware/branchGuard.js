@@ -62,10 +62,13 @@ const branchGuard = async (req, res, next) => {
         if (process.env.NODE_ENV === 'production') {
             console.error('Branch guard error:', error.code, error.message);
         }
-        // Always return 503 (never 500) so client gets a clear, consistent response; check logs for real cause
+        // Return real error so client sees e.g. "relation \"branches\" does not exist" (wrong DB) or connection errors
+        const msg = error.message || (error.code && `Error: ${error.code}`) || 'Service temporarily unavailable';
         return res.status(503).json({
             success: false,
-            message: 'Service temporarily unavailable. Check backend logs for "Branch guard error" or "Get branches error".'
+            message: msg,
+            code: error.code || null,
+            detail: error.detail || null
         });
     }
 };

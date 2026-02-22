@@ -29,12 +29,12 @@ const createProductValidation = [
 ];
 
 // Routes
-// Products
+// Products – all authenticated users (admin, manager, staff, cashier) can add/edit/delete products
 router.get('/products', authenticate, inventoryController.getAllProducts);
 router.get('/products/:id', authenticate, inventoryController.getProductById);
-router.post('/products', authenticate, requireManagerOrStaff, createProductValidation, handleValidationErrors, inventoryController.createProduct);
-router.put('/products/:id', authenticate, requireManagerOrStaff, inventoryController.updateProduct);
-router.delete('/products/:id', authenticate, requireManagerOrStaff, inventoryController.deleteProduct);
+router.post('/products', authenticate, createProductValidation, handleValidationErrors, inventoryController.createProduct);
+router.put('/products/:id', authenticate, inventoryController.updateProduct);
+router.delete('/products/:id', authenticate, inventoryController.deleteProduct);
 
 // Stock
 router.get('/stock', authenticate, branchGuard, setBranchContext, inventoryController.getBranchStock);

@@ -19,10 +19,12 @@ const Dashboard = () => {
   const [salesData, setSalesData] = useState([]);
   const [revenueData, setRevenueData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
+      setLoadError(null);
       const salesUrl = selectedBranchId ? `/api/billing/sales?branchId=${selectedBranchId}` : '/api/billing/sales';
       const dailyUrl = selectedBranchId ? `/api/reports/daily-summary?branchId=${selectedBranchId}` : '/api/reports/daily-summary';
       const [customersRes, productsRes, salesRes, dailyRes] = await Promise.all([
@@ -31,11 +33,22 @@ const Dashboard = () => {
         authFetch(salesUrl),
         authFetch(dailyUrl),
       ]);
+      const resList = [
+        { name: 'Customers', res: customersRes },
+        { name: 'Products', res: productsRes },
+        { name: 'Sales', res: salesRes },
+        { name: 'Daily summary', res: dailyRes },
+      ];
+      const failed = resList.find((r) => !r.res.ok);
+      if (failed) {
+        const msg = failed.res.data?.message || failed.res.data?.detail || `Failed to load ${failed.name}`;
+        setLoadError(msg);
+      }
       const customers = Array.isArray(customersRes.data?.data) ? customersRes.data.data : [];
       const products = Array.isArray(productsRes.data?.data) ? productsRes.data.data : [];
       const sales = Array.isArray(salesRes.data?.data) ? salesRes.data.data : [];
       const totalRevenue = sales.reduce((sum, s) => sum + (parseFloat(s.total_amount) || 0), 0);
-      const daily = dailyRes.data?.data || [];
+      const daily = dailyRes.data?.data != null && !Array.isArray(dailyRes.data?.data) ? [dailyRes.data.data] : (Array.isArray(dailyRes.data?.data) ? dailyRes.data.data : []);
       setStats({
         totalCustomers: customers.length,
         totalRevenue,
@@ -43,7 +56,8 @@ const Dashboard = () => {
         totalOrders: sales.length,
       });
       if (Array.isArray(daily) && daily.length > 0) {
-        const chartData = daily.map(d => ({ name: d.date || d.label, sales: d.sale_count || 0, revenue: parseFloat(d.total_sales) || 0 }));
+        const d0 = daily[0];
+        const chartData = [{ name: d0.sale_date || 'Today', sales: Number(d0.total_transactions) || 0, revenue: parseFloat(d0.total_revenue) || 0 }];
         setSalesData(chartData);
         setRevenueData(chartData);
       } else {
@@ -63,6 +77,11 @@ const Dashboard = () => {
       </Helmet>
 
       <div className="space-y-6">
+        {loadError && (
+          <div className="rounded-lg border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            <strong>Dashboard load error:</strong> {loadError}
+          </div>
+        )}
         {/* Header + Branch filter (Admin only) */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>

@@ -256,10 +256,11 @@ const createProduct = async (req, res, next) => {
                     detail: insertError.detail || null
                 });
             }
-            // Return real error so you see exact DB error (column does not exist, invalid syntax, etc.)
+            // Return real error so client sees exact DB error (e.g. relation does not exist, wrong DB)
+            const msg = insertError.message || (insertError.code && `Error ${insertError.code}`) || insertError.detail || 'Could not add product';
             return res.status(500).json({
                 success: false,
-                message: insertError.message || 'Could not add product',
+                message: msg,
                 detail: insertError.detail || null,
                 code: insertError.code || null
             });
@@ -275,6 +276,10 @@ const createProduct = async (req, res, next) => {
             detail: error.detail,
             bodyKeys: req.body ? Object.keys(req.body) : []
         });
+        // Ensure error has a message so global handler returns something useful to the client
+        if (error && !error.message) {
+            error.message = (error.code ? `Error: ${error.code}. ` : '') + (error.detail || 'Could not add product');
+        }
         next(error);
     } finally {
         if (connection && connection.release) {

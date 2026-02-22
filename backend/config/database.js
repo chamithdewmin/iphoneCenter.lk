@@ -1,8 +1,9 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-// Use DATABASE_URL (e.g. postgresql://user:pass@host:5432/dbname) or separate env vars
-// dotenv is loaded in server.js before this; ensure env is loaded
+// Use DATABASE_URL (e.g. postgresql://user:pass@host:5432/dbname) or separate env vars.
+// Database name must match where your data lives (e.g. IphoneCenterDB). If you use DB_HOST only
+// and omit DB_NAME, default is pos_system – set DB_NAME=IphoneCenterDB (or your actual DB name).
 require('dotenv').config();
 const connectionString = process.env.DATABASE_URL || (process.env.DB_HOST ? (
     `postgresql://${encodeURIComponent(process.env.DB_USER || 'postgres')}:${encodeURIComponent(process.env.DB_PASSWORD || '')}@${process.env.DB_HOST}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME || 'pos_system'}`
@@ -25,9 +26,13 @@ function toPgPlaceholders(query) {
     return query.replace(/\?/g, () => `$${++i}`);
 }
 
-// Test connection
-pool.query('SELECT 1')
-    .then(() => console.log('✅ Database connected successfully'))
+// Test connection and log database name (so you can verify backend uses IphoneCenterDB, not pos_system)
+pool.query('SELECT 1 AS ok, current_database() AS db_name')
+    .then((res) => {
+        const dbName = res.rows && res.rows[0] && res.rows[0].db_name ? res.rows[0].db_name : 'unknown';
+        console.log('✅ Database connected successfully');
+        console.log(`   Database name: ${dbName} (must match your data, e.g. IphoneCenterDB)`);
+    })
     .catch((err) => console.error('❌ Database connection error:', err.message));
 
 /**

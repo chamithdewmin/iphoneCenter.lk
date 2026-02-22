@@ -38,6 +38,12 @@ SELECT id, username, role, branch_id FROM users WHERE is_active = TRUE ORDER BY 
 
 If any table is missing from the first query, run the schema from **outside** psql (see section 1 or 2). If `branches` or `users` count is 0, add a branch/user.
 
+**Backend must use the same database.** If you verified tables in **IphoneCenterDB** with user **Iphone_Center**, set in the backend environment either:
+- **DATABASE_URL** = `postgresql://Iphone_Center:PASSWORD@HOST:5432/IphoneCenterDB`  
+- or **DB_HOST**, **DB_USER**, **DB_PASSWORD**, **DB_NAME=IphoneCenterDB**.  
+
+If **DB_NAME** is missing, the backend defaults to `pos_system` and will not see your data (500s or empty). After deploy, check backend logs for `Database name: ...` to confirm it says **IphoneCenterDB**.
+
 ---
 
 ## 1. From your computer (if you have `psql` and network access to DB)
