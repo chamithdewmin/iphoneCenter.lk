@@ -780,23 +780,6 @@ const CashFlow = () => {
               </p>
             </div>
           </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="bg-card rounded-lg border border-secondary p-4 flex items-center justify-between"
-          >
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Current Cash</p>
-              <p
-                className={`text-2xl font-bold ${
-                  summary.currentCash >= 0 ? 'text-primary' : 'text-red-500'
-                }`}
-              >
-                {settings.currency} {summary.currentCash.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-            </div>
-          </motion.div>
         </div>
 
         {/* Alert */}
