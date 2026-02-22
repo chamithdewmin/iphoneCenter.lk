@@ -139,25 +139,6 @@ const menuGroups = [
     ],
   },
   {
-    label: 'Tools',
-    items: [
-      {
-        type: 'menu',
-        icon: MessageSquare,
-        label: 'Messaging',
-        permission: 'customers',
-        children: [
-          { to: '/sms/send-customer', label: 'Send SMS to Customer', icon: Send },
-          { to: '/sms/bulk', label: 'Bulk SMS', icon: Mail },
-          { to: '/sms/invoice', label: 'Invoice SMS', icon: Receipt },
-          { to: '/sms/promotion', label: 'Promotion SMS', icon: Tag },
-          { to: '/sms/due-payment-reminder', label: 'Due Payment Reminder', icon: AlertTriangle },
-          { to: '/sms/custom-message', label: 'Custom Message', icon: MessageSquare },
-        ],
-      },
-    ],
-  },
-  {
     label: 'System',
     items: [
       { type: 'link', to: '/settings/general', icon: Settings, label: 'Settings', permission: 'settings' },
