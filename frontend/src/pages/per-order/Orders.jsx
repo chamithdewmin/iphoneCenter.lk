@@ -101,7 +101,7 @@ const Orders = () => {
       const filtered = products.filter(product =>
         (product.brand || product.make || '').toLowerCase().includes(searchLower) ||
         product.model.toLowerCase().includes(searchLower) ||
-        (product.imei || product.vin || '').toLowerCase().includes(searchLower)
+        (product.imei || '').toLowerCase().includes(searchLower)
       );
       setFilteredProducts(filtered);
     } else {

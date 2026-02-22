@@ -27,7 +27,6 @@ const ScanBarcode = () => {
     const product = products.find(p => 
       p.barcode === barcode ||
       p.imei === barcode ||
-      p.vin === barcode ||
       p.id === barcode
     );
 

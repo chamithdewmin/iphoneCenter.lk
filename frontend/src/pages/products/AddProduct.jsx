@@ -388,17 +388,6 @@ const AddProduct = () => {
                       className="mt-1 text-foreground bg-background"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="vin">VIN (if applicable)</Label>
-                    <Input
-                      id="vin"
-                      name="vin"
-                      value={formData.vin}
-                      onChange={handleChange}
-                      placeholder="Vehicle Identification Number"
-                      className="mt-1 text-foreground bg-background"
-                    />
-                  </div>
                 </div>
               </div>
 

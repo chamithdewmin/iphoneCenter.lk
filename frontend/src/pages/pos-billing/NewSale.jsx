@@ -97,7 +97,7 @@ const NewSale = () => {
           (product.brand || product.make || '').toLowerCase().includes(searchLower) ||
           (product.model || product.name || '').toLowerCase().includes(searchLower) ||
           (product.sku || '').toLowerCase().includes(searchLower) ||
-          (product.imei || product.vin || '').toLowerCase().includes(searchLower) ||
+          (product.imei || '').toLowerCase().includes(searchLower) ||
           (product.barcode || '').toLowerCase().includes(searchLower)
       );
       setFilteredProducts(filtered);
@@ -128,7 +128,6 @@ const NewSale = () => {
     const product = products.find(p => 
       p.barcode === barcodeInput ||
       p.imei === barcodeInput ||
-      p.vin === barcodeInput ||
       p.id === barcodeInput
     );
 
