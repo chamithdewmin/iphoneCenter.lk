@@ -427,25 +427,6 @@ export default function PhoneShopPOS() {
             </div>
           </div>
         </div>
-
-        {/* ── Status bar ── */}
-        <div style={{ background: "#0f1117", borderTop: "1px solid #1e2433", padding: "7px 20px", display: "flex", alignItems: "center", gap: 20, fontSize: 11, color: "#6b7a99", flexShrink: 0 }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <svg width="8" height="8"><circle cx="4" cy="4" r="4" fill="#22c55e"/></svg>
-            System Online
-          </span>
-          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <svg width="8" height="8"><circle cx="4" cy="4" r="4" fill="#22d3ee"/></svg>
-            Printer Ready
-          </span>
-          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <svg width="8" height="8"><circle cx="4" cy="4" r="4" fill="#ff8040"/></svg>
-            POS v2.4.1
-          </span>
-          <span style={{ marginLeft: "auto" }}>
-            {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-          </span>
-        </div>
       </div>
     </>
   );
