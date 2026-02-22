@@ -192,6 +192,9 @@ export default function PhoneShopPOS() {
   const discountAmt = parseFloat(discount) || 0;
   const total = subtotal - discountAmt;
 
+  const hasCustomerInfo = (customerName || '').trim().length > 0 && (customerPhone || '').trim().length > 0;
+  const payNowDisabled = cart.length === 0 || saving || !hasCustomerInfo;
+
   // Resolve customer: find by phone or create new; return customerId or null
   const resolveCustomerId = async () => {
     const name = (customerName || '').trim();
@@ -218,7 +221,7 @@ export default function PhoneShopPOS() {
 
   // Save sale to DB: creates invoice, sale_items, reduces stock; then show invoice popup (enterprise POS flow)
   const handlePayNow = async () => {
-    if (cart.length === 0 || saving) return;
+    if (cart.length === 0 || saving || !hasCustomerInfo) return;
     setSaving(true);
     try {
       const customerId = await resolveCustomerId();
@@ -266,8 +269,8 @@ export default function PhoneShopPOS() {
   return (
     <>
       <Helmet>
-        <title>Phone Shop POS - iphone center.lk</title>
-        <meta name="description" content="Point of Sale system for phone shop" />
+        <title>Billing Terminal - iphone center.lk</title>
+        <meta name="description" content="Billing terminal point of sale" />
       </Helmet>
 
       <style>{`
@@ -399,22 +402,25 @@ export default function PhoneShopPOS() {
               </button>
             </div>
 
-            {/* Customer (optional) */}
-            <div style={{ padding: "10px 18px", borderBottom: "1px solid #1e2433", display: "flex", gap: 10 }}>
-              <input
-                type="text"
-                placeholder="Customer name"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                style={{ flex: 1, background: "#1e2433", border: "1px solid #2a3347", borderRadius: 8, padding: "8px 12px", color: "#d1d9e6", fontSize: 12, outline: "none", fontFamily: SYS_FONT }}
-              />
-              <input
-                type="text"
-                placeholder="Phone"
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                style={{ width: 120, background: "#1e2433", border: "1px solid #2a3347", borderRadius: 8, padding: "8px 12px", color: "#d1d9e6", fontSize: 12, outline: "none", fontFamily: SYS_FONT }}
-              />
+            {/* Customer (required for Pay Now) */}
+            <div style={{ padding: "10px 18px", borderBottom: "1px solid #1e2433" }}>
+              <div style={{ display: "flex", gap: 10, marginBottom: 6 }}>
+                <input
+                  type="text"
+                  placeholder="Customer name *"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  style={{ flex: 1, background: "#1e2433", border: "1px solid #2a3347", borderRadius: 8, padding: "8px 12px", color: "#d1d9e6", fontSize: 12, outline: "none", fontFamily: SYS_FONT }}
+                />
+                <input
+                  type="text"
+                  placeholder="Phone number *"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  style={{ width: 120, background: "#1e2433", border: "1px solid #2a3347", borderRadius: 8, padding: "8px 12px", color: "#d1d9e6", fontSize: 12, outline: "none", fontFamily: SYS_FONT }}
+                />
+              </div>
+              <div style={{ fontSize: 10, color: "#6b7a99" }}>Customer name and phone are required to complete payment.</div>
             </div>
 
             {/* Tabs */}
@@ -497,17 +503,17 @@ export default function PhoneShopPOS() {
             <div style={{ display: "flex", gap: 8, padding: "0 18px 18px" }}>
               <button
                 type="button"
-                disabled={cart.length === 0 || saving}
+                disabled={payNowDisabled}
                 onClick={handlePayNow}
                 style={{
                   flex: 2, border: "none", borderRadius: 10, fontWeight: 700, fontSize: 14, padding: "14px 0",
-                  cursor: cart.length === 0 || saving ? "not-allowed" : "pointer", fontFamily: SYS_FONT,
+                  cursor: payNowDisabled ? "not-allowed" : "pointer", fontFamily: SYS_FONT,
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  background: cart.length === 0 || saving ? "#1c1e24" : "linear-gradient(135deg, #ff8040 0%, #e05010 54%, #c03800 100%)",
-                  color: cart.length === 0 || saving ? "#4a5568" : "#fff",
+                  background: payNowDisabled ? "#1c1e24" : "linear-gradient(135deg, #ff8040 0%, #e05010 54%, #c03800 100%)",
+                  color: payNowDisabled ? "#4a5568" : "#fff",
                   transition: "opacity 0.15s",
                 }}>
-                <IconCreditCard color={cart.length === 0 || saving ? "#4a5568" : "#fff"} />
+                <IconCreditCard color={payNowDisabled ? "#4a5568" : "#fff"} />
                 {saving ? 'Saving…' : 'Pay Now'}
               </button>
               <button disabled={cart.length === 0}
