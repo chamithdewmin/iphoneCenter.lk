@@ -728,57 +728,67 @@ const CashFlow = () => {
           </div>
         </div>
 
-        {/* Summary cards: second-image style with green up-arrow and red down-arrow icons */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Summary cards: TOTAL MONEY IN / OUT, NET CASH FLOW, CURRENT CASH */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-xl border border-border p-5 flex flex-col gap-3"
+            className="bg-card rounded-xl border border-border p-5 flex flex-col gap-2"
           >
-            <span className="text-sm text-muted-foreground">
-              {summary.hasBranch ? 'Total Income (Branch)' : 'Total Income'}
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Total Money In
             </span>
-            <p className="text-xs font-medium text-green-500/90 bg-green-500/10 inline-flex w-fit px-2 py-0.5 rounded-md">
-              —
-            </p>
-            <p className="text-2xl font-bold text-foreground">
-              {settings.currency} {(summary.hasBranch ? summary.totalIncomeBranch : summary.totalIn).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xl font-bold text-green-500">
+                {settings.currency} {(summary.hasBranch ? summary.totalIncomeBranch : summary.totalIn).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </p>
+              <div className="flex-shrink-0 w-9 h-9 rounded-full bg-green-500/20 flex items-center justify-center">
+                <ArrowUpCircle className="w-5 h-5 text-green-500" />
+              </div>
+            </div>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="bg-card rounded-xl border border-border p-5 flex flex-col gap-3"
+            className="bg-card rounded-xl border border-border p-5 flex flex-col gap-2"
           >
-            <span className="text-sm text-muted-foreground">
-              {summary.hasBranch ? 'Total Expenses (Branch)' : 'Total Outcome'}
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Total Money Out
             </span>
-            <p className="text-xs font-medium text-red-500/90 bg-red-500/10 inline-flex w-fit px-2 py-0.5 rounded-md">
-              —
-            </p>
-            <p className="text-2xl font-bold text-foreground">
-              {settings.currency} {(summary.hasBranch ? summary.totalExpensesBranch : summary.totalOut).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xl font-bold text-red-500">
+                {settings.currency} {(summary.hasBranch ? summary.totalExpensesBranch : summary.totalOut).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </p>
+              <div className="flex-shrink-0 w-9 h-9 rounded-full bg-red-500/20 flex items-center justify-center">
+                <ArrowDownCircle className="w-5 h-5 text-red-500" />
+              </div>
+            </div>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-card rounded-xl border border-border p-5 flex flex-col gap-3"
+            className="bg-card rounded-xl border border-border p-5 flex flex-col gap-2"
           >
-            <span className="text-sm text-muted-foreground">
-              {summary.hasBranch ? 'Net Profit (Branch)' : 'Net Profit'}
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Net Cash Flow
             </span>
-            <p className={`text-xs font-medium inline-flex w-fit px-2 py-0.5 rounded-md ${
-              (summary.hasBranch ? summary.netProfitBranch : summary.netCashFlow) >= 0
-                ? 'text-green-500/90 bg-green-500/10'
-                : 'text-red-500/90 bg-red-500/10'
-            }`}>
-              —
-            </p>
-            <p className="text-2xl font-bold text-foreground">
+            <p className={`text-xl font-bold ${(summary.hasBranch ? summary.netProfitBranch : summary.netCashFlow) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {settings.currency} {(summary.hasBranch ? summary.netProfitBranch : summary.netCashFlow).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="bg-card rounded-xl border border-border p-5 flex flex-col gap-2"
+          >
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Current Cash
+            </span>
+            <p className={`text-xl font-bold ${summary.currentCash >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              {settings.currency} {summary.currentCash.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </p>
           </motion.div>
         </div>
