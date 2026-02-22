@@ -470,7 +470,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           </nav>
 
           {/* Footer - User Profile */}
-          <div className="border-t border-secondary px-3 py-3 bg-[var(--sidebar-footer-bg)]">
+          <div className="border-t-2 border-border px-3 py-3">
             {collapsed ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
