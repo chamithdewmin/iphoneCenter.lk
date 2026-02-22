@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
+import { authFetch } from '@/lib/api';
 
 const SYS_FONT = `-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif`;
 
@@ -47,8 +48,8 @@ const IconTag = () => (
   </svg>
 );
 
-// ── Product Images (Sample placeholder - replace with actual product images later) ──────────────
-const products = [
+// Fallback when API returns no products (e.g. offline or empty DB)
+const FALLBACK_PRODUCTS = [
   { id: 1,  name: "iPhone 15 Pro Max",   price: 1199, category: "iPhone",   color: "#ff8040", img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
   { id: 2,  name: "iPhone 15 Pro",       price: 999,  category: "iPhone",   color: "#ff8040", img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
   { id: 3,  name: "iPhone 15",           price: 799,  category: "iPhone",   color: "#ff8040", img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
@@ -63,7 +64,7 @@ const products = [
   { id: 12, name: "MacBook Air M3",      price: 1299, category: "Mac",      color: "#ff8040", img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
 ];
 
-const categories = ["All", "iPhone", "AirPods", "Watch", "iPad", "Mac"];
+const PLACEHOLDER_IMG = "https://via.placeholder.com/200x200/1e2433/ff8040?text=Product";
 
 // ── Product Image Component ───────────────────────────────────────────────────
 const ProductImage = ({ product }) => {
@@ -124,6 +125,39 @@ export default function PhoneShopPOS() {
   const [discount, setDiscount] = useState("");
   const [tab, setTab] = useState("Walk-In");
   const [hoverCard, setHoverCard] = useState(null);
+  const [products, setProducts] = useState(FALLBACK_PRODUCTS);
+  const [productsLoading, setProductsLoading] = useState(true);
+
+  // Load products from API so POS shows real inventory (Products you add in Add Product)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setProductsLoading(true);
+      try {
+        const res = await authFetch('/api/inventory/products');
+        const list = res?.data?.data;
+        if (cancelled) return;
+        if (Array.isArray(list) && list.length > 0) {
+          const mapped = list.map((p) => ({
+            id: p.id,
+            name: p.name || p.sku || 'Product',
+            price: Number(p.base_price) || 0,
+            category: p.category || p.brand || 'Other',
+            color: '#ff8040',
+            img: PLACEHOLDER_IMG,
+          }));
+          setProducts(mapped);
+        }
+      } catch (_) {
+        if (!cancelled) setProducts(FALLBACK_PRODUCTS);
+      } finally {
+        if (!cancelled) setProductsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const categories = ["All", ...Array.from(new Set(products.map((p) => p.category).filter(Boolean))).sort()];
 
   const filtered = products.filter(
     (p) =>
@@ -211,7 +245,10 @@ export default function PhoneShopPOS() {
 
             {/* Product grid — 4 columns */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, overflowY: "auto", paddingBottom: 8, alignContent: "start" }}>
-              {filtered.map((p) => {
+              {productsLoading && (
+                <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: 24, color: "#8b9ab0", fontSize: 13 }}>Loading products...</div>
+              )}
+              {!productsLoading && filtered.map((p) => {
                 const isHovered = hoverCard === p.id;
                 const inCart = cart.find(i => i.id === p.id);
                 return (
