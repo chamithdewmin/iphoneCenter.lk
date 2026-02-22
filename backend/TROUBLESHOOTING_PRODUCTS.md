@@ -63,6 +63,110 @@ If you see **DB OK**, the app can reach Postgres. If you see **DB Error**, fix `
 
 ---
 
+## Common causes of 500 in Dockerized Node.js APIs
+
+| Cause | Symptom | Fix |
+|-------|---------|-----|
+| **Tables missing** (schema not run) | PostgreSQL `42P01` "relation does not exist" | Set `WAIT_FOR_DB=1` and redeploy, or run `init.pg.sql` manually (see below). |
+| **Wrong DB host** | `ECONNREFUSED` / `ENOTFOUND` | Use **internal** DB hostname from Dokploy (e.g. `iphone-center-database-xxxxx`), not `localhost`. |
+| **Missing env** | `DATABASE_URL` undefined, pool fails | Set `DATABASE_URL` or `DB_HOST`+`DB_USER`+`DB_PASSWORD`+`DB_NAME` in backend Environment. |
+| **Schema out of date** | `42703` undefined column | Run `backend/database/init.pg.sql` on the DB and restart backend. |
+| **Invalid request body** | Validation fails or controller throws | Send `name`, `sku`, `base_price` (and for admin, `branchId`). Use DevTools → Network to see response body. |
+| **Unhandled exception** | Any thrown error in route/controller | All errors go through global error handler; check backend logs for `[Express Error]` and full stack. |
+
+---
+
+## Full Express error logging and global error handler
+
+Every error is passed to the **global error handler** in `middleware/errorHandler.js` (registered last in `server.js`). It:
+
+1. **Logs the full error to stdout** (so Docker/Dokploy logs show it):
+   - `[Express Error]` + message, code, stack, detail, request method/url
+2. **Logs structured JSON** to `logs/error.log` and `logs/combined.log` via Winston
+3. **Maps known errors** to friendly status codes (e.g. 42P01 → 503 "Database tables missing", 23505 → 409 "SKU already exists")
+4. **In production**, for generic 500s, returns `"Internal server error"` to the client (no stack/detail) while still logging the real error server-side
+
+To see the **real** cause of a 500:
+
+- **Dokploy**: open your backend app → **Logs**, search for `[Express Error]` or `Create product error`
+- **Docker**: `docker logs <backend_container> --tail 200`
+
+Example log line:
+
+```
+[Express Error] relation "products" does not exist
+  code: 42P01
+  stack: ...
+  request: POST /api/inventory/products ...
+```
+
+---
+
+## Request validation (POST /api/inventory/products)
+
+Validation runs **before** the controller (`routes/inventoryRoutes.js` → `createProductValidation`, `handleValidationErrors`). Required:
+
+- **name** (non-empty string)
+- **sku** (non-empty string)
+- **base_price** or **basePrice** (number ≥ 0)
+
+Optional (validated if present):
+
+- **description** (string, max 2000)
+- **category**, **brand** (string, max 100)
+- **initialQuantity** (integer ≥ 0)
+- **branchId** (integer ≥ 1, required for admin when adding product)
+
+Invalid types or missing required fields return **400** with an `errors` array; the controller is not called. This reduces 500s from bad input.
+
+---
+
+## PostgreSQL connection verified on startup
+
+- **Default**: The server **starts listening first** (avoids 502 while DB is starting). Then it runs `applySchema()` in the background to create tables. If the DB is slow, the first few requests might hit "tables missing" (503).
+- **Optional (recommended for Dokploy)**: Set **`WAIT_FOR_DB=1`** (or **`RUN_INIT_BEFORE_LISTEN=1`**) in the backend Environment. On startup the app will:
+  1. Wait for PostgreSQL (retries with backoff)
+  2. Run **init.pg.sql** (create tables if not exist)
+  3. Then start the HTTP server
+
+So by the time the first request arrives, the DB is verified and tables exist. This avoids 500s from missing tables on first deploy.
+
+---
+
+## Auto-run init.pg.sql on container start
+
+The backend **already** runs `backend/database/init.pg.sql` on container start:
+
+- **Without** `WAIT_FOR_DB=1`: After the HTTP server starts, `applySchema()` runs in the background (see `server.js`). Logs: *"Database: installing on first run in background..."* and *"✅ Database init completed"* or an error.
+- **With** `WAIT_FOR_DB=1`: Before the server listens, the app runs `verifyConnection()` then `applySchema()` (see `config/initDatabase.js`). Logs: *"WAIT_FOR_DB=1: verifying PostgreSQL..."*, *"✅ Database connection verified"*, *"✅ Database init completed"*, then *"Server running..."*.
+
+Schema file path: **`backend/database/init.pg.sql`** (relative to project root). It uses `CREATE TABLE IF NOT EXISTS`, so it is safe to run on every start.
+
+To run it **manually** (e.g. if auto-run failed):
+
+```bash
+psql -h <db_host> -U <db_user> -d <db_name> -f backend/database/init.pg.sql
+```
+
+Or from inside the backend container (if the file is mounted or copied):
+
+```bash
+node -e "
+const { applySchema } = require('./config/initDatabase');
+applySchema().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); });
+"
+```
+
+---
+
+## Production-safe logging
+
+- **Error handler** (`middleware/errorHandler.js`): Logs request method, path, and (in non-production) a safe sample of `req.body` with password-like keys redacted. In production it does **not** send stack or internal detail to the client for 500s.
+- **Controller** (`inventoryController.js` createProduct): Logs error **code**, **detail**, **bodyKeys** (no full body). No `console.log(req.body)` in production.
+- **Logger** (`utils/logger.js`): In production, console transport uses JSON format so Dokploy/Docker can parse it. Set **`LOG_LEVEL=debug`** only when debugging; use **`info`** or **`warn`** in production.
+
+---
+
 ## Step 1 — Check backend container logs
 
 See why the request is failing. Replace `<backend_container>` with your backend container name (Dokploy app name or run `docker ps` to see it):
@@ -79,13 +183,13 @@ docker logs <backend_container> --tail 100
 
 Look for:
 
-- **`BODY:`** — request payload (confirm `name`, `sku`, `base_price` are present).
-- **`CREATE PRODUCT ERROR:`** — full PostgreSQL error (e.g. missing column, null violation, invalid type).
+- **`[Express Error]`** — full error message, code, and stack (see "Full Express error logging" above).
+- **`Create product error`** — controller-level log with code, detail, bodyKeys.
 - **Database connection failed** — DB unreachable; check `DATABASE_URL` / DB container.
 - **Missing table/column** — schema not applied or out of date; apply schema (Step 4).
-- **Validation error** — missing/invalid `name`, `sku`, or `base_price`; fix request body.
+- **Validation error** — missing/invalid `name`, `sku`, or `base_price`; fix request body (400 response).
 
-The API now returns the real error in the response body on 500: `message`, `code`, `detail`. Check the response JSON as well.
+In development, the API returns the real error in the response body on 500: `message`, `code`, `detail`. In production, 500 responses show a generic "Internal server error"; use backend logs for the real cause.
 
 ---
 

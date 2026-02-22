@@ -96,7 +96,9 @@ const getProductById = async (req, res, next) => {
  * DB columns (products table): name, sku, description, category, brand, base_price (no category_id/branch_id on products)
  */
 const createProduct = async (req, res, next) => {
-    console.log('BODY:', req.body);
+    if (process.env.NODE_ENV !== 'production') {
+        logger.debug('Create product request', { bodyKeys: Object.keys(req.body || {}), name: req.body?.name, sku: req.body?.sku });
+    }
 
     let connection;
     try {
@@ -215,14 +217,13 @@ const createProduct = async (req, res, next) => {
             });
         } catch (insertError) {
             await connection.rollback().catch((err) => logger.error('Rollback error:', err));
-            console.error('CREATE PRODUCT ERROR:', insertError);
-            logger.error('Create product error:', {
+            logger.error('Create product error', {
                 message: insertError.message,
                 stack: insertError.stack,
                 code: insertError.code,
                 detail: insertError.detail,
                 hint: insertError.hint,
-                body: req.body
+                bodyKeys: req.body ? Object.keys(req.body) : []
             });
             // Postgres: unique violation (e.g. SKU)
             if (insertError.code === '23505') {
@@ -252,14 +253,12 @@ const createProduct = async (req, res, next) => {
         if (connection && connection.rollback) {
             await connection.rollback().catch((err) => logger.error('Rollback error:', err));
         }
-        console.error('CREATE PRODUCT ERROR:', error);
-        logger.error('Create product error:', {
+        logger.error('Create product error (outer)', {
             message: error.message,
             stack: error.stack,
             code: error.code,
             detail: error.detail,
-            hint: error.hint,
-            body: req.body
+            bodyKeys: req.body ? Object.keys(req.body) : []
         });
         next(error);
     } finally {

@@ -4,25 +4,51 @@ function jsonError(message, detail = null, extra = {}) {
     return { success: false, message, detail, ...extra };
 }
 
+/** Redact sensitive data for production logs */
+function safeReqMeta(req) {
+    const isProd = process.env.NODE_ENV === 'production';
+    return {
+        method: req.method,
+        url: req.url,
+        path: req.path,
+        ...(req.user && { userId: req.user.id }),
+        ...(!isProd && req.body && typeof req.body === 'object' && {
+            bodyKeys: Object.keys(req.body),
+            bodySample: Object.fromEntries(
+                Object.entries(req.body).slice(0, 5).map(([k, v]) => [
+                    k,
+                    /password|token|secret|authorization/i.test(k) ? '[REDACTED]' : (typeof v === 'string' && v.length > 100 ? v.slice(0, 100) + '...' : v)
+                ])
+            )
+        })
+    };
+}
+
 /**
- * Global error handler middleware
- * Returns JSON: { message, detail: error.detail || null }
+ * Global error handler middleware (must be registered last).
+ * Logs full error to stdout and logger so Docker/Dokploy logs show real cause of 500s.
+ * In production, does not expose stack/detail to client for generic 500s.
  */
 const errorHandler = (err, req, res, next) => {
-    // Log full error so Dokploy/container logs show the real error (no blind 500s)
-    console.error(err);
-    if (process.env.NODE_ENV === 'production') {
-        console.error('API Error:', err.code || '', err.message, req.method, req.url);
-        if (err.stack) console.error(err.stack);
-    }
+    const statusCode = err.statusCode || 500;
+    const isProd = process.env.NODE_ENV === 'production';
+
+    // 1. Always log full error to stdout (Docker/Dokploy captures this)
+    console.error('[Express Error]', err.message);
+    console.error('  code:', err.code);
+    console.error('  stack:', err.stack || '(no stack)');
+    if (err.detail) console.error('  detail:', err.detail);
+    console.error('  request:', req.method, req.url, safeReqMeta(req));
+
+    // 2. Structured log (file + optional console)
     try {
-        logger.error('Error:', {
+        logger.error('API Error', {
             message: err.message,
             code: err.code,
             stack: err.stack,
-            url: req.url,
-            method: req.method,
-            userId: req.user?.id
+            detail: err.detail,
+            hint: err.hint,
+            ...safeReqMeta(req)
         });
     } catch (logErr) {
         console.error('Logger failed:', logErr.message);
@@ -103,15 +129,15 @@ const errorHandler = (err, req, res, next) => {
         return res.status(401).json(jsonError('Token expired', null));
     }
 
-    // Default error: return real message/code/detail so 500s are never blind
-    const statusCode = err.statusCode || 500;
-    res.status(statusCode).json({
+    // Default: 500 or custom status. In production hide internal details from client.
+    const payload = {
         success: false,
         message: err.message || 'Internal server error',
-        code: err.code || null,
-        detail: err.detail || null,
-        ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
-    });
+        ...(isProd && statusCode === 500
+            ? { message: 'Internal server error', code: null, detail: null }
+            : { code: err.code || null, detail: err.detail || null, ...(statusCode === 500 && { stack: err.stack }) })
+    };
+    res.status(statusCode).json(payload);
 };
 
 /**

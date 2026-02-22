@@ -7,7 +7,7 @@ const { requireManager, requireManagerOrStaff } = require('../middleware/roleGua
 const { branchGuard, setBranchContext } = require('../middleware/branchGuard');
 const { handleValidationErrors } = require('../middleware/validate');
 
-// Validation rules: name, sku, base_price (or basePrice) required; converted to number in controller
+// Validation rules: name, sku, base_price (or basePrice) required; optional: description, category, brand, initialQuantity, branchId
 const createProductValidation = [
     body('name').trim().notEmpty().withMessage('Product name is required'),
     body('sku').trim().notEmpty().withMessage('SKU is required'),
@@ -20,7 +20,12 @@ const createProductValidation = [
         const n = Number(v);
         if (Number.isNaN(n) || n < 0) throw new Error('Base price must be 0 or greater');
         return true;
-    })
+    }),
+    body('description').optional({ values: 'null' }).isString().withMessage('Description must be a string').bail().isLength({ max: 2000 }).withMessage('Description too long'),
+    body('category').optional({ values: 'null' }).isString().withMessage('Category must be a string').bail().isLength({ max: 100 }).withMessage('Category too long'),
+    body('brand').optional({ values: 'null' }).isString().withMessage('Brand must be a string').bail().isLength({ max: 100 }).withMessage('Brand too long'),
+    body('initialQuantity').optional().isInt({ min: 0 }).withMessage('Initial quantity must be 0 or greater').toInt(),
+    body('branchId').optional().isInt({ min: 1 }).withMessage('Branch ID must be a positive integer').toInt()
 ];
 
 // Routes

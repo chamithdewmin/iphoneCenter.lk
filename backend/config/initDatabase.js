@@ -115,4 +115,36 @@ async function applySchema() {
     console.log('✅ Database init completed (tables ready)');
 }
 
-module.exports = { applySchema, initDatabase: applySchema };
+/**
+ * Verify PostgreSQL is reachable (SELECT 1). Uses same retry logic as applySchema.
+ * Use on startup to ensure DB is up before accepting requests when WAIT_FOR_DB=1.
+ */
+async function verifyConnection() {
+    const connectionString = getConnectionString();
+    let client = new Client({ connectionString });
+    for (let i = 0; i < MAX_CONNECT_RETRIES; i++) {
+        try {
+            await client.connect();
+            await client.query('SELECT 1 AS ok');
+            await client.end();
+            logger.info('Database connection verified');
+            console.log('✅ Database connection verified');
+            return true;
+        } catch (err) {
+            await client.end().catch(() => {});
+            if (i === MAX_CONNECT_RETRIES - 1) {
+                logger.error('Database verification failed', { message: err.message });
+                throw err;
+            }
+            if (i === 0) {
+                console.log('Waiting for database...');
+                logger.warn('Database not ready, retrying...', { message: err.message });
+            }
+            await new Promise((r) => setTimeout(r, CONNECT_RETRY_DELAY_MS));
+            client = new Client({ connectionString });
+        }
+    }
+    return false;
+}
+
+module.exports = { applySchema, initDatabase: applySchema, verifyConnection };

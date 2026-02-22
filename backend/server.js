@@ -177,9 +177,12 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 const HOST = '0.0.0.0';
 
+// When set (e.g. WAIT_FOR_DB=1), verify PostgreSQL and run init.pg.sql before listening.
+// Use in Docker/Dokploy when DB is available at startup to avoid 500s from missing tables.
+const WAIT_FOR_DB = process.env.WAIT_FOR_DB === '1' || process.env.RUN_INIT_BEFORE_LISTEN === '1';
+
 function start() {
-    // Start HTTP server first so proxy gets a response (avoids 502). Then run DB init in background.
-    return new Promise((resolve, reject) => {
+    const listen = () => new Promise((resolve, reject) => {
         const server = app.listen(PORT, HOST, () => {
             const msg = `Server running on http://${HOST}:${PORT}`;
             console.log(msg);
@@ -194,15 +197,16 @@ function start() {
             } catch (e) {
                 console.log('Test login: check JWT env vars');
             }
-            // Database install on first run (background) – avoids 502 while waiting for DB
-            const { applySchema } = require('./config/initDatabase');
-            console.log('Database: installing on first run in background (creating tables if needed)...');
-            applySchema()
-                .then(() => {})
-                .catch((err) => {
-                    console.error('Database init failed (will retry on next request or restart):', err.message);
-                    logger.error('Database init failed', { message: err.message });
-                });
+            if (!WAIT_FOR_DB) {
+                const { applySchema } = require('./config/initDatabase');
+                console.log('Database: installing on first run in background (creating tables if needed)...');
+                applySchema()
+                    .then(() => {})
+                    .catch((err) => {
+                        console.error('Database init failed (will retry on next request or restart):', err.message);
+                        logger.error('Database init failed', { message: err.message });
+                    });
+            }
             resolve(server);
         });
         server.on('error', (err) => {
@@ -213,6 +217,18 @@ function start() {
             reject(err);
         });
     });
+
+    if (WAIT_FOR_DB) {
+        const { verifyConnection, applySchema } = require('./config/initDatabase');
+        console.log('WAIT_FOR_DB=1: verifying PostgreSQL and running init.pg.sql before starting server...');
+        return verifyConnection()
+            .then(() => applySchema())
+            .then(() => {
+                console.log('Database ready. Starting HTTP server.');
+                return listen();
+            });
+    }
+    return listen();
 }
 
 start().catch((err) => {
