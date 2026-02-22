@@ -62,7 +62,6 @@ import UserReport from './pages/reports/UserReport';
 import CustomerReport from './pages/reports/CustomerReport';
 import WarehouseReport from './pages/reports/WarehouseReport';
 import SupplierReport from './pages/reports/SupplierReport';
-import DiscountReport from './pages/reports/DiscountReport';
 import TaxReport from './pages/reports/TaxReport';
 import ShippingChargeReport from './pages/reports/ShippingChargeReport';
 
@@ -192,7 +191,6 @@ function App() {
         <Route path="reports/customer" element={<CustomerReport />} />
         <Route path="reports/warehouse" element={<WarehouseReport />} />
         <Route path="reports/supplier" element={<SupplierReport />} />
-        <Route path="reports/discount" element={<DiscountReport />} />
         <Route path="reports/tax" element={<TaxReport />} />
         <Route path="reports/shipping" element={<ShippingChargeReport />} />
 

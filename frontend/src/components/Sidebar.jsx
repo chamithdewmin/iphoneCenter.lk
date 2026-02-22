@@ -134,7 +134,6 @@ const menuGroups = [
           { to: '/reports/customer', label: 'Customer Report', icon: FileText },
           { to: '/reports/warehouse', label: 'Warehouse Report', icon: FileText },
           { to: '/reports/supplier', label: 'Supplier Report', icon: FileText },
-          { to: '/reports/discount', label: 'Discount Report', icon: FileText },
         ],
       },
     ],
