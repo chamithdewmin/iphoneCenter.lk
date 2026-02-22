@@ -11,10 +11,5 @@ export const CASHIER_ALLOWED_PATHS = new Set([
   '/inventory/low-stock-alert',
   '/inventory/transfer-stock',
   '/people/customers/add',
-  '/sms/send-customer',
-  '/sms/bulk',
-  '/sms/invoice',
-  '/sms/promotion',
-  '/sms/due-payment-reminder',
-  '/sms/custom-message',
+  '/sms',
 ]);

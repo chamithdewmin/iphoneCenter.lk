@@ -139,6 +139,12 @@ const menuGroups = [
     ],
   },
   {
+    label: 'Tools',
+    items: [
+      { type: 'link', to: '/sms', icon: MessageSquare, label: 'SMS', permission: 'customers' },
+    ],
+  },
+  {
     label: 'System',
     items: [
       { type: 'link', to: '/settings/general', icon: Settings, label: 'Settings', permission: 'settings' },

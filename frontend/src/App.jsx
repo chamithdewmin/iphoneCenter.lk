@@ -90,13 +90,8 @@ import WarehouseStock from './pages/inventory/WarehouseStock';
 import TransferStock from './pages/inventory/TransferStock';
 import BarcodeScanCheck from './pages/inventory/BarcodeScanCheck';
 
-// SMS
-import SendCustomer from './pages/sms/SendCustomer';
-import BulkSMS from './pages/sms/Bulk';
-import InvoiceSMS from './pages/sms/Invoice';
-import PromotionSMS from './pages/sms/Promotion';
-import DuePaymentReminder from './pages/sms/DuePaymentReminder';
-import CustomMessage from './pages/sms/CustomMessage';
+// SMS (single page)
+import SMS from './pages/sms/SMS';
 
 // Per Order
 import AddPerOrder from './pages/per-order/AddPerOrder';
@@ -200,12 +195,8 @@ function App() {
         <Route path="warehouses" element={<Warehouses />} />
 
         {/* SMS */}
-        <Route path="sms/send-customer" element={<SendCustomer />} />
-        <Route path="sms/bulk" element={<BulkSMS />} />
-        <Route path="sms/invoice" element={<InvoiceSMS />} />
-        <Route path="sms/promotion" element={<PromotionSMS />} />
-        <Route path="sms/due-payment-reminder" element={<DuePaymentReminder />} />
-        <Route path="sms/custom-message" element={<CustomMessage />} />
+        <Route path="sms" element={<SMS />} />
+        <Route path="sms/*" element={<Navigate to="/sms" replace />} />
 
         {/* Settings */}
         <Route path="settings/general" element={<GeneralSetting />} />
