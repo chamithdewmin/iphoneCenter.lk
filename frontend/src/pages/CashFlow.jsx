@@ -7,7 +7,6 @@ import {
   Plus,
   Search,
   Download,
-  RefreshCw,
   Pencil,
   Trash2,
   Repeat,
@@ -19,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { authFetch } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -57,6 +57,12 @@ const CashFlow = () => {
     loadData,
   } = useFinance();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = (user?.role || '').toLowerCase() === 'admin';
+
+  const [branches, setBranches] = useState([]);
+  const [branchesLoading, setBranchesLoading] = useState(true);
+  const [selectedBranchId, setSelectedBranchId] = useState(''); // '' = Select the branch / All (admin)
 
   const [filters, setFilters] = useState({
     type: 'all', // all | inflow | outflow | upcoming
@@ -90,11 +96,14 @@ const CashFlow = () => {
     paymentMethod: 'cash',
   });
 
-  // Fetch billing sales from API (POS/invoice sales)
-  const refreshApiSales = useCallback(async () => {
+  // Fetch billing sales from API (POS/invoice sales), optionally filtered by branch
+  const refreshApiSales = useCallback(async (branchId) => {
     setApiSalesLoading(true);
     try {
-      const res = await authFetch('/api/billing/sales?limit=500');
+      const url = branchId
+        ? `/api/billing/sales?limit=500&branchId=${encodeURIComponent(branchId)}`
+        : '/api/billing/sales?limit=500';
+      const res = await authFetch(url);
       const data = res?.data?.data;
       setApiSales(Array.isArray(data) ? data : []);
     } catch {
@@ -104,9 +113,32 @@ const CashFlow = () => {
     }
   }, []);
 
+  // Load branches for branch filter dropdown
   useEffect(() => {
-    refreshApiSales();
-  }, [refreshApiSales]);
+    let cancelled = false;
+    setBranchesLoading(true);
+    authFetch('/api/branches')
+      .then((res) => {
+        if (cancelled) return;
+        const data = res?.data?.data;
+        const list = Array.isArray(data) ? data : [];
+        setBranches(list);
+        if (!isAdmin && user?.branch_id != null && list.length > 0) {
+          setSelectedBranchId(String(user.branch_id));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setBranches([]);
+      })
+      .finally(() => {
+        if (!cancelled) setBranchesLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [isAdmin, user?.branch_id]);
+
+  useEffect(() => {
+    refreshApiSales(selectedBranchId || undefined);
+  }, [selectedBranchId, refreshApiSales]);
 
   // Build unified transaction list from incomes, expenses, unpaid invoices, and API sales
   const allTransactions = useMemo(() => {
@@ -630,30 +662,31 @@ const CashFlow = () => {
       </Helmet>
 
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold">Cash Flow</h1>
             <p className="text-muted-foreground">
               When money comes in, when it goes out, and upcoming payments.
             </p>
           </div>
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={async () => { loadData(); await refreshApiSales(); toast({ title: 'Refreshed', description: 'Data refreshed.' }); }} disabled={apiSalesLoading}>
-              <RefreshCw className={`w-4 h-4 mr-2 ${apiSalesLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            <Button variant="outline" onClick={exportCSV}>
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV
-            </Button>
-            <Button onClick={() => openAdd('inflow')} className="bg-green-600 hover:bg-green-700">
-              <ArrowUpCircle className="w-4 h-4 mr-2" />
-              Add Inflow
-            </Button>
-            <Button onClick={() => openAdd('outflow')} variant="destructive">
-              <ArrowDownCircle className="w-4 h-4 mr-2" />
-              Add Outflow
-            </Button>
+          <div className="flex items-center gap-3">
+            <label htmlFor="cashflow-branch" className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+              Branch
+            </label>
+            <select
+              id="cashflow-branch"
+              value={selectedBranchId || ''}
+              onChange={(e) => setSelectedBranchId(e.target.value || '')}
+              disabled={branchesLoading || (!isAdmin && branches.length <= 1)}
+              className="min-w-[180px] px-3 py-2 bg-card border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <option value="">Select the branch</option>
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name || b.code || `Branch ${b.id}`}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
