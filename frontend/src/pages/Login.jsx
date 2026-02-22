@@ -104,7 +104,7 @@ export default function LoginPage() {
     const result = await login((email || "").trim(), password);
     setLoading(false);
     if (result.success) {
-      navigate('/dashboard', { state: result.adminSecurityAlert ? { adminSecurityAlert: result.adminSecurityAlert } : undefined });
+      navigate('/dashboard');
     } else {
       setError(result.error || 'Invalid email or password. Please try again.');
     }

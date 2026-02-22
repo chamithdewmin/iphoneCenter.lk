@@ -207,11 +207,11 @@ const login = async (req, res, next) => {
                     const userAgent = req.headers['user-agent'] || 'unknown';
                     const dateTime = new Date().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'medium' });
                     const deviceInfo = `IP: ${ipAddress} | Device: ${userAgent}`;
-                    payload.data.adminSecurityAlert = {
-                        message: `🔐 Admin Security Alert\nAn administrator logged into your system at ${dateTime}.\nDevice/IP: ${deviceInfo}\nIf this was not you, reset your password immediately and review security settings.`,
-                        dateTime,
-                        deviceInfo
-                    };
+                    const message = `Admin Security Alert: An administrator logged into your system at ${dateTime}. Device/IP: ${deviceInfo}. If this was not you, reset your password immediately.`;
+                    const adminPhone = (user.phone || '').trim();
+                    if (adminPhone && sendSMS) {
+                        sendSMS(adminPhone, message).catch((err) => logger.error('Admin login SMS failed:', err?.message || err));
+                    }
                 }
                 return res.json(payload);
             } catch (err) {
@@ -226,7 +226,7 @@ const login = async (req, res, next) => {
 
         // Find user in database
         const [users] = await executeQuery(
-            `SELECT u.id, u.username, u.email, u.password_hash, u.full_name, u.role, 
+            `SELECT u.id, u.username, u.email, u.password_hash, u.full_name, u.role, u.phone,
                     u.branch_id, u.is_active, b.name as branch_name, b.code as branch_code
              FROM users u
              LEFT JOIN branches b ON u.branch_id = b.id
@@ -322,11 +322,11 @@ const login = async (req, res, next) => {
             const userAgent = req.headers['user-agent'] || 'unknown';
             const dateTime = new Date().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'medium' });
             const deviceInfo = `IP: ${ipAddress} | Device: ${userAgent}`;
-            payload.data.adminSecurityAlert = {
-                message: `🔐 Admin Security Alert\nAn administrator logged into your system at ${dateTime}.\nDevice/IP: ${deviceInfo}\nIf this was not you, reset your password immediately and review security settings.`,
-                dateTime,
-                deviceInfo
-            };
+            const message = `Admin Security Alert: An administrator logged into your system at ${dateTime}. Device/IP: ${deviceInfo}. If this was not you, reset your password immediately.`;
+            const adminPhone = (user.phone || '').trim();
+            if (adminPhone && sendSMS) {
+                sendSMS(adminPhone, message).catch((err) => logger.error('Admin login SMS failed:', err?.message || err));
+            }
         }
         res.json(payload);
     } catch (error) {

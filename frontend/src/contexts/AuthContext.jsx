@@ -88,7 +88,7 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: message };
       }
 
-      const { accessToken, refreshToken, user: userData, adminSecurityAlert } = data.data;
+      const { accessToken, refreshToken, user: userData } = data.data;
       setTokens(accessToken, refreshToken);
       setUser({
         id: userData.id,
@@ -101,7 +101,7 @@ export const AuthProvider = ({ children }) => {
         branchCode: userData.branchCode,
       });
       setIsAuthenticated(true);
-      return { success: true, adminSecurityAlert };
+      return { success: true };
     } catch (err) {
       const message = err.message || 'Network error';
       const isNetwork = message.includes('fetch') || message.includes('Network') || message === 'Failed to fetch';
