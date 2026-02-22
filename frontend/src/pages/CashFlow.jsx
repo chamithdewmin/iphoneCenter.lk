@@ -805,15 +805,15 @@ const CashFlow = () => {
           animate={{ opacity: 1, y: 0 }}
           className="bg-card rounded-xl p-6 border border-border"
         >
-          <h2 className="text-lg font-bold text-foreground mb-1">Income vs Expenses vs Net Profit</h2>
-          <p className="text-sm text-muted-foreground mb-4">Monthly breakdown — {settings.currency}</p>
+          <h2 className="text-lg font-bold text-white mb-1">Income vs Expenses vs Net Profit</h2>
+          <p className="text-sm text-white/90 mb-4">Monthly breakdown — {settings.currency}</p>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-              <XAxis dataKey="month" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.2)" vertical={false} />
+              <XAxis dataKey="month" className="text-xs" tick={{ fill: '#fff', fontSize: 12 }} />
               <YAxis
                 className="text-xs"
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                tick={{ fill: '#fff', fontSize: 12 }}
                 tickFormatter={(v) => `${Number(v) / 1000}K`}
                 domain={['auto', 'auto']}
                 allowDataOverflow
@@ -823,11 +823,12 @@ const CashFlow = () => {
                   backgroundColor: 'hsl(var(--card))',
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '0.5rem',
+                  color: '#fff',
                 }}
                 formatter={(value) => [value?.toLocaleString(undefined, { maximumFractionDigits: 0 }), undefined]}
                 labelFormatter={(label) => label}
               />
-              <Legend />
+              <Legend wrapperStyle={{ color: '#fff' }} />
               <Bar dataKey="income" fill="#22c55e" name="Income" radius={[4, 4, 0, 0]} />
               <Bar dataKey="expenses" fill="#ef4444" name="Expenses" radius={[4, 4, 0, 0]} />
               <Bar dataKey="profit" fill="#3b82f6" name="Profit" radius={[4, 4, 0, 0]} />
