@@ -118,7 +118,7 @@ const menuGroups = [
       {
         type: 'menu',
         icon: BarChart3,
-        label: 'Reports',
+        label: 'Analytics',
         permission: 'reports',
         excludeRoles: ['manager'],
         children: [
@@ -143,7 +143,7 @@ const menuGroups = [
       {
         type: 'menu',
         icon: MessageSquare,
-        label: 'SMS',
+        label: 'Messaging',
         permission: 'customers',
         children: [
           { to: '/sms/send-customer', label: 'Send SMS to Customer', icon: Send },
