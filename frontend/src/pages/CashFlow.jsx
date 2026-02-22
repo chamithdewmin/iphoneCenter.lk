@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import {
@@ -12,10 +12,13 @@ import {
   Trash2,
   Repeat,
   AlertTriangle,
+  Eye,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
+import { authFetch } from '@/lib/api';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -67,6 +70,8 @@ const CashFlow = () => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [addType, setAddType] = useState('inflow'); // inflow | outflow
   const [editingTx, setEditingTx] = useState(null);
+  const [apiSales, setApiSales] = useState([]);
+  const [apiSalesLoading, setApiSalesLoading] = useState(false);
   const [form, setForm] = useState({
     source: '',
     category: '',
@@ -85,9 +90,46 @@ const CashFlow = () => {
     paymentMethod: 'cash',
   });
 
-  // Build unified transaction list from incomes, expenses, unpaid invoices
+  // Fetch billing sales from API (POS/invoice sales)
+  const refreshApiSales = useCallback(async () => {
+    setApiSalesLoading(true);
+    try {
+      const res = await authFetch('/api/billing/sales?limit=500');
+      const data = res?.data?.data;
+      setApiSales(Array.isArray(data) ? data : []);
+    } catch {
+      setApiSales([]);
+    } finally {
+      setApiSalesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshApiSales();
+  }, [refreshApiSales]);
+
+  // Build unified transaction list from incomes, expenses, unpaid invoices, and API sales
   const allTransactions = useMemo(() => {
     const txList = [];
+
+    // Billing/POS sales as inflows (amount = paid amount received)
+    apiSales.forEach((sale) => {
+      const paid = parseFloat(sale.paid_amount) || 0;
+      const status = (sale.payment_status || '').toLowerCase() === 'paid' ? 'received' : (sale.payment_status || 'pending').toLowerCase();
+      txList.push({
+        id: `sale_${sale.id}`,
+        type: 'inflow',
+        date: sale.created_at,
+        source: sale.customer_name || 'Walk-in',
+        category: 'Sales',
+        amount: paid,
+        status,
+        notes: sale.notes || sale.invoice_number || '',
+        isRecurring: false,
+        raw: sale,
+        sourceType: 'billing',
+      });
+    });
 
     incomes.forEach((i) => {
       txList.push({
@@ -144,7 +186,7 @@ const CashFlow = () => {
       });
 
     return txList;
-  }, [incomes, expenses, invoices]);
+  }, [apiSales, incomes, expenses, invoices]);
 
   // Sort transactions
   const sortedTransactions = useMemo(() => {
@@ -325,13 +367,14 @@ const CashFlow = () => {
     });
     const netCashFlow = totalIn - totalOut;
 
-    // Current cash = all received income - all paid expenses (full dataset)
+    // Current cash = all received income + API sales paid - all paid expenses (full dataset)
     let currentCash = 0;
     incomes.forEach((i) => (currentCash += i.amount));
     expenses.forEach((e) => (currentCash -= e.amount));
+    apiSales.forEach((s) => (currentCash += parseFloat(s.paid_amount) || 0));
 
     return { totalIn, totalOut, netCashFlow, currentCash };
-  }, [filteredTransactions, incomes, expenses]);
+  }, [filteredTransactions, incomes, expenses, apiSales]);
 
   // Upcoming payments (pending + overdue)
   const upcomingPayments = useMemo(() => {
@@ -406,6 +449,7 @@ const CashFlow = () => {
   };
 
   const openEdit = (tx) => {
+    if (tx.sourceType === 'billing') return; // Billing sales are read-only; view on Invoices page
     setEditingTx(tx);
     setAddType(tx.type);
     if (tx.sourceType === 'income') {
@@ -594,8 +638,8 @@ const CashFlow = () => {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed.' }); }}>
-              <RefreshCw className="w-4 h-4 mr-2" />
+            <Button variant="outline" onClick={async () => { loadData(); await refreshApiSales(); toast({ title: 'Refreshed', description: 'Data refreshed.' }); }} disabled={apiSalesLoading}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${apiSalesLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
             <Button variant="outline" onClick={exportCSV}>
@@ -887,6 +931,14 @@ const CashFlow = () => {
                           >
                             <ArrowUpCircle className="w-4 h-4" />
                           </button>
+                        ) : tx.sourceType === 'billing' ? (
+                          <Link
+                            to="/invoices"
+                            className="p-2 hover:bg-secondary rounded-lg transition-colors text-primary inline-flex items-center justify-center"
+                            title="View invoice"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
                         ) : tx.sourceType !== 'invoice' ? (
                           <>
                             <button

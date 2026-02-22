@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { authFetch } from '@/lib/api';
 import { useToast } from '@/components/ui/use-toast';
@@ -12,6 +13,8 @@ export default function Invoices() {
   const [viewLoading, setViewLoading] = useState(false);
   const [markingPaidId, setMarkingPaidId] = useState(null);
   const { toast } = useToast();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const loadSales = async () => {
     setLoading(true);
@@ -30,6 +33,15 @@ export default function Invoices() {
   useEffect(() => {
     loadSales();
   }, []);
+
+  // Open specific invoice when navigated from Sales page (state.openSaleId)
+  useEffect(() => {
+    const openSaleId = location.state?.openSaleId;
+    if (openSaleId && list.length > 0) {
+      fetchSaleById(openSaleId);
+      navigate(location.pathname, { replace: true, state: {} }); // clear state so refresh doesn't reopen
+    }
+  }, [list.length, location.state?.openSaleId]);
 
   const pendingTotal = list
     .filter((s) => (s.payment_status || '').toLowerCase() !== 'paid')

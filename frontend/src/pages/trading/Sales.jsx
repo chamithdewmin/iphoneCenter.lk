@@ -1,41 +1,48 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Plus, Eye, DollarSign, Calendar, Package, TrendingUp } from 'lucide-react';
+import { Search, Eye, DollarSign, Calendar, Package, TrendingUp, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getStorageData } from '@/utils/storage';
+import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 const Sales = () => {
   const [sales, setSales] = useState([]);
-  const [filteredSales, setFilteredSales] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [totalRevenue, setTotalRevenue] = useState(0);
 
   useEffect(() => {
-    const orders = getStorageData('orders', []);
-    const perOrders = getStorageData('perOrders', []);
-    const allSales = [...orders, ...perOrders];
-    setSales(allSales);
-    setFilteredSales(allSales);
-    
-    const revenue = allSales.reduce((sum, sale) => sum + (sale.total || sale.subtotal || 0), 0);
-    setTotalRevenue(revenue);
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await authFetch('/api/billing/sales?limit=500');
+        const data = res?.data?.data;
+        if (!cancelled) setSales(Array.isArray(data) ? data : []);
+      } catch {
+        if (!cancelled) setSales([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
-  useEffect(() => {
-    if (searchQuery) {
-      const filtered = sales.filter(sale =>
-        sale.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sale.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sale.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredSales(filtered);
-    } else {
-      setFilteredSales(sales);
-    }
-  }, [searchQuery, sales]);
+  const filteredSales = useMemo(() => {
+    if (!searchQuery.trim()) return sales;
+    const q = searchQuery.toLowerCase();
+    return sales.filter(
+      (sale) =>
+        (sale.invoice_number || '').toLowerCase().includes(q) ||
+        (sale.customer_name || '').toLowerCase().includes(q)
+    );
+  }, [sales, searchQuery]);
+
+  const totalRevenue = useMemo(
+    () => filteredSales.reduce((sum, s) => sum + (parseFloat(s.total_amount) || 0), 0),
+    [filteredSales]
+  );
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -90,7 +97,7 @@ const Sales = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Total Revenue</p>
-                <p className="text-2xl font-bold text-primary">LKR {totalRevenue.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-primary">Rs {totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
               <div className="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center">
                 <DollarSign className="w-6 h-6 text-green-500" />
@@ -107,7 +114,7 @@ const Sales = () => {
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Average Sale</p>
                 <p className="text-2xl font-bold">
-                  LKR {filteredSales.length > 0 ? (totalRevenue / filteredSales.length).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '0'}
+                  Rs {filteredSales.length > 0 ? (totalRevenue / filteredSales.length).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                 </p>
               </div>
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -131,7 +138,12 @@ const Sales = () => {
         </div>
 
         {/* Sales List */}
-        {filteredSales.length === 0 ? (
+        {loading ? (
+          <div className="bg-card rounded-xl p-12 border border-secondary text-center">
+            <Loader2 className="w-12 h-12 mx-auto text-muted-foreground animate-spin mb-4" />
+            <p className="text-muted-foreground">Loading sales…</p>
+          </div>
+        ) : filteredSales.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -160,13 +172,19 @@ const Sales = () => {
                     <div className="flex-1 space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="font-bold text-lg font-mono">{sale.id}</h3>
+                          <h3 className="font-bold text-lg font-mono">{sale.invoice_number || `#${sale.id}`}</h3>
                           <p className="text-sm text-muted-foreground mt-1">
-                            {sale.customerName || sale.customer?.name || 'Unknown Customer'}
+                            {sale.customer_name || 'Walk-in'}
                           </p>
                         </div>
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-600 dark:text-green-400">
-                          Completed
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          (sale.payment_status || '').toLowerCase() === 'paid'
+                            ? 'bg-green-500/20 text-green-600 dark:text-green-400'
+                            : (sale.payment_status || '').toLowerCase() === 'partial'
+                            ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                            : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {(sale.payment_status || '—').charAt(0).toUpperCase() + (sale.payment_status || '').slice(1).toLowerCase()}
                         </span>
                       </div>
                       
@@ -175,14 +193,14 @@ const Sales = () => {
                           <Calendar className="w-4 h-4 text-muted-foreground" />
                           <div>
                             <p className="text-xs text-muted-foreground">Date</p>
-                            <p className="font-medium">{formatDate(sale.date || sale.createdAt)}</p>
+                            <p className="font-medium">{formatDate(sale.created_at)}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Package className="w-4 h-4 text-muted-foreground" />
                           <div>
                             <p className="text-xs text-muted-foreground">Items</p>
-                            <p className="font-medium">{sale.items?.length || 0}</p>
+                            <p className="font-medium">{sale.item_count ?? '—'}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -190,7 +208,7 @@ const Sales = () => {
                           <div>
                             <p className="text-xs text-muted-foreground">Total</p>
                             <p className="font-semibold text-primary">
-                              LKR {(sale.total || sale.subtotal || 0).toLocaleString()}
+                              Rs {(parseFloat(sale.total_amount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                           </div>
                         </div>
@@ -198,9 +216,11 @@ const Sales = () => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm">
-                        <Eye className="w-4 h-4 mr-2" />
-                        View
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to="/invoices" state={{ openSaleId: sale.id }}>
+                          <Eye className="w-4 h-4 mr-2" />
+                          View
+                        </Link>
                       </Button>
                     </div>
                   </div>
