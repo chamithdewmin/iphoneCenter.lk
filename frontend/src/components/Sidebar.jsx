@@ -57,7 +57,7 @@ const menuGroups = [
     items: [
       { type: 'link', to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', permission: 'dashboard' },
       { type: 'link', to: '/phone-shop-pos', icon: ShoppingCart, label: 'Billing Terminal', permission: 'orders', excludeRoles: ['admin'] },
-      { type: 'link', to: '/orders', icon: FileText, label: 'Orders', permission: 'orders' },
+      { type: 'link', to: '/orders', icon: ClipboardList, label: 'Per Order', permission: 'orders' },
       { type: 'link', to: '/invoices', icon: FileText, label: 'Invoices', permission: 'orders' },
       {
         type: 'menu',
