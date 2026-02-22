@@ -43,7 +43,8 @@ import {
   Send,
   Mail,
   LogOut,
-  ShoppingCart
+  ShoppingCart,
+  ClipboardList
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRolePermissions } from '@/constants/rolePermissions';
@@ -161,6 +162,7 @@ const menuGroups = [
     label: 'System',
     items: [
       { type: 'link', to: '/settings/general', icon: Settings, label: 'Settings', permission: 'settings' },
+      { type: 'link', to: '/audit-log', icon: ClipboardList, label: 'Audit Log', permission: 'settings', includeRoles: ['admin'] },
     ],
   },
 ];

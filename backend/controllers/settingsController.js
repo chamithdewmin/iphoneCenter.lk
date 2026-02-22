@@ -1,5 +1,6 @@
 const { getConnection } = require('../config/database');
 const logger = require('../utils/logger');
+const { logAudit, getRequestMeta } = require('../services/auditService');
 
 /**
  * Reset branch data - Delete all data for a specific branch (Admin only)
@@ -82,6 +83,16 @@ const resetBranchData = async (req, res, next) => {
 
             await connection.commit();
 
+            await logAudit({
+                action: 'settings_reset',
+                userId: req.user.id,
+                branchId: null,
+                entityType: 'branch',
+                entityId: null,
+                newValues: { scope: 'all' },
+                ...getRequestMeta(req),
+            });
+
             logger.info(`All branches data reset by user ${req.user.id}`);
 
             res.json({
@@ -136,6 +147,16 @@ const resetBranchData = async (req, res, next) => {
             );
 
             await connection.commit();
+
+            await logAudit({
+                action: 'settings_reset',
+                userId: req.user.id,
+                branchId: parseInt(branchId, 10) || null,
+                entityType: 'branch',
+                entityId: parseInt(branchId, 10) || null,
+                newValues: { scope: 'branch', branchName },
+                ...getRequestMeta(req),
+            });
 
             logger.info(`Branch data reset: Branch ID ${branchId} (${branchName}) by user ${req.user.id}`);
 

@@ -73,6 +73,7 @@ import Warehouses from './pages/warehouses/Warehouses';
 
 // Settings
 import GeneralSetting from './pages/settings/GeneralSetting';
+import AuditLog from './pages/AuditLog';
 
 // POS Billing
 import ScanBarcode from './pages/pos-billing/ScanBarcode';
@@ -210,6 +211,7 @@ function App() {
 
         {/* Settings */}
         <Route path="settings/general" element={<GeneralSetting />} />
+        <Route path="audit-log" element={<AuditLog />} />
 
         {/* Per Order */}
         <Route path="per-order/add" element={<AddPerOrder />} />

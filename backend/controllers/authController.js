@@ -5,6 +5,7 @@ const { executeQuery, getConnection } = require('../config/database');
 const { JWT_EXPIRY } = require('../config/constants');
 const { getJwtSecret, getJwtRefreshSecret, getTestLoginCredentials, TEST_USER_ID } = require('../config/env');
 const logger = require('../utils/logger');
+const { logAudit, getRequestMeta } = require('../services/auditService');
 const smsService = require('../utils/smsService');
 const sendSMS = smsService?.sendSMS;
 if (!sendSMS) {
@@ -108,6 +109,16 @@ const register = async (req, res, next) => {
 
         const userId = result.insertId ?? (result.rows && result.rows[0] && result.rows[0].id);
         logger.info(`User registered: ${username} (ID: ${userId})`);
+
+        await logAudit({
+            action: 'user_create',
+            userId: req.user.id,
+            branchId: req.user.branch_id,
+            entityType: 'user',
+            entityId: userId,
+            newValues: { username, email, role },
+            ...getRequestMeta(req),
+        });
 
         res.status(201).json({
             success: true,
@@ -235,6 +246,12 @@ const login = async (req, res, next) => {
         );
 
         if (users.length === 0) {
+            await logAudit({
+                action: 'login_failure',
+                entityType: 'auth',
+                newValues: { identifier: String(username).substring(0, 100) },
+                ...getRequestMeta(req),
+            });
             return res.status(401).json({
                 success: false,
                 message: 'Invalid credentials'
@@ -246,6 +263,15 @@ const login = async (req, res, next) => {
         // Verify password
         const isValidPassword = await bcrypt.compare(password, user.password_hash);
         if (!isValidPassword) {
+            await logAudit({
+                action: 'login_failure',
+                userId: user.id,
+                branchId: user.branch_id,
+                entityType: 'auth',
+                entityId: user.id,
+                newValues: { reason: 'invalid_password', username: user.username },
+                ...getRequestMeta(req),
+            });
             return res.status(401).json({
                 success: false,
                 message: 'Invalid credentials'
@@ -298,6 +324,16 @@ const login = async (req, res, next) => {
             // Don't fail login if logging fails, just log the error
             logger.error('Failed to create login log:', logError);
         }
+
+        await logAudit({
+            action: 'login_success',
+            userId: user.id,
+            branchId: user.branch_id,
+            entityType: 'user',
+            entityId: user.id,
+            newValues: { username: user.username },
+            ...getRequestMeta(req),
+        });
 
         const payload = {
             success: true,

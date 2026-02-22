@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const { executeQuery } = require('../config/database');
 const logger = require('../utils/logger');
+const { logAudit, getRequestMeta } = require('../services/auditService');
 
 /**
  * List all users (Admin only). Excludes password_hash.
@@ -133,6 +134,17 @@ const updateUser = async (req, res, next) => {
             [id]
         );
 
+        await logAudit({
+            action: 'user_update',
+            userId: req.user.id,
+            branchId: req.user.branch_id,
+            entityType: 'user',
+            entityId: id,
+            oldValues: { username: existing[0].username, email: existing[0].email },
+            newValues: updated[0] ? { username: updated[0].username, email: updated[0].email, role: updated[0].role } : null,
+            ...getRequestMeta(req),
+        });
+
         logger.info(`User updated: id=${id}`);
         res.json({ success: true, message: 'User updated', data: updated[0] });
     } catch (error) {
@@ -158,10 +170,20 @@ const deleteUser = async (req, res, next) => {
             return res.status(400).json({ success: false, message: 'You cannot delete your own account' });
         }
 
-        const [existing] = await executeQuery('SELECT id, role FROM users WHERE id = ?', [id]);
+        const [existing] = await executeQuery('SELECT id, username, role FROM users WHERE id = ?', [id]);
         if (!existing || existing.length === 0) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
+
+        await logAudit({
+            action: 'user_delete',
+            userId: req.user.id,
+            branchId: req.user.branch_id,
+            entityType: 'user',
+            entityId: id,
+            oldValues: { username: existing[0].username, role: existing[0].role },
+            ...getRequestMeta(req),
+        });
 
         // Log out: remove refresh tokens
         await executeQuery('DELETE FROM refresh_tokens WHERE user_id = ?', [id]);

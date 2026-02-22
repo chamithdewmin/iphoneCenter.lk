@@ -33,6 +33,7 @@ const customerRoutes = require('./routes/customerRoutes');
 const userRoutes = require('./routes/userRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const smsRoutes = require('./routes/smsRoutes');
+const auditRoutes = require('./routes/auditRoutes');
 
 // Initialize Express app
 const app = express();
@@ -166,6 +167,7 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/sms', smsRoutes);
+app.use('/api/audit-logs', auditRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
