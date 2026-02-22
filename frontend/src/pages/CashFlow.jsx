@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { authFetch } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { getStorageData } from '@/utils/storage';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -78,6 +79,7 @@ const CashFlow = () => {
   const [editingTx, setEditingTx] = useState(null);
   const [apiSales, setApiSales] = useState([]);
   const [apiSalesLoading, setApiSalesLoading] = useState(false);
+  const [branchExpenses, setBranchExpenses] = useState([]); // expenses from Expenses page (have branchId)
   const [form, setForm] = useState({
     source: '',
     category: '',
@@ -139,6 +141,14 @@ const CashFlow = () => {
   useEffect(() => {
     refreshApiSales(selectedBranchId || undefined);
   }, [selectedBranchId, refreshApiSales]);
+
+  // Load branch expenses (Expenses page data with branchId) for per-branch net profit
+  useEffect(() => {
+    setBranchExpenses(getStorageData('expenses', []));
+    const onFocus = () => setBranchExpenses(getStorageData('expenses', []));
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, []);
 
   // Build unified transaction list from incomes, expenses, unpaid invoices, and API sales
   const allTransactions = useMemo(() => {
@@ -405,8 +415,29 @@ const CashFlow = () => {
     expenses.forEach((e) => (currentCash -= e.amount));
     apiSales.forEach((s) => (currentCash += parseFloat(s.paid_amount) || 0));
 
-    return { totalIn, totalOut, netCashFlow, currentCash };
-  }, [filteredTransactions, incomes, expenses, apiSales]);
+    // Per-branch: total income (sales), total expenses (from Expenses page), net profit = income - expenses
+    const hasBranch = selectedBranchId != null && selectedBranchId !== '';
+    const totalIncomeBranch = hasBranch
+      ? apiSales.reduce((s, sale) => s + (parseFloat(sale.paid_amount) || 0), 0)
+      : 0;
+    const totalExpensesBranch = hasBranch
+      ? branchExpenses
+          .filter((e) => String(e.branchId) === String(selectedBranchId))
+          .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)
+      : 0;
+    const netProfitBranch = totalIncomeBranch - totalExpensesBranch;
+
+    return {
+      totalIn,
+      totalOut,
+      netCashFlow,
+      currentCash,
+      totalIncomeBranch,
+      totalExpensesBranch,
+      netProfitBranch,
+      hasBranch,
+    };
+  }, [filteredTransactions, incomes, expenses, apiSales, selectedBranchId, branchExpenses]);
 
   // Upcoming payments (pending + overdue)
   const upcomingPayments = useMemo(() => {
@@ -690,7 +721,7 @@ const CashFlow = () => {
           </div>
         </div>
 
-        {/* Summary cards */}
+        {/* Summary cards: when branch selected show Total Income, Total Expenses, Net Profit for that branch */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -698,9 +729,12 @@ const CashFlow = () => {
             className="bg-card rounded-lg border border-secondary p-4 flex items-center justify-between"
           >
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Total Money In</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {summary.hasBranch ? 'Total Income (Branch)' : 'Total Money In'}
+              </p>
               <p className="text-2xl font-bold text-green-500">
-                {settings.currency} {summary.totalIn.toLocaleString()}
+                {settings.currency}{' '}
+                {(summary.hasBranch ? summary.totalIncomeBranch : summary.totalIn).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
@@ -714,9 +748,12 @@ const CashFlow = () => {
             className="bg-card rounded-lg border border-secondary p-4 flex items-center justify-between"
           >
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Total Money Out</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {summary.hasBranch ? 'Total Expenses (Branch)' : 'Total Money Out'}
+              </p>
               <p className="text-2xl font-bold text-red-500">
-                {settings.currency} {summary.totalOut.toLocaleString()}
+                {settings.currency}{' '}
+                {(summary.hasBranch ? summary.totalExpensesBranch : summary.totalOut).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
@@ -730,13 +767,16 @@ const CashFlow = () => {
             className="bg-card rounded-lg border border-secondary p-4 flex items-center justify-between"
           >
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Net Cash Flow</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {summary.hasBranch ? 'Net Profit (Branch)' : 'Net Cash Flow'}
+              </p>
               <p
                 className={`text-2xl font-bold ${
-                  summary.netCashFlow >= 0 ? 'text-green-500' : 'text-red-500'
+                  (summary.hasBranch ? summary.netProfitBranch : summary.netCashFlow) >= 0 ? 'text-green-500' : 'text-red-500'
                 }`}
               >
-                {settings.currency} {summary.netCashFlow.toLocaleString()}
+                {settings.currency}{' '}
+                {(summary.hasBranch ? summary.netProfitBranch : summary.netCashFlow).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
           </motion.div>
@@ -753,7 +793,7 @@ const CashFlow = () => {
                   summary.currentCash >= 0 ? 'text-primary' : 'text-red-500'
                 }`}
               >
-                {settings.currency} {summary.currentCash.toLocaleString()}
+                {settings.currency} {summary.currentCash.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
           </motion.div>
