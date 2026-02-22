@@ -6,14 +6,16 @@ import {
   Search,
   Eye,
   Trash2,
-  Calendar,
   Save,
   X,
   FileText,
   Loader2,
-  Pencil
+  Pencil,
+  Building2,
+  Calendar
 } from 'lucide-react';
 import { getStorageData, setStorageData } from '@/utils/storage';
+import { authFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -50,7 +52,21 @@ const Expenses = () => {
     date: new Date().toISOString().split('T')[0],
     paymentMethod: 'cash',
     reference: '',
+    branchId: '',
+    branchName: '',
   });
+  const [branches, setBranches] = useState([]);
+  useEffect(() => {
+    let cancelled = false;
+    authFetch('/api/branches')
+      .then((res) => {
+        if (cancelled) return;
+        const data = res?.data?.data;
+        setBranches(Array.isArray(data) ? data : []);
+      })
+      .catch(() => { if (!cancelled) setBranches([]); });
+    return () => { cancelled = true; };
+  }, []);
 
   const expenseCategories = [
     'Rent',
@@ -118,6 +134,8 @@ const Expenses = () => {
       date: formData.date,
       paymentMethod: formData.paymentMethod,
       reference: formData.reference || '',
+      branchId: formData.branchId || null,
+      branchName: formData.branchName || '',
       createdAt: new Date().toISOString(),
     };
 
@@ -139,6 +157,8 @@ const Expenses = () => {
       date: new Date().toISOString().split('T')[0],
       paymentMethod: 'cash',
       reference: '',
+      branchId: '',
+      branchName: '',
     });
     setIsAddModalOpen(false);
   };
@@ -214,6 +234,8 @@ const Expenses = () => {
         date: foundExpense.date ? foundExpense.date.split('T')[0] : new Date().toISOString().split('T')[0],
         paymentMethod: foundExpense.paymentMethod || 'cash',
         reference: foundExpense.reference || '',
+        branchId: foundExpense.branchId || '',
+        branchName: foundExpense.branchName || '',
       });
       setSelectedExpense(foundExpense);
       setIsEditModalOpen(true);
@@ -246,6 +268,8 @@ const Expenses = () => {
       date: formData.date,
       paymentMethod: formData.paymentMethod,
       reference: formData.reference || '',
+      branchId: formData.branchId || null,
+      branchName: formData.branchName || '',
     };
 
     const updatedExpenses = expenses.map(e => 
@@ -269,6 +293,8 @@ const Expenses = () => {
       date: new Date().toISOString().split('T')[0],
       paymentMethod: 'cash',
       reference: '',
+      branchId: '',
+      branchName: '',
     });
   };
 
@@ -290,6 +316,13 @@ const Expenses = () => {
             <div className="text-muted-foreground text-xs font-mono">{expense.reference}</div>
           )}
         </div>
+      ),
+    },
+    {
+      key: 'branch',
+      label: 'Branch',
+      render: (expense) => (
+        <span className="text-muted-foreground text-sm">{expense.branchName || '—'}</span>
       ),
     },
     {
@@ -425,6 +458,24 @@ const Expenses = () => {
                   <h2 className="text-xl font-semibold">Expense Details</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="add-branchId">Branch</Label>
+                    <select
+                      id="add-branchId"
+                      value={formData.branchId}
+                      onChange={(e) => {
+                        const id = e.target.value;
+                        const b = branches.find((x) => String(x.id) === id);
+                        setFormData(prev => ({ ...prev, branchId: id, branchName: b ? (b.name || b.code || '') : '' }));
+                      }}
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                    >
+                      <option value="">Select branch</option>
+                      {branches.map(b => (
+                        <option key={b.id} value={b.id}>{b.name || b.code || `Branch ${b.id}`}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div>
                     <Label htmlFor="category">Category *</Label>
                     <select
@@ -574,6 +625,15 @@ const Expenses = () => {
                       <p className="font-medium">{formatDate(selectedExpense.date || selectedExpense.createdAt)}</p>
                     </div>
                   </div>
+                  {(selectedExpense.branchName || selectedExpense.branchId) && (
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                      <Building2 className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Branch</p>
+                        <p className="font-medium">{selectedExpense.branchName || '—'}</p>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 sm:col-span-2">
                     <FileText className="w-5 h-5 text-muted-foreground" />
                     <div>
@@ -630,6 +690,24 @@ const Expenses = () => {
                     <h2 className="text-xl font-semibold">Expense Details</h2>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="edit-branchId">Branch</Label>
+                      <select
+                        id="edit-branchId"
+                        value={formData.branchId}
+                        onChange={(e) => {
+                          const id = e.target.value;
+                          const b = branches.find((x) => String(x.id) === id);
+                          setFormData(prev => ({ ...prev, branchId: id, branchName: b ? (b.name || b.code || '') : '' }));
+                        }}
+                        className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                      >
+                        <option value="">Select branch</option>
+                        {branches.map(b => (
+                          <option key={b.id} value={b.id}>{b.name || b.code || `Branch ${b.id}`}</option>
+                        ))}
+                      </select>
+                    </div>
                     <div>
                       <Label htmlFor="edit-category">Category *</Label>
                       <select

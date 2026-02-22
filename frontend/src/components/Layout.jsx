@@ -18,6 +18,14 @@ const Layout = () => {
     if (user?.role === 'manager' && pathname.startsWith('/reports')) {
       navigate('/dashboard', { replace: true });
     }
+    // Expense pages: admin only
+    if (user?.role !== 'admin' && (pathname === '/expenses' || pathname.startsWith('/expense/'))) {
+      navigate('/dashboard', { replace: true });
+    }
+    // Trading pages: admin only
+    if (user?.role !== 'admin' && pathname.startsWith('/trading/')) {
+      navigate('/dashboard', { replace: true });
+    }
   }, [user?.role, pathname, navigate]);
 
   return (

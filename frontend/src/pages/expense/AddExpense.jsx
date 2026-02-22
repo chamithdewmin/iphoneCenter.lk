@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
-import { Save, DollarSign, X, Calendar, FileText } from 'lucide-react';
+import { Save, DollarSign, X, FileText, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getStorageData, setStorageData } from '@/utils/storage';
+import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +19,21 @@ const AddExpense = () => {
     date: new Date().toISOString().split('T')[0],
     paymentMethod: 'cash',
     reference: '',
+    branchId: '',
+    branchName: '',
   });
+  const [branches, setBranches] = useState([]);
+  useEffect(() => {
+    let cancelled = false;
+    authFetch('/api/branches')
+      .then((res) => {
+        if (cancelled) return;
+        const data = res?.data?.data;
+        setBranches(Array.isArray(data) ? data : []);
+      })
+      .catch(() => { if (!cancelled) setBranches([]); });
+    return () => { cancelled = true; };
+  }, []);
 
   const expenseCategories = [
     'Rent',
@@ -61,6 +75,8 @@ const AddExpense = () => {
       date: formData.date,
       paymentMethod: formData.paymentMethod,
       reference: formData.reference || '',
+      branchId: formData.branchId || null,
+      branchName: formData.branchName || '',
       createdAt: new Date().toISOString(),
     };
 
@@ -102,6 +118,25 @@ const AddExpense = () => {
                   <h2 className="text-xl font-semibold">Expense Details</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="branchId">Branch</Label>
+                    <select
+                      id="branchId"
+                      name="branchId"
+                      value={formData.branchId}
+                      onChange={(e) => {
+                        const id = e.target.value;
+                        const b = branches.find((x) => String(x.id) === id);
+                        setFormData(prev => ({ ...prev, branchId: id, branchName: b ? (b.name || b.code || '') : '' }));
+                      }}
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                    >
+                      <option value="">Select branch</option>
+                      {branches.map(b => (
+                        <option key={b.id} value={b.id}>{b.name || b.code || `Branch ${b.id}`}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div>
                     <Label htmlFor="category">Category *</Label>
                     <select

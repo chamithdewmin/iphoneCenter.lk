@@ -63,6 +63,7 @@ const menuGroups = [
         icon: ArrowRightLeft,
         label: 'Trading',
         permission: 'orders',
+        includeRoles: ['admin'],
         children: [
           { to: '/trading/sales', label: 'Sales', icon: ShoppingBag },
           { to: '/trading/purchase', label: 'Purchase', icon: Receipt },
@@ -114,7 +115,7 @@ const menuGroups = [
     label: 'Finance',
     items: [
       { type: 'link', to: '/cash-flow', icon: ArrowRightLeft, label: 'Cash Flow', permission: 'settings' },
-      { type: 'link', to: '/expenses', icon: TrendingDown, label: 'Expenses', permission: 'settings' },
+      { type: 'link', to: '/expenses', icon: TrendingDown, label: 'Expenses', permission: 'settings', includeRoles: ['admin'] },
       {
         type: 'menu',
         icon: BarChart3,
@@ -168,7 +169,11 @@ const menuGroups = [
 function filterMenuByPermissions(items, permissions, userRole) {
   if (!permissions) return items;
   return items.filter((item) => {
-    // Exclude items for specific roles (e.g., exclude admin from Phone Shop POS)
+    // Show only to specific roles (e.g. Expenses for admin only)
+    if (item.includeRoles && item.includeRoles.length > 0) {
+      if (!userRole || !item.includeRoles.includes(userRole.toLowerCase())) return false;
+    }
+    // Exclude items for specific roles (e.g., exclude admin from Billing Terminal)
     if (item.excludeRoles && userRole && item.excludeRoles.includes(userRole.toLowerCase())) {
       return false;
     }
