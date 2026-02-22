@@ -567,40 +567,6 @@ const CashFlow = () => {
     return { totalIn, totalOut, profit: totalIn - totalOut };
   }, [filters.dateFrom, filters.dateTo, selectedBranchId, apiSales, branchExpenses, sortedTransactions]);
 
-  // Year-to-date totals (from Jan 1 to today)
-  const ytdSummary = useMemo(() => {
-    const now = new Date();
-    const ytdFrom = new Date(now.getFullYear(), 0, 1).toISOString().slice(0, 10);
-    const ytdTo = now.toISOString().slice(0, 10);
-    const startT = new Date(ytdFrom + 'T00:00:00').getTime();
-    const endT = new Date(ytdTo + 'T23:59:59').getTime() + 1;
-    let totalIn = 0;
-    let totalOut = 0;
-    const hasBranch = selectedBranchId != null && selectedBranchId !== '';
-    const isAllBranches = selectedBranchId === 'all';
-    if (hasBranch) {
-      apiSales.forEach((sale) => {
-        const t = new Date(sale.created_at).getTime();
-        if (t >= startT && t < endT) totalIn += parseFloat(sale.paid_amount) || 0;
-      });
-      const expList = isAllBranches ? branchExpenses : branchExpenses.filter((e) => String(e.branchId) === String(selectedBranchId));
-      expList.forEach((e) => {
-        const t = new Date(e.date).getTime();
-        if (t >= startT && t < endT) totalOut += parseFloat(e.amount) || 0;
-      });
-    } else {
-      sortedTransactions.forEach((tx) => {
-        const d = new Date(tx.date).getTime();
-        if (d < startT || d > endT) return;
-        if (tx.type === 'inflow' && tx.status === 'received') totalIn += tx.amount;
-        if (tx.type === 'outflow' && (tx.status === 'paid' || tx.sourceType === 'expense')) totalOut += tx.amount;
-      });
-    }
-    const profit = totalIn - totalOut;
-    const margin = totalIn > 0 ? (profit / totalIn) * 100 : 0;
-    return { totalIn, totalOut, profit, margin };
-  }, [selectedBranchId, apiSales, branchExpenses, sortedTransactions]);
-
   // Branch comparison (when no branch selected, for admins): per-branch income, expenses, profit
   const branchComparisonData = useMemo(() => {
     if (branches.length === 0) return [];
@@ -1197,31 +1163,6 @@ const CashFlow = () => {
           </motion.div>
         </div>
 
-        {/* Year-to-date */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-3 rounded-xl border border-border bg-muted/30 p-4"
-        >
-          <span className="col-span-2 md:col-span-4 text-sm font-semibold text-muted-foreground">Year to date</span>
-          <div>
-            <p className="text-xs text-muted-foreground">YTD Income</p>
-            <p className="font-bold text-green-500">{settings.currency} {ytdSummary.totalIn.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">YTD Expenses</p>
-            <p className="font-bold text-red-500">{settings.currency} {ytdSummary.totalOut.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">YTD Profit</p>
-            <p className={`font-bold ${ytdSummary.profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>{settings.currency} {ytdSummary.profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">YTD Margin</p>
-            <p className="font-bold">{ytdSummary.margin.toFixed(0)}%</p>
-          </div>
-        </motion.div>
-
         {/* After upcoming payments */}
         {upcomingTotal > 0 && (
           <motion.div
@@ -1237,38 +1178,6 @@ const CashFlow = () => {
             </p>
           </motion.div>
         )}
-
-        {/* Profit at a glance: margin % + one-line insight */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-primary/10 border border-primary/30 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
-        >
-          <div>
-            <p className="text-sm font-medium text-muted-foreground mb-1">Profit at a glance</p>
-            <p className="text-foreground font-medium">
-              {profitInsight.text}
-              {summary.hasBranch && selectedBranchId !== 'all' && (
-                <span className="text-muted-foreground font-normal"> (this branch)</span>
-              )}
-              {selectedBranchId === 'all' && (
-                <span className="text-muted-foreground font-normal"> (all branches)</span>
-              )}
-            </p>
-          </div>
-          {(summary.hasBranch ? summary.totalIncomeBranch : summary.totalIn) > 0 && (
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-primary">
-                {profitInsight.margin >= 0 ? `${profitInsight.margin.toFixed(0)}%` : '—'}
-              </span>
-              <span className="text-sm text-muted-foreground">profit margin</span>
-              <span className="text-muted-foreground cursor-help" title="Profit as % of income (profit ÷ income × 100)">
-                <HelpCircle className="w-4 h-4 inline" />
-              </span>
-            </div>
-          )}
-        </motion.div>
 
         {/* Income & expense by category */}
         {(incomeByCategory.length > 0 || expensesByCategory.length > 0) && (
