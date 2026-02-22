@@ -31,7 +31,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
 
 const SORT_OPTIONS = [
@@ -828,7 +827,6 @@ const CashFlow = () => {
                 formatter={(value) => [value?.toLocaleString(undefined, { maximumFractionDigits: 0 }), undefined]}
                 labelFormatter={(label) => label}
               />
-              <Legend wrapperStyle={{ color: '#fff' }} />
               <Bar dataKey="income" fill="#22c55e" name="Income" radius={[4, 4, 0, 0]} />
               <Bar dataKey="expenses" fill="#ef4444" name="Expenses" radius={[4, 4, 0, 0]} />
               <Bar dataKey="profit" fill="#3b82f6" name="Profit" radius={[4, 4, 0, 0]} />
