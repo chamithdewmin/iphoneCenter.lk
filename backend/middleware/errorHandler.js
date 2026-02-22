@@ -136,14 +136,14 @@ const errorHandler = (err, req, res, next) => {
         return res.status(401).json(jsonError('Token expired', null));
     }
 
-    // Default: 500 or custom status. In production hide internal details unless EXPOSE_500_ERROR=1 (debug).
-    const exposeError = process.env.EXPOSE_500_ERROR === '1' || !isProd;
+    // Default: 500 – always return real message so frontend/Network tab shows the cause (no blind 500s).
     const payload = {
         success: false,
-        message: (isProd && statusCode === 500 && !exposeError) ? 'Internal server error' : (err.message || 'Internal server error'),
-        ...(exposeError ? { code: err.code || null, detail: err.detail || err.message || null } : {}),
-        ...(statusCode === 500 && exposeError && err.stack ? { stack: err.stack } : {})
+        message: err.message || 'Internal server error',
+        code: err.code || null,
+        detail: err.detail || null
     };
+    if (!isProd && statusCode === 500 && err.stack) payload.stack = err.stack;
     res.status(statusCode).json(payload);
 };
 

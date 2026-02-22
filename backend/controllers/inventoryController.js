@@ -152,6 +152,21 @@ const createProduct = async (req, res, next) => {
             branchIdForStock = branches.length > 0 ? branches[0].id : null;
         }
 
+        // Ensure the branch exists (avoid FK violation and unclear 500)
+        if (branchIdForStock) {
+            const [branchRows] = await connection.execute(
+                'SELECT id FROM branches WHERE id = ? AND is_active = TRUE',
+                [branchIdForStock]
+            );
+            if (!branchRows || branchRows.length === 0) {
+                await connection.rollback();
+                return res.status(400).json({
+                    success: false,
+                    message: 'Selected branch not found or inactive. Add a warehouse (branch) first in Warehouses.'
+                });
+            }
+        }
+
         // Check if SKU exists
         const [existing] = await connection.execute(
             'SELECT id FROM products WHERE sku = ?',

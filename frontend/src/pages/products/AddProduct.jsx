@@ -181,10 +181,7 @@ const AddProduct = () => {
       setLoading(false);
       if (!ok) {
         const msg = data?.message || 'Please try again';
-        const hint = (status === 500 && msg === 'Internal server error')
-          ? ' Check backend/Dokploy container logs for the real error, or set EXPOSE_500_ERROR=1 in backend env to see it here.'
-          : '';
-        toast({ title: 'Could not add product', description: msg + hint, variant: 'destructive' });
+        toast({ title: 'Could not add product', description: msg, variant: 'destructive' });
         return;
       }
       toast({ title: 'Product Added', description: `${name} has been saved to the database` });
