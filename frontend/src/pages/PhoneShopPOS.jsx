@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { authFetch } from '@/lib/api';
 import { useToast } from '@/components/ui/use-toast';
+import { downloadInvoicePdf, printInvoicePdf } from '@/utils/invoicePdf';
 
 const SYS_FONT = `-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif`;
 
@@ -130,6 +131,9 @@ export default function PhoneShopPOS() {
   const [products, setProducts] = useState(FALLBACK_PRODUCTS);
   const [productsLoading, setProductsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [invoicePopupSale, setInvoicePopupSale] = useState(null);
 
   // Load products from API so POS shows real inventory (Products you add in Add Product)
   useEffect(() => {
@@ -188,11 +192,36 @@ export default function PhoneShopPOS() {
   const discountAmt = parseFloat(discount) || 0;
   const total = subtotal - discountAmt;
 
-  // Save sale to DB: creates invoice, sale_items, and reduces logged-in branch stock (enterprise POS flow)
+  // Resolve customer: find by phone or create new; return customerId or null
+  const resolveCustomerId = async () => {
+    const name = (customerName || '').trim();
+    const phone = (customerPhone || '').trim();
+    if (!name && !phone) return null;
+    try {
+      const searchTerm = phone || name;
+      const listRes = await authFetch(`/api/customers?search=${encodeURIComponent(searchTerm)}`);
+      const list = listRes?.data?.data;
+      if (Array.isArray(list) && list.length > 0) {
+        const match = phone ? list.find((c) => (c.phone || '').toString().trim() === phone) : list[0];
+        if (match) return match.id;
+      }
+      const createRes = await authFetch('/api/customers', {
+        method: 'POST',
+        body: JSON.stringify({ name: name || 'Walk-in', phone: phone || null }),
+      });
+      const created = createRes?.data?.data;
+      return created?.id ?? null;
+    } catch (_) {
+      return null;
+    }
+  };
+
+  // Save sale to DB: creates invoice, sale_items, reduces stock; then show invoice popup (enterprise POS flow)
   const handlePayNow = async () => {
     if (cart.length === 0 || saving) return;
     setSaving(true);
     try {
+      const customerId = await resolveCustomerId();
       const items = cart.map((i) => ({
         productId: i.id,
         quantity: i.qty,
@@ -205,6 +234,7 @@ export default function PhoneShopPOS() {
         taxRate: 0,
         paidAmount: total,
         notes: tab ? `Order type: ${tab}` : '',
+        ...(customerId != null && { customerId }),
       };
       const res = await authFetch('/api/billing/sales', {
         method: 'POST',
@@ -212,10 +242,8 @@ export default function PhoneShopPOS() {
       });
       const data = res?.data;
       if (res?.ok && data?.success) {
-        setCart([]);
-        setDiscount('');
-        const inv = data?.data?.invoice_number || 'Sale saved';
-        toast({ title: 'Invoice saved', description: `Invoice ${inv}. Stock updated for your branch.`, variant: 'default' });
+        setInvoicePopupSale(data.data);
+        toast({ title: 'Invoice saved', description: `Invoice ${data.data?.invoice_number || 'saved'}.`, variant: 'default' });
       } else {
         const msg = data?.message || data?.detail || 'Could not save sale';
         toast({ title: 'Error', description: msg, variant: 'destructive' });
@@ -225,6 +253,14 @@ export default function PhoneShopPOS() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const closeInvoicePopup = () => {
+    setInvoicePopupSale(null);
+    setCart([]);
+    setDiscount('');
+    setCustomerName('');
+    setCustomerPhone('');
   };
 
   return (
@@ -363,6 +399,24 @@ export default function PhoneShopPOS() {
               </button>
             </div>
 
+            {/* Customer (optional) */}
+            <div style={{ padding: "10px 18px", borderBottom: "1px solid #1e2433", display: "flex", gap: 10 }}>
+              <input
+                type="text"
+                placeholder="Customer name"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                style={{ flex: 1, background: "#1e2433", border: "1px solid #2a3347", borderRadius: 8, padding: "8px 12px", color: "#d1d9e6", fontSize: 12, outline: "none", fontFamily: SYS_FONT }}
+              />
+              <input
+                type="text"
+                placeholder="Phone"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                style={{ width: 120, background: "#1e2433", border: "1px solid #2a3347", borderRadius: 8, padding: "8px 12px", color: "#d1d9e6", fontSize: 12, outline: "none", fontFamily: SYS_FONT }}
+              />
+            </div>
+
             {/* Tabs */}
             <div style={{ display: "flex", borderBottom: "1px solid #1e2433" }}>
               {["Walk-In", "Pick Up", "Delivery"].map((t) => (
@@ -469,6 +523,61 @@ export default function PhoneShopPOS() {
           </div>
         </div>
       </div>
+
+      {/* Invoice popup (after Pay Now success) */}
+      {invoicePopupSale && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: "#13161e", borderRadius: 12, border: "1px solid #1e2433", maxWidth: 520, width: "100%", maxHeight: "90vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #1e2433", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ fontWeight: 700, fontSize: 16 }}>Invoice {invoicePopupSale.invoice_number || ''}</div>
+              <button type="button" onClick={closeInvoicePopup} style={{ background: "transparent", border: "none", color: "#8b9ab0", cursor: "pointer", padding: 4, fontSize: 18 }} aria-label="Close">×</button>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
+              <div style={{ fontSize: 12, color: "#8b9ab0", marginBottom: 12 }}>
+                {invoicePopupSale.created_at && new Date(invoicePopupSale.created_at).toLocaleString()}
+                {invoicePopupSale.branch_name && ` · ${invoicePopupSale.branch_name}`}
+                {invoicePopupSale.cashier_name && ` · ${invoicePopupSale.cashier_name}`}
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ color: "#d1d9e6", fontWeight: 600 }}>{invoicePopupSale.customer_name || '—'}</div>
+                <div style={{ color: "#8b9ab0", fontSize: 12 }}>{invoicePopupSale.customer_phone || '—'}</div>
+              </div>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid #1e2433", color: "#8b9ab0", textAlign: "left" }}>
+                    <th style={{ padding: "8px 0" }}>Item</th>
+                    <th style={{ padding: "8px 0", width: 50 }}>Qty</th>
+                    <th style={{ padding: "8px 0", width: 70 }}>Unit</th>
+                    <th style={{ padding: "8px 0", width: 70, textAlign: "right" }}>Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(Array.isArray(invoicePopupSale.items) ? invoicePopupSale.items : []).map((row, idx) => (
+                    <tr key={idx} style={{ borderBottom: "1px solid #1e2433" }}>
+                      <td style={{ padding: "8px 0", color: "#d1d9e6" }}>{row.product_name || '—'}</td>
+                      <td style={{ padding: "8px 0", color: "#d1d9e6" }}>{row.quantity}</td>
+                      <td style={{ padding: "8px 0", color: "#d1d9e6" }}>${Number(row.unit_price).toFixed(2)}</td>
+                      <td style={{ padding: "8px 0", color: "#d1d9e6", textAlign: "right" }}>${Number(row.subtotal).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #1e2433", fontSize: 13, color: "#8b9ab0" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}><span>Discount</span><span>−${Number(invoicePopupSale.discount_amount || 0).toFixed(2)}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 15, color: "#fff", marginTop: 8 }}>
+                  <span>Total</span><span style={{ color: "#ff8040" }}>${Number(invoicePopupSale.total_amount || 0).toFixed(2)}</span>
+                </div>
+                <div style={{ marginTop: 4, color: "#8b9ab0" }}>Status: {String(invoicePopupSale.payment_status || '—')}</div>
+              </div>
+            </div>
+            <div style={{ padding: 16, borderTop: "1px solid #1e2433", display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button type="button" onClick={() => downloadInvoicePdf(invoicePopupSale)} style={{ flex: 1, minWidth: 120, background: "#1e2433", border: "1px solid #303338", borderRadius: 8, color: "#d1d9e6", padding: "10px 16px", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: SYS_FONT }}>Download PDF</button>
+              <button type="button" onClick={() => printInvoicePdf(invoicePopupSale)} style={{ flex: 1, minWidth: 120, background: "#1e2433", border: "1px solid #303338", borderRadius: 8, color: "#d1d9e6", padding: "10px 16px", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: SYS_FONT }}>Print</button>
+              <button type="button" onClick={closeInvoicePopup} style={{ flex: 1, minWidth: 120, background: "linear-gradient(135deg, #ff8040 0%, #e05010 100%)", border: "none", borderRadius: 8, color: "#fff", padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: SYS_FONT }}>Done</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

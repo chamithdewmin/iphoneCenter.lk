@@ -725,7 +725,8 @@ const getAllSales = async (req, res, next) => {
         const limitNum = Math.min(Math.max(0, parseInt(limit, 10) || 50), 500);
         const offsetNum = Math.max(0, parseInt(offset, 10) || 0);
 
-        let query = `SELECT s.*, c.name as customer_name, u.full_name as cashier_name, b.name as branch_name
+        let query = `SELECT s.*, c.name as customer_name, u.full_name as cashier_name, b.name as branch_name,
+                     (SELECT COUNT(*) FROM sale_items WHERE sale_id = s.id) as item_count
                      FROM sales s
                      LEFT JOIN customers c ON s.customer_id = c.id
                      LEFT JOIN users u ON s.user_id = u.id

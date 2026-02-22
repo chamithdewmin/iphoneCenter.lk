@@ -1,5 +1,7 @@
 export const CASHIER_ALLOWED_PATHS = new Set([
   '/dashboard',
+  '/phone-shop-pos',
+  '/invoices',
   '/pos-billing/new-sale',
   '/pos-billing/print-invoice',
   '/pos-billing/hold-invoice',

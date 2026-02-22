@@ -60,6 +60,7 @@ const menuGroups = [
       { type: 'link', to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', permission: 'dashboard' },
       { type: 'link', to: '/phone-shop-pos', icon: ShoppingCart, label: 'Phone Shop POS', permission: 'orders', excludeRoles: ['admin'] },
       { type: 'link', to: '/orders', icon: FileText, label: 'Orders', permission: 'orders' },
+      { type: 'link', to: '/invoices', icon: FileText, label: 'Invoices', permission: 'orders' },
       {
         type: 'menu',
         icon: Receipt,

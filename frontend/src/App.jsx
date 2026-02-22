@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Loading from './components/Loading';
 import POS from './pages/POS';
 import PhoneShopPOS from './pages/PhoneShopPOS';
+import Invoices from './pages/Invoices';
 import Inventory from './pages/Inventory';
 import CustomersPage from './pages/Customers';
 import Reports from './pages/Reports';
@@ -122,6 +123,7 @@ function App() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="pos" element={<POS />} />
         <Route path="phone-shop-pos" element={<PhoneShopPOS />} />
+        <Route path="invoices" element={<Invoices />} />
         <Route path="inventory" element={<Inventory />} />
         <Route path="orders" element={<Orders />} />
         <Route path="customers" element={<CustomersPage />} />
