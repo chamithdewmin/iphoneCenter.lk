@@ -81,10 +81,6 @@ import ApplyDiscount from './pages/pos-billing/ApplyDiscount';
 import ApplyTax from './pages/pos-billing/ApplyTax';
 import SelectCustomer from './pages/pos-billing/SelectCustomer';
 import PaymentMethods from './pages/pos-billing/PaymentMethods';
-import PrintInvoice from './pages/pos-billing/PrintInvoice';
-import HoldInvoice from './pages/pos-billing/HoldInvoice';
-import ReturnRefund from './pages/pos-billing/ReturnRefund';
-import ReprintInvoice from './pages/pos-billing/ReprintInvoice';
 
 // Inventory
 import StockView from './pages/inventory/StockView';
@@ -138,10 +134,6 @@ function App() {
         <Route path="pos-billing/apply-tax" element={<ApplyTax />} />
         <Route path="pos-billing/select-customer" element={<SelectCustomer />} />
         <Route path="pos-billing/payment-methods" element={<PaymentMethods />} />
-        <Route path="pos-billing/print-invoice" element={<PrintInvoice />} />
-        <Route path="pos-billing/hold-invoice" element={<HoldInvoice />} />
-        <Route path="pos-billing/return-refund" element={<ReturnRefund />} />
-        <Route path="pos-billing/reprint-invoice" element={<ReprintInvoice />} />
 
         {/* Products */}
         <Route path="products/add" element={<AddProduct />} />

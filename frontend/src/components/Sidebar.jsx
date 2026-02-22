@@ -36,9 +36,6 @@ import {
   BarChart3,
   ScanLine,
   Percent,
-  Printer,
-  Pause,
-  RotateCcw,
   PackageSearch,
   AlertTriangle,
   ArrowLeftRight,
@@ -61,18 +58,6 @@ const menuGroups = [
       { type: 'link', to: '/phone-shop-pos', icon: ShoppingCart, label: 'Phone Shop POS', permission: 'orders', excludeRoles: ['admin'] },
       { type: 'link', to: '/orders', icon: FileText, label: 'Orders', permission: 'orders' },
       { type: 'link', to: '/invoices', icon: FileText, label: 'Invoices', permission: 'orders' },
-      {
-        type: 'menu',
-        icon: Receipt,
-        label: 'Invoice',
-        permission: 'orders',
-        children: [
-          { to: '/pos-billing/print-invoice', label: 'Print Invoice', icon: Printer },
-          { to: '/pos-billing/hold-invoice', label: 'Hold Invoice', icon: Pause },
-          { to: '/pos-billing/return-refund', label: 'Return / Refund', icon: RotateCcw },
-          { to: '/pos-billing/reprint-invoice', label: 'Reprint Invoice', icon: Printer },
-        ],
-      },
       {
         type: 'menu',
         icon: ArrowRightLeft,
