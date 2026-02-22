@@ -140,7 +140,7 @@ const Dashboard = () => {
             transition={{ delay: 0.4 }}
           >
             <KpiCard
-              title="Total Orders"
+              title="Total Sale"
               value={stats.totalOrders}
               icon={ShoppingBag}
               trend={15.3}
