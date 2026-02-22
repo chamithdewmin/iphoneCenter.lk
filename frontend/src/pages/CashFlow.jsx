@@ -438,6 +438,70 @@ const CashFlow = () => {
     };
   }, [filteredTransactions, incomes, expenses, apiSales, selectedBranchId, branchExpenses]);
 
+  // Profit at a glance: margin % and one-line insight (uses same totals as summary cards)
+  const profitInsight = useMemo(() => {
+    const income = summary.hasBranch ? summary.totalIncomeBranch : summary.totalIn;
+    const expenses = summary.hasBranch ? summary.totalExpensesBranch : summary.totalOut;
+    const profit = summary.hasBranch ? summary.netProfitBranch : summary.netCashFlow;
+    const margin = income > 0 ? (profit / income) * 100 : 0;
+    let text = '';
+    if (profit >= 0 && income > 0) {
+      text = `Net profit is ${margin.toFixed(0)}% of income.`;
+    } else if (profit < 0 && income > 0) {
+      text = `Expenses exceed income by ${settings.currency} ${Math.abs(profit).toLocaleString(undefined, { maximumFractionDigits: 0 })}.`;
+    } else if (income === 0 && expenses > 0) {
+      text = `No income this period; ${settings.currency} ${expenses.toLocaleString(undefined, { maximumFractionDigits: 0 })} in expenses.`;
+    } else if (income === 0 && expenses === 0) {
+      text = 'No income or expenses in this period.';
+    } else {
+      text = `Profit margin: ${margin.toFixed(0)}%.`;
+    }
+    return { margin, text, profit };
+  }, [summary, settings.currency]);
+
+  // Income and expense breakdown by category (branch-aware when a branch is selected)
+  const incomeByCategory = useMemo(() => {
+    const map = new Map();
+    const hasBranch = selectedBranchId != null && selectedBranchId !== '';
+    if (hasBranch) {
+      const total = apiSales.reduce((s, sale) => s + (parseFloat(sale.paid_amount) || 0), 0);
+      if (total > 0) map.set('Sales', total);
+    } else {
+      filteredTransactions.forEach((tx) => {
+        if (tx.type !== 'inflow' || tx.status !== 'received') return;
+        const cat = tx.category || 'Other';
+        map.set(cat, (map.get(cat) || 0) + tx.amount);
+      });
+    }
+    return Array.from(map.entries())
+      .map(([name, amount]) => ({ name, amount }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 6);
+  }, [filteredTransactions, selectedBranchId, apiSales]);
+
+  const expensesByCategory = useMemo(() => {
+    const map = new Map();
+    const hasBranch = selectedBranchId != null && selectedBranchId !== '';
+    if (hasBranch) {
+      branchExpenses
+        .filter((e) => String(e.branchId) === String(selectedBranchId))
+        .forEach((e) => {
+          const cat = e.category || 'Other';
+          map.set(cat, (map.get(cat) || 0) + (parseFloat(e.amount) || 0));
+        });
+    } else {
+      filteredTransactions.forEach((tx) => {
+        if (tx.type !== 'outflow' || !(tx.status === 'paid' || tx.sourceType === 'expense')) return;
+        const cat = tx.category || 'Other';
+        map.set(cat, (map.get(cat) || 0) + tx.amount);
+      });
+    }
+    return Array.from(map.entries())
+      .map(([name, amount]) => ({ name, amount }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 6);
+  }, [filteredTransactions, selectedBranchId, branchExpenses]);
+
   // Upcoming payments (pending + overdue)
   const upcomingPayments = useMemo(() => {
     return allTransactions.filter(
@@ -817,6 +881,69 @@ const CashFlow = () => {
             </p>
           </motion.div>
         </div>
+
+        {/* Profit at a glance: margin % + one-line insight */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-primary/10 border border-primary/30 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+        >
+          <div>
+            <p className="text-sm font-medium text-muted-foreground mb-1">Profit at a glance</p>
+            <p className="text-foreground font-medium">
+              {profitInsight.text}
+              {summary.hasBranch && (
+                <span className="text-muted-foreground font-normal"> (this branch)</span>
+              )}
+            </p>
+          </div>
+          {(summary.hasBranch ? summary.totalIncomeBranch : summary.totalIn) > 0 && (
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-primary">
+                {profitInsight.margin >= 0 ? `${profitInsight.margin.toFixed(0)}%` : '—'}
+              </span>
+              <span className="text-sm text-muted-foreground">profit margin</span>
+            </div>
+          )}
+        </motion.div>
+
+        {/* Income & expense by category */}
+        {(incomeByCategory.length > 0 || expensesByCategory.length > 0) && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          >
+            <div className="bg-card rounded-xl border border-border p-5">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Where income comes from</h3>
+              <ul className="space-y-2">
+                {incomeByCategory.map(({ name, amount }) => (
+                  <li key={name} className="flex justify-between items-center text-sm">
+                    <span className="text-foreground">{name}</span>
+                    <span className="font-medium text-green-500">
+                      {settings.currency} {amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="bg-card rounded-xl border border-border p-5">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Where money goes</h3>
+              <ul className="space-y-2">
+                {expensesByCategory.map(({ name, amount }) => (
+                  <li key={name} className="flex justify-between items-center text-sm">
+                    <span className="text-foreground">{name}</span>
+                    <span className="font-medium text-red-500">
+                      {settings.currency} {amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </motion.div>
+        )}
 
         {/* Alert */}
         {showAlert && (
