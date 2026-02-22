@@ -181,106 +181,89 @@ const createProduct = async (req, res, next) => {
             });
         }
 
-        try {
-            // Insert only columns that exist: name, sku, description, category, brand, base_price (all match init.pg.sql)
-            const [result] = await connection.execute(
-                `INSERT INTO products (name, sku, description, category, brand, base_price) 
-                 VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
-                [name, sku, description || null, category || null, brand || null, base_price]
-            );
+        // Insert only columns that exist: name, sku, description, category, brand, base_price (all match init.pg.sql)
+        const [result] = await connection.execute(
+            `INSERT INTO products (name, sku, description, category, brand, base_price) 
+             VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
+            [name, sku, description || null, category || null, brand || null, base_price]
+        );
 
-            const productId = result.insertId || (result.rows && result.rows[0] && result.rows[0].id);
-            if (!productId) {
-                await connection.rollback();
-                logger.error('Create product: INSERT did not return id', { result });
-                return res.status(500).json({
-                    success: false,
-                    message: 'Could not create product record. Check backend logs.'
-                });
-            }
-
-            // Generate barcode
-            const barcode = generateBarcode(productId, sku);
-            await connection.execute(
-                'INSERT INTO barcodes (product_id, barcode) VALUES (?, ?)',
-                [productId, barcode]
-            );
-
-            // Set initial stock quantity at the chosen branch
-            const qty = Math.max(0, parseInt(initialQuantity, 10) || 0);
-            if (qty >= 0 && branchIdForStock) {
-                await connection.execute(
-                    `INSERT INTO branch_stock (branch_id, product_id, quantity) VALUES (?, ?, ?)
-                     ON CONFLICT (branch_id, product_id) DO UPDATE SET quantity = branch_stock.quantity + EXCLUDED.quantity`,
-                    [branchIdForStock, productId, qty]
-                );
-            }
-
-            await connection.commit();
-
-            logger.info(`Product created: ${name} (ID: ${productId})`);
-
-            res.status(201).json({
-                success: true,
-                message: 'Product created successfully',
-                data: {
-                    id: productId,
-                    name,
-                    sku,
-                    barcode
-                }
-            });
-        } catch (insertError) {
-            await connection.rollback().catch((err) => logger.error('Rollback error:', err));
-            logger.error('Create product error', {
-                message: insertError.message,
-                stack: insertError.stack,
-                code: insertError.code,
-                detail: insertError.detail,
-                hint: insertError.hint,
-                bodyKeys: req.body ? Object.keys(req.body) : []
-            });
-            // Postgres: unique violation (e.g. SKU)
-            if (insertError.code === '23505') {
-                return res.status(409).json({
-                    success: false,
-                    message: 'SKU already exists',
-                    detail: insertError.detail || null
-                });
-            }
-            // Postgres: NOT NULL violation
-            if (insertError.code === '23502') {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Missing required field',
-                    detail: insertError.detail || null
-                });
-            }
-            // Return real error so client sees exact DB error (e.g. relation does not exist, wrong DB)
-            const msg = insertError.message || (insertError.code && `Error ${insertError.code}`) || insertError.detail || 'Could not add product';
+        const productId = result.insertId || (result.rows && result.rows[0] && result.rows[0].id);
+        if (!productId) {
+            await connection.rollback();
+            logger.error('Create product: INSERT did not return id', { result });
             return res.status(500).json({
                 success: false,
-                message: msg,
-                detail: insertError.detail || null,
-                code: insertError.code || null
+                message: 'Could not create product record. Check backend logs.'
             });
         }
+
+        // Generate barcode
+        const barcode = generateBarcode(productId, sku);
+        await connection.execute(
+            'INSERT INTO barcodes (product_id, barcode) VALUES (?, ?)',
+            [productId, barcode]
+        );
+
+        // Set initial stock quantity at the chosen branch
+        const qty = Math.max(0, parseInt(initialQuantity, 10) || 0);
+        if (qty >= 0 && branchIdForStock) {
+            await connection.execute(
+                `INSERT INTO branch_stock (branch_id, product_id, quantity) VALUES (?, ?, ?)
+                 ON CONFLICT (branch_id, product_id) DO UPDATE SET quantity = branch_stock.quantity + EXCLUDED.quantity`,
+                [branchIdForStock, productId, qty]
+            );
+        }
+
+        await connection.commit();
+
+        logger.info(`Product created: ${name} (ID: ${productId})`);
+
+        res.status(201).json({
+            success: true,
+            message: 'Product created successfully',
+            data: {
+                id: productId,
+                name,
+                sku,
+                barcode
+            }
+        });
     } catch (error) {
         if (connection && connection.rollback) {
             await connection.rollback().catch((err) => logger.error('Rollback error:', err));
         }
-        logger.error('Create product error (outer)', {
+        logger.error('Create product error', {
             message: error.message,
             stack: error.stack,
             code: error.code,
             detail: error.detail,
             bodyKeys: req.body ? Object.keys(req.body) : []
         });
-        // Ensure error has a message so global handler returns something useful to the client
-        if (error && !error.message) {
-            error.message = (error.code ? `Error: ${error.code}. ` : '') + (error.detail || 'Could not add product');
+        // Postgres: unique violation (e.g. SKU)
+        if (error.code === '23505') {
+            return res.status(409).json({
+                success: false,
+                message: 'SKU already exists',
+                detail: error.detail || null
+            });
         }
-        next(error);
+        // Postgres: NOT NULL violation
+        if (error.code === '23502') {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required field',
+                detail: error.detail || null
+            });
+        }
+        // Return real error so client sees exact DB error
+        const msg = error.message || (error.code ? `Error ${error.code}` : '') || error.detail || 'Could not add product';
+        return res.status(500).json({
+            success: false,
+            message: msg,
+            detail: error.detail || null,
+            code: error.code || null
+        });
     } finally {
         if (connection && connection.release) {
             await connection.release().catch((err) => logger.error('Release connection error:', err));
