@@ -141,7 +141,7 @@ const menuGroups = [
   {
     label: 'Tools',
     items: [
-      { type: 'link', to: '/sms', icon: MessageSquare, label: 'SMS', permission: 'customers' },
+      { type: 'link', to: '/sms', icon: MessageSquare, label: 'Messaging', permission: 'customers' },
     ],
   },
   {
