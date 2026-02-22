@@ -38,6 +38,7 @@
     --primary-gradient: linear-gradient(135deg, #ff8040 0%, #e05010 54%, #c03800 100%);
     --sidebar-active-bg: #2a3a4f;        /* Sidebar active background */
     --sidebar-active-accent: #ff8040;    /* Sidebar active accent */
+    --sidebar-footer-bg: #0d0f12;        /* Sidebar footer (user profile) - darker than secondary */
     
     /* Status Colors */
     --success: #22c55e;                  /* Success/Income green */
@@ -100,6 +101,7 @@
     --primary-gradient: linear-gradient(135deg, #ff8040 0%, #e05010 54%, #c03800 100%);
     --sidebar-active-bg: #fef3eb;
     --sidebar-active-accent: #ff8040;
+    --sidebar-footer-bg: #e4e6eb;        /* Sidebar footer - slightly darker in light theme */
     --success: #16a34a;
     --destructive: #dc2626;
     --warning: #ca8a04;
