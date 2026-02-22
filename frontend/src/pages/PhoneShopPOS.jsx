@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { authFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/use-toast';
 
 const SYS_FONT = `-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif`;
 
@@ -111,8 +112,9 @@ const CartThumb = ({ product }) => {
 export default function PhoneShopPOS() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const role = user?.role != null ? String(user.role).toLowerCase() : '';
-  
+
   // Only allow Manager, Staff, and Cashier - redirect admin
   if (role === 'admin') {
     navigate('/dashboard');
@@ -127,6 +129,7 @@ export default function PhoneShopPOS() {
   const [hoverCard, setHoverCard] = useState(null);
   const [products, setProducts] = useState(FALLBACK_PRODUCTS);
   const [productsLoading, setProductsLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   // Load products from API so POS shows real inventory (Products you add in Add Product)
   useEffect(() => {
@@ -183,8 +186,46 @@ export default function PhoneShopPOS() {
 
   const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
   const discountAmt = parseFloat(discount) || 0;
-  const tax = (subtotal - discountAmt) * 0.12;
-  const total = subtotal - discountAmt + tax;
+  const total = subtotal - discountAmt;
+
+  // Save sale to DB: creates invoice, sale_items, and reduces logged-in branch stock (enterprise POS flow)
+  const handlePayNow = async () => {
+    if (cart.length === 0 || saving) return;
+    setSaving(true);
+    try {
+      const items = cart.map((i) => ({
+        productId: i.id,
+        quantity: i.qty,
+        unitPrice: i.price,
+        discount: 0,
+      }));
+      const body = {
+        items,
+        discountAmount: discountAmt,
+        taxRate: 0,
+        paidAmount: total,
+        notes: tab ? `Order type: ${tab}` : '',
+      };
+      const res = await authFetch('/api/billing/sales', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+      const data = res?.data;
+      if (res?.ok && data?.success) {
+        setCart([]);
+        setDiscount('');
+        const inv = data?.data?.invoice_number || 'Sale saved';
+        toast({ title: 'Invoice saved', description: `Invoice ${inv}. Stock updated for your branch.`, variant: 'default' });
+      } else {
+        const msg = data?.message || data?.detail || 'Could not save sale';
+        toast({ title: 'Error', description: msg, variant: 'destructive' });
+      }
+    } catch (e) {
+      toast({ title: 'Error', description: e?.message || 'Could not save sale', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <>
@@ -316,7 +357,7 @@ export default function PhoneShopPOS() {
                 <div style={{ fontWeight: 700, fontSize: 15 }}>Order Details</div>
                 <div style={{ color: "#8b9ab0", fontSize: 11, marginTop: 2 }}>{cart.reduce((s, i) => s + i.qty, 0)} items · ${subtotal.toFixed(2)}</div>
               </div>
-              <button onClick={() => setCart([])}
+              <button type="button" onClick={() => { setCart([]); setDiscount(''); }}
                 style={{ background: "transparent", border: "1px solid #303338", borderRadius: 8, color: "#ef4444", padding: "6px 12px", fontSize: 11, cursor: "pointer", fontFamily: SYS_FONT, display: "flex", alignItems: "center", gap: 5 }}>
                 <IconRefresh /> Reset
               </button>
@@ -392,10 +433,6 @@ export default function PhoneShopPOS() {
                 <span>Discount</span>
                 <span style={{ color: "#ef4444", fontWeight: 600 }}>−${discountAmt.toFixed(2)}</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#8b9ab0" }}>
-                <span>Tax 12%</span>
-                <span style={{ color: "#d1d9e6" }}>${tax.toFixed(2)}</span>
-              </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 17, fontWeight: 800, color: "#fff", borderTop: "1px solid #1e2433", paddingTop: 11, marginTop: 2 }}>
                 <span>Total Payment</span>
                 <span style={{ color: "#ff8040" }}>${total.toFixed(2)}</span>
@@ -404,16 +441,20 @@ export default function PhoneShopPOS() {
 
             {/* Buttons */}
             <div style={{ display: "flex", gap: 8, padding: "0 18px 18px" }}>
-              <button disabled={cart.length === 0}
+              <button
+                type="button"
+                disabled={cart.length === 0 || saving}
+                onClick={handlePayNow}
                 style={{
                   flex: 2, border: "none", borderRadius: 10, fontWeight: 700, fontSize: 14, padding: "14px 0",
-                  cursor: cart.length === 0 ? "not-allowed" : "pointer", fontFamily: SYS_FONT,
+                  cursor: cart.length === 0 || saving ? "not-allowed" : "pointer", fontFamily: SYS_FONT,
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  background: cart.length === 0 ? "#1c1e24" : "linear-gradient(135deg, #ff8040 0%, #e05010 54%, #c03800 100%)",
-                  color: cart.length === 0 ? "#4a5568" : "#fff",
+                  background: cart.length === 0 || saving ? "#1c1e24" : "linear-gradient(135deg, #ff8040 0%, #e05010 54%, #c03800 100%)",
+                  color: cart.length === 0 || saving ? "#4a5568" : "#fff",
                   transition: "opacity 0.15s",
                 }}>
-                <IconCreditCard color={cart.length === 0 ? "#4a5568" : "#fff"} /> Pay Now
+                <IconCreditCard color={cart.length === 0 || saving ? "#4a5568" : "#fff"} />
+                {saving ? 'Saving…' : 'Pay Now'}
               </button>
               <button disabled={cart.length === 0}
                 style={{
