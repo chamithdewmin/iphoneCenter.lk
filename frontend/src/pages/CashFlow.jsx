@@ -764,7 +764,7 @@ const CashFlow = () => {
               Total Money In
             </span>
             <div className="flex items-center justify-between gap-2">
-              <p className="text-xl font-bold text-green-500">
+              <p className="text-2xl font-bold text-green-500">
                 {settings.currency} {(summary.hasBranch ? summary.totalIncomeBranch : summary.totalIn).toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </p>
               <div className="flex-shrink-0 w-9 h-9 rounded-full bg-green-500/20 flex items-center justify-center">
@@ -782,7 +782,7 @@ const CashFlow = () => {
               Total Money Out
             </span>
             <div className="flex items-center justify-between gap-2">
-              <p className="text-xl font-bold text-red-500">
+              <p className="text-2xl font-bold text-red-500">
                 {settings.currency} {(summary.hasBranch ? summary.totalExpensesBranch : summary.totalOut).toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </p>
               <div className="flex-shrink-0 w-9 h-9 rounded-full bg-red-500/20 flex items-center justify-center">
@@ -799,7 +799,7 @@ const CashFlow = () => {
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Net Cash Flow
             </span>
-            <p className={`text-xl font-bold ${(summary.hasBranch ? summary.netProfitBranch : summary.netCashFlow) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            <p className={`text-2xl font-bold ${(summary.hasBranch ? summary.netProfitBranch : summary.netCashFlow) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {settings.currency} {(summary.hasBranch ? summary.netProfitBranch : summary.netCashFlow).toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </p>
           </motion.div>
@@ -812,7 +812,7 @@ const CashFlow = () => {
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Current Cash
             </span>
-            <p className={`text-xl font-bold ${summary.currentCash >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            <p className={`text-2xl font-bold ${summary.currentCash >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {settings.currency} {summary.currentCash.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </p>
           </motion.div>
