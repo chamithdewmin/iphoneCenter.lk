@@ -97,6 +97,7 @@ const sanitizeInput = (input) => {
 };
 
 module.exports = {
+    isAdmin,
     generateInvoiceNumber,
     generateTransferNumber,
     generateRefundNumber,

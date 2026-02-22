@@ -1,7 +1,13 @@
 'use strict';
 const { getConnection } = require('../config/database');
-const { generateBarcode, isAdmin } = require('../utils/helpers');
+const { generateBarcode } = require('../utils/helpers');
 const logger = require('../utils/logger');
+
+/** Check if request user has admin role (inline to avoid import issues on deploy). */
+function isAdmin(req) {
+    const role = req && req.user && req.user.role != null ? String(req.user.role).toLowerCase() : '';
+    return role === 'admin';
+}
 
 /**
  * Create product - in separate file to avoid try/catch parse issues in main controller.
