@@ -21,13 +21,13 @@
     --table-border: #2a3347;             /* Table border */
     --button-border: #303338;             /* Button border */
     
-    /* Text Colors */
+    /* Text Colors - all full white for dark theme */
     --foreground: #ffffff;               /* Primary text */
     --card-foreground: #ffffff;          /* Text on cards */
     --primary-foreground: #ffffff;       /* White text on primary */
-    --secondary-foreground: #d1d9e6;     /* Body text */
-    --muted-foreground: #8b9ab0;         /* Label text */
-    --accent-foreground: #6b7a99;        /* Muted text */
+    --secondary-foreground: #ffffff;     /* Body text */
+    --muted-foreground: #ffffff;         /* Label text */
+    --accent-foreground: #ffffff;        /* Muted text */
     --destructive-foreground: #ffffff;   /* White text on destructive */
     
     /* Primary/Accent Colors - Mix Orange (Bright → Deep → Burnt) */
@@ -57,12 +57,12 @@
     --table-row-hover: #1a1d27;          /* Row hover background */
     --table-divider: #1e2433;            /* Table divider/border */
     
-    /* Text Colors (duplicate for clarity) */
+    /* Text Colors (duplicate for clarity) - all full white */
     --text-primary: #ffffff;              /* Primary headings & values */
-    --text-body: #d1d9e6;                /* Body text, source names */
-    --text-label: #8b9ab0;               /* Labels, secondary text */
-    --text-muted: #6b7a99;               /* Muted text, notes */
-    --text-placeholder: #4a5568;         /* Placeholder text, null values */
+    --text-body: #ffffff;                /* Body text, source names */
+    --text-label: #ffffff;               /* Labels, secondary text */
+    --text-muted: #ffffff;               /* Muted text, notes */
+    --text-placeholder: #9ca3af;         /* Placeholder text (slightly muted for inputs only) */
     --input-text: #b8c0cc;               /* Light gray: text inside every input/select/textarea (all pages) */
     
     /* UI Elements */
@@ -159,6 +159,13 @@
   
   .text-foreground {
     color: var(--foreground) !important;
+  }
+
+  /* Page titles: solid white instead of gradient (no mixed white/gray) */
+  .bg-clip-text.text-transparent {
+    background: none !important;
+    color: var(--foreground) !important;
+    -webkit-text-fill-color: var(--foreground) !important;
   }
 
   /* Every page: text inside all inputs, selects, textareas = #111827 */
