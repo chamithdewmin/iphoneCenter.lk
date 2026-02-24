@@ -345,193 +345,424 @@ export default function LoginPage() {
         <meta name="description" content="Login to iphone center.lk POS system" />
       </Helmet>
 
-      <style>{styles}</style>
+      <div style={{
+        minHeight:"100vh", display:"flex",
+        fontFamily:"'SF Pro Display',-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif",
+        backgroundColor:"#000", overflow:"hidden",
+      }}>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,300;1,400&display=swap');
+          * { box-sizing:border-box; margin:0; padding:0; }
 
-      <div className="vp-root">
-        {/* LEFT HERO (from VidProLogin, with iPhone Center text) */}
-        <div className="vp-hero">
-          <div className="vp-geo vp-g1"/><div className="vp-geo vp-g2"/>
-          <div className="vp-geo vp-g3"/><div className="vp-geo vp-g4"/>
-          <div className="vp-geo vp-g5"/><div className="vp-geo vp-g6"/>
-          <div style={{display:'flex',justifyContent:'flex-start',alignItems:'center',width:'100%',position:'relative',zIndex:10}}>
-            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-              <AppleLogo />
-              <span className="vp-logo-text">iPhone Center</span>
-            </div>
+          @keyframes floatA { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-18px) rotate(1.2deg)} }
+          @keyframes floatB { 0%,100%{transform:translateY(0) rotate(2deg)}  50%{transform:translateY(-11px) rotate(-1.2deg)} }
+          @keyframes floatC { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-13px) rotate(1.5deg)} }
+          @keyframes orb    { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(26px,-19px) scale(1.07)} 66%{transform:translate(-17px,13px) scale(0.94)} }
+          @keyframes fadeUp { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+          @keyframes spin   { to{transform:rotate(360deg)} }
+
+          .gp  { animation:fadeUp .8s ease both; }
+          .fr  { animation:fadeUp .8s ease both; }
+          .fr:nth-child(1){animation-delay:.1s} .fr:nth-child(2){animation-delay:.2s}
+          .fr:nth-child(3){animation-delay:.3s} .fr:nth-child(4){animation-delay:.4s}
+
+          .ifield {
+            width:100%; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1);
+            border-radius:14px; padding:16px 18px; color:#fff; font-size:15px;
+            font-family:inherit; outline:none; transition:all .3s; letter-spacing:.01em;
+          }
+          .ifield::placeholder { color:rgba(255,255,255,.25); }
+          .ifield:focus {
+            border-color:rgba(255,122,42,.62); background:rgba(255,255,255,.07);
+            box-shadow:0 0 0 3px rgba(255,100,30,.09),inset 0 1px 0 rgba(255,255,255,.05);
+          }
+          .lbtn {
+            width:100%; padding:16px; border:none; border-radius:14px; font-size:16px;
+            font-weight:600; font-family:inherit; letter-spacing:.02em; cursor:pointer;
+            background:var(--primary-gradient);
+            color:#fff; transition:all .3s;
+          }
+          .lbtn:hover:not(:disabled){ transform:translateY(-1px); box-shadow:0 12px 42px rgba(255,100,30,.42); }
+          .lbtn:active{ transform:translateY(0); }
+          .lbtn:disabled{ opacity:.7; cursor:not-allowed; }
+        `}</style>
+
+        {/* ══ LEFT ══ */}
+        <div style={{
+          flex:1, display:"flex", flexDirection:"column", justifyContent:"space-between",
+          padding:"40px 44px",
+          background:"linear-gradient(145deg,#0a0500 0%,#130800 55%,#0d0500 100%)",
+          position:"relative", overflow:"hidden",
+        }}>
+          {/* Orbs */}
+          {[[{top:"12%",left:"4%"},{w:480,c:"rgba(255,112,42,.13)"}],
+            [{bottom:"7%",right:"0%"},{w:340,c:"rgba(255,162,62,.09)"}],
+            [{top:"48%",left:"37%"},{w:200,c:"rgba(255,82,22,.07)"}]
+          ].map(([pos,{w,c}],i) => (
+            <div key={i} style={{
+              position:"absolute",...pos, width:w, height:w, borderRadius:"50%",
+              background:`radial-gradient(circle,${c} 0%,transparent 70%)`,
+              animation:`orb ${12+i*4}s ease-in-out infinite ${i*3}s`, pointerEvents:"none",
+            }}/>
+          ))}
+
+          {/* Logo */}
+          <div style={{display:"flex",alignItems:"center",gap:10,color:"#fff",zIndex:1}}>
+            <AppleLogo/>
+            <span style={{fontSize:20,fontWeight:600,letterSpacing:"0.05em"}}>iPhone Center</span>
           </div>
-          <div className="vp-copy">
-            <h1 className="vp-headline">Sell Smarter.<br/>Manage Faster.<br/>Grow Your Phone Shop.</h1>
-            <p className="vp-sub">
-              From instant billing to inventory tracking and IMEI control, our smart POS system
-              helps mobile shops run faster, reduce errors, and boost profits.
+
+          {/* Empty space */}
+          <div style={{flex:1}}></div>
+
+          {/* Tagline */}
+          <div style={{zIndex:1}}>
+            <p style={{
+              color:"rgba(255,255,255,.3)", fontSize:13,
+              fontFamily:"'Cormorant Garamond',serif", fontStyle:"italic", letterSpacing:"0.05em",
+            }}>
+              "Your Authorized iPhone Destination"
             </p>
-            <div className="vp-dots">
-              <span className="vp-dot vp-dot-active"/><span className="vp-dot"/><span className="vp-dot"/>
-            </div>
           </div>
         </div>
 
-        {/* RIGHT PANEL – reusing existing logic, new card styling */}
-        <div className="vp-panel">
-          <div className="vp-card">
-            {/* LOGIN VIEW (styled like VidProLogin) */}
-            {view === "login" && (
-              <>
-                <div className="vp-card-header" style={{display:"flex",flexDirection:"column",gap:8}}>
-                  <AppleLogo />
-                  <div style={{marginTop:14}}>
-                    <h2 className="vp-title">Welcome Back!</h2>
-                    <p className="vp-title-sub">Log in to access your POS dashboard.</p>
+        {/* ══ RIGHT ══ */}
+        <div style={{
+          width:"44%", minWidth:420, background:"#000",
+          display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+          padding:"60px 52px", position:"relative",
+        }}>
+          <div style={{
+            position:"absolute",top:0,left:0,right:0,height:200,
+            background:"radial-gradient(ellipse at 50% 0%,rgba(255,100,30,.06) 0%,transparent 70%)",
+            pointerEvents:"none",
+          }}/>
+
+          <div className="gp" style={{width:"100%",maxWidth:380}}>
+
+            {/* ── LOGIN VIEW ── */}
+            {view === "login" && <>
+              <div style={{textAlign:"center",marginBottom:36}}>
+                <div style={{
+                  display:"inline-flex",alignItems:"center",justifyContent:"center",
+                  width:62,height:62,borderRadius:20,
+                  background:"linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.03))",
+                  border:"1px solid rgba(255,255,255,.12)", marginBottom:18, color:"#fff",
+                }}>
+                  <AppleLogo/>
+                </div>
+                <h1 style={{color:"#fff",fontSize:26,fontWeight:600,letterSpacing:"-0.02em",marginBottom:6}}>Staff Sign In</h1>
+                <p style={{color:"rgba(255,255,255,.38)",fontSize:13}}>Enter your credentials to access the POS</p>
+              </div>
+
+              {error && (
+                <div style={{
+                  background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)",
+                  borderRadius:12, padding:"12px 16px", marginBottom:20,
+                  display:"flex", alignItems:"center", gap:10,
+                }}>
+                  <div style={{width:20,height:20,borderRadius:"50%",background:"rgba(239,68,68,0.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(239,68,68,0.9)" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
                   </div>
+                  <span style={{color:"rgba(239,68,68,0.9)",fontSize:13,lineHeight:1.5}}>{error}</span>
                 </div>
 
-                {error && (
-                  <div className="vp-alert vp-alert-err">
-                    {error}
-                  </div>
-                )}
-
-                <form className="vp-form" onSubmit={handleLogin}>
-                  <div className="vp-field">
-                    <label className="vp-label">Email or Username</label>
-                    <input
-                      type="email"
-                      className="vp-input"
-                      placeholder="staff@iphonecenter.com"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="vp-field">
-                    <label className="vp-label">Password</label>
-                    <div className="vp-input-wrap">
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        className="vp-input vp-input-pr"
-                        placeholder="Enter your password"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        required
-                      />
-                      <button
-                        type="button"
-                        className="vp-eye"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        <EyeIcon open={showPassword} />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="vp-row">
-                    <span style={{fontSize:".76rem",color:"#9ca3af"}}>Staff access only</span>
-                    <button
-                      type="button"
-                      className="vp-forgot"
-                      onClick={() => setView("forgot")}
-                    >
-                      Forgot Password?
+              <form onSubmit={handleLogin} style={{display:"flex",flexDirection:"column",gap:14}}>
+                <div className="fr">
+                  <label style={{display:"block",color:"rgba(255,255,255,.55)",fontSize:12,marginBottom:7,letterSpacing:"0.03em",textTransform:"uppercase"}}>Email Address</label>
+                  <input className="ifield" type="email" placeholder="staff@iphonecenter.com"
+                    value={email} onChange={e=>setEmail(e.target.value)} required/>
+                </div>
+                <div className="fr">
+                  <label style={{display:"block",color:"rgba(255,255,255,.55)",fontSize:12,marginBottom:7,letterSpacing:"0.03em",textTransform:"uppercase"}}>Password</label>
+                  <div style={{position:"relative"}}>
+                    <input className="ifield" type={showPassword?"text":"password"}
+                      placeholder="Enter your password" value={password}
+                      onChange={e=>setPassword(e.target.value)} style={{paddingRight:50}} required/>
+                    <button type="button" onClick={()=>setShowPassword(!showPassword)} style={{
+                      position:"absolute",right:16,top:"50%",transform:"translateY(-50%)",
+                      background:"none",border:"none",cursor:"pointer",
+                      color:"rgba(255,255,255,.35)",padding:0,display:"flex",transition:"color .2s",
+                    }}
+                    onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,.7)"}
+                    onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,.35)"}>
+                      <EyeIcon open={showPassword}/>
                     </button>
                   </div>
-                  <button type="submit" className="vp-btn-login" disabled={loading}>
-                    {loading ? <span className="vp-spinner" /> : "Login"}
+                )}
+
+                <div className="fr" style={{textAlign:"right"}}>
+                  <button type="button" onClick={()=>setView("forgot")} style={{
+                    background:"none",border:"none",cursor:"pointer",
+                    color:"rgba(255,120,40,.75)",fontSize:13,padding:0,transition:"color .2s",fontFamily:"inherit",
+                  }}
+                  onMouseEnter={e=>{e.currentTarget.style.color="var(--primary)";}}
+                  onMouseLeave={e=>e.currentTarget.style.color="rgba(255,120,40,.75)"}>
+                    Forgot password?
                   </button>
                 </form>
               </>
             )}
 
-            {/* EXISTING FORGOT / OTP / RESET VIEWS INSIDE SAME CARD */}
-            {view === "forgot" && (
-              <>
-                <div className="vp-card-header">
-                  <h2 className="vp-title">Forgot Password?</h2>
-                  <p className="vp-title-sub">
-                    Enter your registered email. We'll send a 6-digit OTP to your registered phone.
-                  </p>
+                <div className="fr" style={{marginTop:4}}>
+                  <button type="submit" className="lbtn" disabled={loading}>
+                    {loading ? <div style={{width:20,height:20,border:"2px solid rgba(255,255,255,.25)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite",margin:"0 auto"}}/> : "Sign In to POS"}
+                  </button>
                 </div>
+              )}
 
-                {otpError && (
-                  <div className="vp-alert vp-alert-err">{otpError}</div>
-                )}
-                {otpSuccess && (
-                  <div className="vp-alert vp-alert-ok">{otpSuccess}</div>
-                )}
+              {otpSuccess && (
+                <div style={{
+                  background:"rgba(48,209,88,0.1)", border:"1px solid rgba(48,209,88,0.3)",
+                  borderRadius:12, padding:"12px 16px", marginBottom:20,
+                  display:"flex", alignItems:"center", gap:10,
+                }}>
+                  <span style={{color:"rgba(48,209,88,0.9)",fontSize:13,lineHeight:1.5}}>{otpSuccess}</span>
+                </div>
+              )}
 
-                <form className="vp-form" onSubmit={handleSendOtp}>
-                  <div className="vp-field">
-                    <label className="vp-label">Email</label>
-                    <input
-                      className="vp-input"
-                      type="email"
-                      placeholder="staff@iphonecenter.com"
-                      value={forgotEmail}
-                      onChange={e => { setForgotEmail(e.target.value); setOtpError(""); }}
-                      required
+              <form onSubmit={handleVerifyOtp} style={{display:"flex",flexDirection:"column",gap:20}}>
+                {/* OTP boxes */}
+                <div style={{display:"flex",gap:8,justifyContent:"center"}}>
+                  {otp.map((d,i) => (
+                    <input key={i} id={`otp-${i}`}
+                      type="text" inputMode="numeric" maxLength={1} value={d}
+                      onChange={e=>handleOtpChange(e.target.value,i)}
+                      onKeyDown={e=>handleOtpKey(e,i)}
+                      style={{
+                        width:48,height:58,textAlign:"center",fontSize:24,fontWeight:700,
+                        background:d?"rgba(255,120,40,.13)":"rgba(255,255,255,.04)",
+                        border:d?"1.5px solid rgba(255,120,40,.6)":"1.5px solid rgba(255,255,255,.1)",
+                        borderRadius:14,color:"#fff",outline:"none",
+                        fontFamily:"inherit",transition:"all .2s",caretColor:"var(--primary)",
+                        boxShadow:d?"0 0 0 3px rgba(255,100,30,.08)":"none",
+                      }}
+                      onFocus={e=>{e.target.style.borderColor="rgba(255,120,40,.7)";e.target.style.boxShadow="0 0 0 3px rgba(255,100,30,.12)"}}
+                      onBlur={e=>{if(!d){e.target.style.borderColor="rgba(255,255,255,.1)";e.target.style.boxShadow="none"}}}
                     />
-                  </div>
-                  <button
-                    type="submit"
-                    className="vp-btn-login"
-                    disabled={loading || !forgotEmail.trim()}
-                  >
-                    {loading ? <span className="vp-spinner" /> : "Send OTP"}
+                  ))}
+                </div>
+
+                {/* Progress bar */}
+                <div style={{background:"rgba(255,255,255,.06)",borderRadius:4,height:4,overflow:"hidden"}}>
+                  <div style={{
+                    height:"100%",borderRadius:4,transition:"width .3s ease",
+                    width:`${(otp.filter(d=>d).length/6)*100}%`,
+                    background:"linear-gradient(90deg,var(--primary),var(--primary-mid))",
+                  }}/>
+                </div>
+
+                {/* Resend */}
+                <div style={{textAlign:"center"}}>
+                  {countdown > 0 ? (
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                      <div style={{
+                        width:28,height:28,borderRadius:"50%",
+                        background:"rgba(255,120,40,.08)",border:"1px solid rgba(255,120,40,.2)",
+                        display:"flex",alignItems:"center",justifyContent:"center",
+                        fontSize:11,fontWeight:700,color:"var(--primary)",
+                      }}>{countdown}</div>
+                      <span style={{color:"rgba(255,255,255,.3)",fontSize:13}}>Resend OTP in <span style={{color:"var(--primary)",fontWeight:600}}>{countdown}s</span></span>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={handleResendOtp} style={{
+                      background:"none",border:"none",cursor:"pointer",
+                      color:"rgba(255,120,40,.85)",fontSize:13,fontFamily:"inherit",padding:0,
+                      textDecoration:"underline",textUnderlineOffset:3,
+                    }}>
+                      Resend OTP
+                    </button>
+                  )}
+                </div>
+
+                <button type="submit" className="lbtn" disabled={loading || !otpFilled}>
+                  {loading
+                    ? <div style={{width:20,height:20,border:"2px solid rgba(255,255,255,.25)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite",margin:"0 auto"}}/>
+                    : <span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                        <Icon name="check" size={16} color="#fff"/> Verify OTP
+                      </span>
+                  }
+                </button>
+
+                <button type="button" onClick={()=>{setView("forgot");setOtp(["","","","","",""]);setOtpError("");setOtpSuccess("");}} style={{
+                  background:"none",border:"none",cursor:"pointer",
+                  color:"rgba(255,255,255,.3)",fontSize:13,fontFamily:"inherit",
+                  display:"flex",alignItems:"center",justifyContent:"center",gap:4,
+                }}>
+                  ← Change email
+                </button>
+              </form>
+            </>}
+
+            {/* ── FORGOT VIEW ── */}
+            {view === "forgot" && <>
+              <div style={{textAlign:"center",marginBottom:32}}>
+                <div style={{
+                  display:"inline-flex",alignItems:"center",justifyContent:"center",
+                  width:62,height:62,borderRadius:20,
+                  background:"var(--primary-gradient)",
+                  boxShadow:"0 2px 8px rgba(255,128,64,0.25)",
+                  marginBottom:18,
+                }}>
+                  <Icon name="phone" size={26} color="#fff"/></div>
+                <h1 style={{color:"#fff",fontSize:24,fontWeight:600,letterSpacing:"-0.02em",marginBottom:6}}>Forgot Password?</h1>
+                <p style={{color:"rgba(255,255,255,.38)",fontSize:13,lineHeight:1.6}}>
+                  Enter your registered email.<br/>We'll send a 6-digit OTP to your registered phone number.
+                </p>
+              </div>
+
+              {otpError && (
+                <div style={{
+                  background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)",
+                  borderRadius:12, padding:"12px 16px", marginBottom:20,
+                  display:"flex", alignItems:"center", gap:10,
+                }}>
+                  <span style={{color:"rgba(239,68,68,0.9)",fontSize:13,lineHeight:1.5}}>{otpError}</span>
+                </div>
+              )}
+
+              {otpSuccess && (
+                <div style={{
+                  background:"rgba(48,209,88,0.1)", border:"1px solid rgba(48,209,88,0.3)",
+                  borderRadius:12, padding:"12px 16px", marginBottom:20,
+                  display:"flex", alignItems:"center", gap:10,
+                }}>
+                  <span style={{color:"rgba(48,209,88,0.9)",fontSize:13,lineHeight:1.5}}>{otpSuccess}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSendOtp} style={{display:"flex",flexDirection:"column",gap:14}}>
+                <div className="fr">
+                  <label style={{display:"block",color:"rgba(255,255,255,.55)",fontSize:12,marginBottom:7,letterSpacing:"0.03em",textTransform:"uppercase"}}>Email</label>
+                  <input className="ifield" type="email" placeholder="staff@iphonecenter.com"
+                    value={forgotEmail} onChange={e=>{setForgotEmail(e.target.value);setOtpError("");}}
+                    required/>
+                </div>
+
+                <div style={{marginTop:4,display:"flex",flexDirection:"column",gap:10}}>
+                  <button type="submit" className="lbtn" disabled={loading || !forgotEmail.trim()}>
+                    {loading ? <div style={{width:20,height:20,border:"2px solid rgba(255,255,255,.25)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite",margin:"0 auto"}}/> : "Send OTP"}
                   </button>
-                  <button
-                    type="button"
-                    className="vp-back-btn"
-                    onClick={() => { setView("login"); setOtpError(""); setOtpSuccess(""); setForgotEmail(""); }}
-                  >
-                    ← Back to Login
+                  <button type="button" onClick={()=>{setView("login");setOtpError("");setOtpSuccess("");setForgotEmail("");}} style={{
+                    background:"none",border:"1px solid rgba(255,255,255,.1)",borderRadius:14,
+                    padding:"14px",color:"rgba(255,255,255,.45)",fontSize:14,cursor:"pointer",
+                    fontFamily:"inherit",transition:"all .2s",
+                  }}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,.25)";e.currentTarget.style.color="#fff"}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,.1)";e.currentTarget.style.color="rgba(255,255,255,.45)"}}>
+                    ← Back to Sign In
                   </button>
                 </form>
               </>
             )}
 
-            {view === "otp" && (
-              <>
-                <div className="vp-card-header">
-                  <h2 className="vp-title">Enter OTP</h2>
-                  <p className="vp-title-sub">
-                    6-digit code sent to your registered phone.
-                  </p>
+            {/* ── OTP VIEW ── */}
+            {view === "otp" && <>
+              {/* Step indicator */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginBottom:28}}>
+                {["Email","OTP","Reset"].map((s,i) => (
+                  <div key={s} style={{display:"flex",alignItems:"center",gap:6}}>
+                    <div style={{
+                      width:24,height:24,borderRadius:"50%",fontSize:11,fontWeight:700,
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      background:i<=1?"var(--primary-gradient)":"rgba(255,255,255,0.08)",
+                      color:i<=1?"#fff":"rgba(255,255,255,0.3)",
+                      border:i<=1?"none":"1px solid rgba(255,255,255,0.1)",
+                    }}>{i+1}</div>
+                    <span style={{fontSize:10,color:i<=1?"rgba(255,140,60,0.8)":"rgba(255,255,255,0.25)",fontWeight:i<=1?600:400}}>{s}</span>
+                    {i<2 && <div style={{width:20,height:1,background:i<1?"rgba(255,120,40,0.4)":"rgba(255,255,255,0.1)"}}/>}
+                  </div>
+                ))}
+              </div>
+
+              <div style={{textAlign:"center",marginBottom:28}}>
+                <div style={{
+                  display:"inline-flex",alignItems:"center",justifyContent:"center",
+                  width:62,height:62,borderRadius:20,
+                  background:"var(--primary-gradient)",
+                  boxShadow:"0 2px 8px rgba(255,128,64,0.25)",
+                  marginBottom:16,
+                }}>
+                  <Icon name="key" size={26} color="#fff"/></div>
+                <h1 style={{color:"#fff",fontSize:22,fontWeight:600,letterSpacing:"-0.02em",marginBottom:6}}>Enter OTP Code</h1>
+                <p style={{color:"rgba(255,255,255,.38)",fontSize:13,lineHeight:1.6}}>
+                  6-digit code sent to your registered phone number.
+                </p>
+              </div>
+
+              {otpError && (
+                <div style={{
+                  background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)",
+                  borderRadius:12, padding:"12px 16px", marginBottom:20,
+                  display:"flex", alignItems:"center", gap:10,
+                }}>
+                  <span style={{color:"rgba(239,68,68,0.9)",fontSize:13,lineHeight:1.5}}>{otpError}</span>
                 </div>
 
-                {otpError && (
-                  <div className="vp-alert vp-alert-err">{otpError}</div>
-                )}
-                {otpSuccess && (
-                  <div className="vp-alert vp-alert-ok">{otpSuccess}</div>
-                )}
-
-                <form className="vp-form" onSubmit={handleVerifyOtp}>
-                  <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 4 }}>
-                    {otp.map((d, i) => (
-                      <input
-                        key={i}
-                        id={`otp-${i}`}
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={1}
-                        value={d}
-                        onChange={e => handleOtpChange(e.target.value, i)}
-                        onKeyDown={e => handleOtpKey(e, i)}
-                        className="vp-otp-box"
-                        style={{
-                          borderColor: d ? "#4f8ef7" : "#e5e8f0",
-                          background: d ? "#eef4ff" : "#f8f9fc"
-                        }}
-                      />
-                    ))}
+            {/* ── RESET VIEW ── */}
+            {view === "reset" && <>
+              {/* Step indicator */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginBottom:28}}>
+                {["Email","OTP","Reset"].map((s,i) => (
+                  <div key={s} style={{display:"flex",alignItems:"center",gap:6}}>
+                    <div style={{
+                      width:24,height:24,borderRadius:"50%",fontSize:11,fontWeight:700,
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      background:"var(--primary-gradient)",color:"#fff",
+                    }}>{i+1}</div>
+                    <span style={{fontSize:10,color:"rgba(255,140,60,0.8)",fontWeight:600}}>{s}</span>
+                    {i<2 && <div style={{width:20,height:1,background:"rgba(255,120,40,0.4)"}}/>}
                   </div>
-                  <div className="vp-resend">
-                    {countdown > 0 ? (
-                      <>Resend in <strong>{countdown}s</strong></>
-                    ) : (
-                      <>
-                        <span>Didn't receive it? </span>
-                        <button type="button" onClick={handleResendOtp}>Resend OTP</button>
-                      </>
-                    )}
+                ))}
+              </div>
+              <div style={{textAlign:"center",marginBottom:32}}>
+                <div style={{
+                  display:"inline-flex",alignItems:"center",justifyContent:"center",
+                  width:62,height:62,borderRadius:20,
+                  background:"linear-gradient(135deg,rgba(48,209,88,.15),rgba(30,160,60,.06))",
+                  border:"1px solid rgba(48,209,88,.3)", marginBottom:18,
+                }}>
+                  <Icon name="check" size={26} color="#30d158"/></div>
+                <h1 style={{color:"#fff",fontSize:24,fontWeight:600,letterSpacing:"-0.02em",marginBottom:6}}>Set New Password</h1>
+                <p style={{color:"rgba(255,255,255,.38)",fontSize:13}}>OTP verified. Create your new password.</p>
+              </div>
+
+              {otpError && (
+                <div style={{
+                  background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)",
+                  borderRadius:12, padding:"12px 16px", marginBottom:20,
+                  display:"flex", alignItems:"center", gap:10,
+                }}>
+                  <span style={{color:"rgba(239,68,68,0.9)",fontSize:13,lineHeight:1.5}}>{otpError}</span>
+                </div>
+              )}
+
+              {otpSuccess && (
+                <div style={{
+                  background:"rgba(48,209,88,0.1)", border:"1px solid rgba(48,209,88,0.3)",
+                  borderRadius:12, padding:"12px 16px", marginBottom:20,
+                  display:"flex", alignItems:"center", gap:10,
+                }}>
+                  <span style={{color:"rgba(48,209,88,0.9)",fontSize:13,lineHeight:1.5}}>{otpSuccess}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleReset} style={{display:"flex",flexDirection:"column",gap:14}}>
+                <div className="fr">
+                  <label style={{display:"block",color:"rgba(255,255,255,.55)",fontSize:12,marginBottom:7,letterSpacing:"0.03em",textTransform:"uppercase"}}>New Password</label>
+                  <div style={{position:"relative"}}>
+                    <input className="ifield" type={showNew?"text":"password"}
+                      placeholder="Min. 6 characters" value={newPassword}
+                      onChange={e=>setNewPassword(e.target.value)} style={{paddingRight:50}} required minLength={6}/>
+                    <button type="button" onClick={()=>setShowNew(!showNew)} style={{
+                      position:"absolute",right:16,top:"50%",transform:"translateY(-50%)",
+                      background:"none",border:"none",cursor:"pointer",
+                      color:"rgba(255,255,255,.35)",padding:0,display:"flex",
+                    }}>
+                      <EyeIcon open={showNew}/>
+                    </button>
                   </div>
                   <button
                     type="submit"
@@ -560,73 +791,55 @@ export default function LoginPage() {
                   </p>
                 </div>
 
-                {otpError && (
-                  <div className="vp-alert vp-alert-err">{otpError}</div>
-                )}
-                {otpSuccess && (
-                  <div className="vp-alert vp-alert-ok">{otpSuccess}</div>
+                <div className="fr">
+                  <label style={{display:"block",color:"rgba(255,255,255,.55)",fontSize:12,marginBottom:7,letterSpacing:"0.03em",textTransform:"uppercase"}}>Confirm Password</label>
+                  <input className="ifield" type="password"
+                    placeholder="Confirm your password" value={confirmPassword}
+                    onChange={e=>setConfirmPassword(e.target.value)} required minLength={6}/>
+                </div>
+
+                {/* Password strength */}
+                {newPassword.length > 0 && (
+                  <div style={{display:"flex",gap:4}}>
+                    {[4,6,8,10].map((min,i) => (
+                      <div key={i} style={{
+                        flex:1,height:4,borderRadius:2,
+                        background:newPassword.length>=min
+                          ?["#ff4444","var(--primary)","#ffb347","#30d158"][i]
+                          :"rgba(255,255,255,.1)",
+                        transition:"background .3s",
+                      }}/>
+                    ))}
+                    <span style={{
+                      color:["#ff4444","var(--primary)","#ffb347","#30d158"][
+                        newPassword.length>=10?3:newPassword.length>=8?2:newPassword.length>=6?1:0
+                      ],
+                      fontSize:11,whiteSpace:"nowrap",alignSelf:"center",marginLeft:6,
+                    }}>
+                      {["Weak","Fair","Good","Strong"][newPassword.length>=10?3:newPassword.length>=8?2:newPassword.length>=6?1:0]}
+                    </span>
+                  </div>
                 )}
 
-                <form className="vp-form" onSubmit={handleReset}>
-                  <div className="vp-field">
-                    <label className="vp-label">New password</label>
-                    <div className="vp-input-wrap">
-                      <input
-                        className="vp-input vp-input-pr"
-                        type={showNew ? "text" : "password"}
-                        placeholder="Min. 6 characters"
-                        value={newPassword}
-                        onChange={e => setNewPassword(e.target.value)}
-                        required
-                        minLength={6}
-                      />
-                      <button
-                        type="button"
-                        className="vp-eye"
-                        onClick={() => setShowNew(!showNew)}
-                      >
-                        <EyeIcon open={showNew} />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="vp-field">
-                    <label className="vp-label">Confirm password</label>
-                    <input
-                      className="vp-input"
-                      type="password"
-                      placeholder="Confirm your password"
-                      value={confirmPassword}
-                      onChange={e => setConfirmPassword(e.target.value)}
-                      required
-                      minLength={6}
-                    />
-                  </div>
-                  {newPassword.length > 0 && (
-                    <div style={{ display: "flex", gap: 4, alignItems: "center", marginTop: 4 }}>
-                      {[4, 6, 8, 10].map((min, i) => (
-                        <div
-                          key={i}
-                          style={{
-                            flex: 1,
-                            height: 4,
-                            borderRadius: 2,
-                            background: newPassword.length >= min ? ["#ef4444", "#f59e0b", "#3b82f6", "#22c55e"][i] : "#e5e7eb",
-                            transition: "background .2s"
-                          }}
-                        />
-                      ))}
-                    </div>
-                  )}
-                  <button
-                    type="submit"
-                    className="vp-btn-login"
-                    disabled={loading || newPassword.length < 6 || newPassword !== confirmPassword}
-                  >
-                    {loading ? <span className="vp-spinner" /> : "Reset password"}
+                <div style={{marginTop:4}}>
+                  <button type="submit" className="lbtn" disabled={loading || newPassword.length < 6 || newPassword !== confirmPassword}>
+                    {loading ? <div style={{width:20,height:20,border:"2px solid rgba(255,255,255,.25)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite",margin:"0 auto"}}/> : "Reset Password"}
                   </button>
-                </form>
-              </>
-            )}
+                </div>
+              </form>
+            </>}
+
+          </div>
+
+          {/* Footer */}
+          <div style={{
+            position:"absolute",bottom:28,
+            display:"flex",flexDirection:"column",alignItems:"center",gap:4,
+          }}>
+            <span style={{color:"rgba(255,255,255,.35)",fontSize:13,letterSpacing:"0.04em"}}>
+              Powered by <span style={{color:"rgba(255,120,40,.86)",fontWeight:700}}>LogozoDev</span>
+            </span>
+            <span style={{color:"rgba(255,255,255,.3)",fontSize:12,letterSpacing:"0.1em"}}>v1.0.0</span>
           </div>
         </div>
       </div>

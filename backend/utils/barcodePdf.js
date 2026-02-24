@@ -19,6 +19,9 @@ const BARCODE_OPTIONS = {
   includetext: true,
   textxalign: 'center',
   padding: 1,
+/**
+ * Generate Code128 barcode as PNG buffer.
+ */
 };
 
 async function generateBarcodePng(text) {
