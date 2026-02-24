@@ -11,8 +11,7 @@ const BARCODE_OPTIONS = {
   bcid: 'code128',
   scale: 2,
   height: 12,
-  includetext: true,
-  textxalign: 'center',
+  includetext: false,
 };
 
 /**
@@ -26,12 +25,12 @@ async function generateBarcodePng(text) {
 }
 
 /**
- * Generate a PDF with one barcode (and optional product name), centered on A4.
- * @param {string} barcode - Barcode value
- * @param {string} [productName] - Optional product name to show below barcode
+ * Generate a PDF with one barcode only (no text), centered on A4.
+ * @param {string} barcode - Barcode value to encode
+ * @param {string} [_productName] - Unused; kept for API compatibility
  * @returns {Promise<Buffer>}
  */
-async function generateSingleBarcodePdf(barcode, productName = '') {
+async function generateSingleBarcodePdf(barcode, _productName = '') {
   const pngBuffer = await generateBarcodePng(barcode);
 
   return new Promise((resolve, reject) => {
@@ -44,21 +43,9 @@ async function generateSingleBarcodePdf(barcode, productName = '') {
     const imgWidth = 180;
     const imgHeight = 70;
     const x = (A4_WIDTH_PT - imgWidth) / 2;
-    const y = (A4_HEIGHT_PT - imgHeight) / 2 - 30;
+    const y = (A4_HEIGHT_PT - imgHeight) / 2;
 
     doc.image(pngBuffer, x, y, { width: imgWidth, height: imgHeight });
-
-    const textY = y + imgHeight + 8;
-    doc.fontSize(10).font('Helvetica').text(barcode, 0, textY, {
-      width: A4_WIDTH_PT,
-      align: 'center',
-    });
-    if (productName) {
-      doc.fontSize(9).fillColor('#666666').text(productName, 0, textY + 14, {
-        width: A4_WIDTH_PT,
-        align: 'center',
-      });
-    }
     doc.end();
   });
 }

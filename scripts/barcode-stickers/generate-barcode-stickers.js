@@ -56,19 +56,17 @@ const CELL_HEIGHT = (A4_HEIGHT_PT - MARGIN_TOP - MARGIN_BOTTOM - (ROWS - 1) * GA
 const BARCODE_IMG_WIDTH = Math.min(CELL_WIDTH - 6, 140);
 const BARCODE_IMG_HEIGHT = 72;
 
-// Code128 options optimized for scanner reliability (all major scanners)
+// Code128 options optimized for scanner reliability (no text under barcode)
 const BARCODE_OPTIONS = {
   bcid: 'code128',
-  scale: 2,           // 2x minimum for reliable scanning
-  height: 12,         // bar height in mm – good for hand-held and fixed scanners
-  includetext: true,  // human-readable code once, under the bars
-  textxalign: 'center',
+  scale: 2,
+  height: 12,
+  includetext: false,  // no text – barcode image only
   padding: 2,
 };
 
 /**
- * Generate a Code128 barcode as PNG buffer.
- * The barcode number appears once under the bars (includetext).
+ * Generate a Code128 barcode as PNG buffer (bars only, no text).
  */
 async function generateBarcodePng(code) {
   return bwipjs.toBuffer({
@@ -107,7 +105,7 @@ async function generatePdf(items) {
 
         const col = drawn % COLS;
         const row = Math.floor(drawn / COLS);
-        const { code, name } = items[index];
+        const { code } = items[index];
         const isLastOnPage = drawn === maxThisPage - 1;
         index++;
         drawn++;
@@ -121,17 +119,6 @@ async function generatePdf(items) {
               width: BARCODE_IMG_WIDTH,
               height: BARCODE_IMG_HEIGHT,
             });
-
-            // Product name only below the barcode (code appears once under the bars via includetext)
-            const textY = y + BARCODE_IMG_HEIGHT + 4;
-            doc.fontSize(8)
-              .font('Helvetica')
-              .fillColor('#333333')
-              .text(String(name || '').trim() || code, x, textY, {
-                width: CELL_WIDTH,
-                align: 'center',
-                height: CELL_HEIGHT - BARCODE_IMG_HEIGHT - 8,
-              });
 
             if (isLastOnPage) {
               callback();
