@@ -515,88 +515,98 @@ export default function LoginPage() {
               </>
             )}
 
-              {otpSuccess && (
-                <div style={{
-                  background:"rgba(48,209,88,0.1)", border:"1px solid rgba(48,209,88,0.3)",
-                  borderRadius:12, padding:"12px 16px", marginBottom:20,
-                  display:"flex", alignItems:"center", gap:10,
-                }}>
-                  <span style={{color:"rgba(48,209,88,0.9)",fontSize:13,lineHeight:1.5}}>{otpSuccess}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleVerifyOtp} style={{display:"flex",flexDirection:"column",gap:20}}>
-                {/* OTP boxes */}
-                <div style={{display:"flex",gap:8,justifyContent:"center"}}>
-                  {otp.map((d,i) => (
-                    <input key={i} id={`otp-${i}`}
-                      type="text" inputMode="numeric" maxLength={1} value={d}
-                      onChange={e=>handleOtpChange(e.target.value,i)}
-                      onKeyDown={e=>handleOtpKey(e,i)}
-                      style={{
-                        width:48,height:58,textAlign:"center",fontSize:24,fontWeight:700,
-                        background:d?"rgba(255,120,40,.13)":"rgba(255,255,255,.04)",
-                        border:d?"1.5px solid rgba(255,120,40,.6)":"1.5px solid rgba(255,255,255,.1)",
-                        borderRadius:14,color:"#fff",outline:"none",
-                        fontFamily:"inherit",transition:"all .2s",caretColor:"var(--primary)",
-                        boxShadow:d?"0 0 0 3px rgba(255,100,30,.08)":"none",
-                      }}
-                      onFocus={e=>{e.target.style.borderColor="rgba(255,120,40,.7)";e.target.style.boxShadow="0 0 0 3px rgba(255,100,30,.12)"}}
-                      onBlur={e=>{if(!d){e.target.style.borderColor="rgba(255,255,255,.1)";e.target.style.boxShadow="none"}}}
-                    />
-                  ))}
-                </div>
-
-                {/* Progress bar */}
-                <div style={{background:"rgba(255,255,255,.06)",borderRadius:4,height:4,overflow:"hidden"}}>
+            {/* ── OTP VIEW ── */}
+            {view === "otp" && (
+              <>
+                {otpSuccess && (
                   <div style={{
-                    height:"100%",borderRadius:4,transition:"width .3s ease",
-                    width:`${(otp.filter(d=>d).length/6)*100}%`,
-                    background:"linear-gradient(90deg,var(--primary),var(--primary-mid))",
-                  }}/>
-                </div>
+                    background:"rgba(48,209,88,0.1)", border:"1px solid rgba(48,209,88,0.3)",
+                    borderRadius:12, padding:"12px 16px", marginBottom:20,
+                    display:"flex", alignItems:"center", gap:10,
+                  }}>
+                    <span style={{color:"rgba(48,209,88,0.9)",fontSize:13,lineHeight:1.5}}>{otpSuccess}</span>
+                  </div>
+                )}
 
-                {/* Resend */}
-                <div style={{textAlign:"center"}}>
-                  {countdown > 0 ? (
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                      <div style={{
-                        width:28,height:28,borderRadius:"50%",
-                        background:"rgba(255,120,40,.08)",border:"1px solid rgba(255,120,40,.2)",
-                        display:"flex",alignItems:"center",justifyContent:"center",
-                        fontSize:11,fontWeight:700,color:"var(--primary)",
-                      }}>{countdown}</div>
-                      <span style={{color:"rgba(255,255,255,.3)",fontSize:13}}>Resend OTP in <span style={{color:"var(--primary)",fontWeight:600}}>{countdown}s</span></span>
-                    </div>
-                  ) : (
-                    <button type="button" onClick={handleResendOtp} style={{
+                <form onSubmit={handleVerifyOtp} style={{display:"flex",flexDirection:"column",gap:20}}>
+                  {/* OTP boxes */}
+                  <div style={{display:"flex",gap:8,justifyContent:"center"}}>
+                    {otp.map((d,i) => (
+                      <input key={i} id={`otp-${i}`}
+                        type="text" inputMode="numeric" maxLength={1} value={d}
+                        onChange={e=>handleOtpChange(e.target.value,i)}
+                        onKeyDown={e=>handleOtpKey(e,i)}
+                        style={{
+                          width:48,height:58,textAlign:"center",fontSize:24,fontWeight:700,
+                          background:d?"rgba(255,120,40,.13)":"rgba(255,255,255,.04)",
+                          border:d?"1.5px solid rgba(255,120,40,.6)":"1.5px solid rgba(255,255,255,.1)",
+                          borderRadius:14,color:"#fff",outline:"none",
+                          fontFamily:"inherit",transition:"all .2s",caretColor:"var(--primary)",
+                          boxShadow:d?"0 0 0 3px rgba(255,100,30,.08)":"none",
+                        }}
+                        onFocus={e=>{e.target.style.borderColor="rgba(255,120,40,.7)";e.target.style.boxShadow="0 0 0 3px rgba(255,100,30,.12)";}}
+                        onBlur={e=>{if(!d){e.target.style.borderColor="rgba(255,255,255,.1)";e.target.style.boxShadow="none";}}}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Progress bar */}
+                  <div style={{background:"rgba(255,255,255,.06)",borderRadius:4,height:4,overflow:"hidden"}}>
+                    <div style={{
+                      height:"100%",borderRadius:4,transition:"width .3s ease",
+                      width:`${(otp.filter(d=>d).length/6)*100}%`,
+                      background:"linear-gradient(90deg,var(--primary),var(--primary-mid))",
+                    }}/>
+                  </div>
+
+                  {/* Resend */}
+                  <div style={{textAlign:"center"}}>
+                    {countdown > 0 ? (
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                        <div style={{
+                          width:28,height:28,borderRadius:"50%",
+                          background:"rgba(255,120,40,.08)",border:"1px solid rgba(255,120,40,.2)",
+                          display:"flex",alignItems:"center",justifyContent:"center",
+                          fontSize:11,fontWeight:700,color:"var(--primary)",
+                        }}>{countdown}</div>
+                        <span style={{color:"rgba(255,255,255,.3)",fontSize:13}}>
+                          Resend OTP in <span style={{color:"var(--primary)",fontWeight:600}}>{countdown}s</span>
+                        </span>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={handleResendOtp} style={{
+                        background:"none",border:"none",cursor:"pointer",
+                        color:"rgba(255,120,40,.85)",fontSize:13,fontFamily:"inherit",padding:0,
+                        textDecoration:"underline",textUnderlineOffset:3,
+                      }}>
+                        Resend OTP
+                      </button>
+                    )}
+                  </div>
+
+                  <button type="submit" className="lbtn" disabled={loading || !otpFilled}>
+                    {loading
+                      ? <div style={{width:20,height:20,border:"2px solid rgba(255,255,255,.25)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite",margin:"0 auto"}}/>
+                      : <span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                          <Icon name="check" size={16} color="#fff"/> Verify OTP
+                        </span>
+                    }
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={()=>{setView("forgot");setOtp(["","","","","",""]);setOtpError("");setOtpSuccess("");}}
+                    style={{
                       background:"none",border:"none",cursor:"pointer",
-                      color:"rgba(255,120,40,.85)",fontSize:13,fontFamily:"inherit",padding:0,
-                      textDecoration:"underline",textUnderlineOffset:3,
-                    }}>
-                      Resend OTP
-                    </button>
-                  )}
-                </div>
-
-                <button type="submit" className="lbtn" disabled={loading || !otpFilled}>
-                  {loading
-                    ? <div style={{width:20,height:20,border:"2px solid rgba(255,255,255,.25)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite",margin:"0 auto"}}/>
-                    : <span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                        <Icon name="check" size={16} color="#fff"/> Verify OTP
-                      </span>
-                  }
-                </button>
-
-                <button type="button" onClick={()=>{setView("forgot");setOtp(["","","","","",""]);setOtpError("");setOtpSuccess("");}} style={{
-                  background:"none",border:"none",cursor:"pointer",
-                  color:"rgba(255,255,255,.3)",fontSize:13,fontFamily:"inherit",
-                  display:"flex",alignItems:"center",justifyContent:"center",gap:4,
-                }}>
-                  ← Change email
-                </button>
-              </form>
-            </>}
+                      color:"rgba(255,255,255,.3)",fontSize:13,fontFamily:"inherit",
+                      display:"flex",alignItems:"center",justifyContent:"center",gap:4,
+                    }}
+                  >
+                    ← Change email
+                  </button>
+                </form>
+              </>
+            )}
 
             {/* ── FORGOT VIEW ── */}
             {view === "forgot" && <>
