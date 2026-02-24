@@ -21,6 +21,74 @@ const EyeIcon = ({ open }) => open ? (
   </svg>
 );
 
+// New visual design styles (hero + panel) from VidProLogin
+const styles = `
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .vp-root {
+    display: flex; height: 100vh; width: 100vw;
+    overflow: hidden; font-family: 'DM Sans', sans-serif;
+  }
+
+  .vp-hero {
+    flex: 1 1 58%; position: relative; background: #080c18;
+    overflow: hidden; display: flex; flex-direction: column;
+    padding: 28px 36px 48px;
+  }
+  .vp-geo { position: absolute; pointer-events: none; }
+  .vp-g1 { top:-100px;right:-80px;width:520px;height:520px;background:linear-gradient(145deg,#18243e 0%,#0d1628 55%,transparent 100%);clip-path:polygon(28% 0%,100% 0%,100% 68%,58% 100%,0% 58%);opacity:.95;animation:vpFadeIn 1s ease both; }
+  .vp-g2 { top:60px;left:-60px;width:380px;height:360px;background:linear-gradient(125deg,#14213a 0%,transparent 75%);clip-path:polygon(0 0,100% 18%,82% 100%,0% 82%);opacity:.7;animation:vpFadeIn 1s .1s ease both; }
+  .vp-g3 { bottom:-80px;right:20px;width:460px;height:400px;background:linear-gradient(205deg,#111c30 0%,#080c18 100%);clip-path:polygon(18% 0%,100% 28%,100% 100%,0% 100%);opacity:.9;animation:vpFadeIn 1s .2s ease both; }
+  .vp-g4 { top:190px;right:60px;width:280px;height:300px;background:linear-gradient(175deg,#1c2f4e 0%,transparent 65%);clip-path:polygon(50% 0%,100% 48%,72% 100%,0% 78%,8% 18%);opacity:.45;animation:vpFadeIn 1s .3s ease both; }
+  .vp-g5 { bottom:60px;left:20px;width:220px;height:220px;background:linear-gradient(140deg,#182540 0%,transparent 75%);clip-path:polygon(0 38%,62% 0%,100% 58%,42% 100%);opacity:.38;animation:vpFadeIn 1s .35s ease both; }
+  .vp-g6 { top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;background:radial-gradient(ellipse at center,rgba(79,142,247,.04) 0%,transparent 70%); }
+
+  .vp-logo-text { font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:#eef2ff;letter-spacing:.02em; }
+  .vp-copy { position:relative;z-index:10;margin-top:auto; }
+  .vp-headline { font-family:'DM Sans',sans-serif;font-weight:700;font-size:clamp(1.9rem,2.8vw,2.7rem);line-height:1.14;color:#eef2ff;letter-spacing:-.03em;margin-bottom:14px;animation:vpSlideUp .8s .2s ease both; }
+  .vp-sub { font-size:.85rem;font-weight:300;color:rgba(220,230,255,.42);line-height:1.65;max-width:360px;animation:vpSlideUp .8s .35s ease both; }
+  .vp-dots { display:flex;gap:6px;margin-top:24px;animation:vpSlideUp .8s .45s ease both; }
+  .vp-dot { height:3px;border-radius:2px;background:rgba(255,255,255,.18);width:22px; }
+  .vp-dot-active { background:#4f8ef7;width:36px; }
+
+  .vp-panel { flex:0 0 520px;background:#fff;display:flex;align-items:center;justify-content:center;padding:32px 40px;overflow-y:auto; }
+  .vp-card { width:100%;max-width:420px;animation:vpSlideUp .6s .1s ease both; }
+  .vp-card-header { margin-bottom:26px; }
+  .vp-title { font-family:'Syne',sans-serif;font-weight:700;font-size:1.7rem;color:#111827;letter-spacing:-.03em;margin-bottom:5px; }
+  .vp-title-sub { font-size:.78rem;color:#9ca3af;font-weight:400; }
+
+  .vp-form { display:flex;flex-direction:column;gap:14px; }
+  .vp-field { display:flex;flex-direction:column;gap:5px; }
+  .vp-label { font-size:.76rem;font-weight:500;color:#374151; }
+
+  .vp-input { width:100%;height:42px;padding:0 14px;background:#f8f9fc;border:1.5px solid #e5e8f0;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.84rem;color:#111827;outline:none;transition:border-color .2s,box-shadow .2s,background .2s; }
+  .vp-input::placeholder { color:#c0c8d8; }
+  .vp-input:focus { border-color:#4f8ef7;background:#fff;box-shadow:0 0 0 3px rgba(79,142,247,.1); }
+  .vp-input-pr { padding-right:42px; }
+  .vp-input-wrap { position:relative; }
+  .vp-eye { position:absolute;right:11px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#b0bac8;display:flex;align-items:center;padding:3px;transition:color .2s; }
+  .vp-eye:hover { color:#4f8ef7; }
+
+  .vp-row { display:flex;align-items:center;justify-content:space-between;margin-top:-2px; }
+  .vp-forgot { font-size:.76rem;color:#4f8ef7;font-weight:500;text-decoration:none;cursor:pointer;background:none;border:none;transition:color .2s; }
+  .vp-forgot:hover { color:#3472e0; }
+
+  .vp-btn-login { width:100%;height:43px;background:#111827;color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;letter-spacing:.02em;margin-top:4px;transition:background .2s,transform .12s,box-shadow .2s; }
+  .vp-btn-login:hover:not(:disabled) { background:#1e2d42;transform:translateY(-1px);box-shadow:0 4px 14px rgba(17,24,39,.25); }
+  .vp-btn-login:active:not(:disabled) { transform:translateY(0);box-shadow:none; }
+  .vp-btn-login:disabled { opacity:.65;cursor:not-allowed; }
+
+  .vp-spinner { width:17px;height:17px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:vpSpin .65s linear infinite; }
+
+  @keyframes vpFadeIn { from{opacity:0}to{opacity:1} }
+  @keyframes vpSlideUp { from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)} }
+  @keyframes vpSpin { to{transform:rotate(360deg)} }
+
+  @media (max-width:700px) { .vp-hero{display:none} .vp-panel{flex:1} }
+`;
+
 // ── SVG Icon Library ──
 const Icon = ({ name, size=14, color="currentColor" }) => {
   const s = { width:size, height:size, display:"block", flexShrink:0 };
@@ -277,305 +345,288 @@ export default function LoginPage() {
         <meta name="description" content="Login to iphone center.lk POS system" />
       </Helmet>
 
-      <div style={{
-        minHeight: "100vh",
-        display: "flex",
-        fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif",
-        overflow: "hidden",
-      }}>
-        <style>{`
-          * { box-sizing: border-box; margin: 0; padding: 0; }
-          @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-          @keyframes spin { to { transform: rotate(360deg); } }
-          .login-fade { animation: fadeUp 0.5s ease both; }
-          .login-field {
-            width: 100%; background: #f8f9fa; border: 1px solid #e0e0e0;
-            border-radius: 10px; padding: 14px 16px; color: #1a1a1a; font-size: 15px;
-            font-family: inherit; outline: none; transition: border-color .2s, box-shadow .2s;
-          }
-          .login-field::placeholder { color: #888; }
-          .login-field:focus {
-            border-color: #A31F2A; box-shadow: 0 0 0 2px rgba(163,31,42,.15);
-          }
-          .login-btn {
-            width: 100%; padding: 14px 24px; border: none; border-radius: 10px;
-            font-size: 16px; font-weight: 600; font-family: inherit; cursor: pointer;
-            background: #2563eb; color: #fff; transition: background .2s, transform .15s;
-          }
-          .login-btn:hover:not(:disabled) { background: #1d4ed8; transform: translateY(-1px); }
-          .login-btn:disabled { opacity: .7; cursor: not-allowed; }
-        `}</style>
+      <style>{styles}</style>
 
-        {/* ══ LEFT — Light grey ══ */}
-        <div style={{
-          flex: "0 0 42%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          padding: "48px 56px",
-          background: "#F2F2F2",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 48 }}>
-            <AppleLogo />
-            <span style={{ fontSize: 22, fontWeight: 600, color: "#1a1a1a", letterSpacing: "0.02em" }}>iPhone Center</span>
+      <div className="vp-root">
+        {/* LEFT HERO (from VidProLogin, with iPhone Center text) */}
+        <div className="vp-hero">
+          <div className="vp-geo vp-g1"/><div className="vp-geo vp-g2"/>
+          <div className="vp-geo vp-g3"/><div className="vp-geo vp-g4"/>
+          <div className="vp-geo vp-g5"/><div className="vp-geo vp-g6"/>
+          <div style={{display:'flex',justifyContent:'flex-start',alignItems:'center',width:'100%',position:'relative',zIndex:10}}>
+            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+              <AppleLogo />
+              <span className="vp-logo-text">iPhone Center</span>
+            </div>
           </div>
-          <h1 style={{
-            fontSize: "clamp(1.75rem, 3vw, 2.25rem)",
-            fontWeight: 700,
-            color: "#1a1a1a",
-            lineHeight: 1.3,
-            letterSpacing: "-0.02em",
-          }}>
-            Welcome to iPhone Center POS
-          </h1>
-          <p style={{ marginTop: 16, fontSize: 16, color: "#555", lineHeight: 1.6 }}>
-            Sign in with your staff credentials to access inventory, sales, and reports.
-          </p>
+          <div className="vp-copy">
+            <h1 className="vp-headline">Sell Smarter.<br/>Manage Faster.<br/>Grow Your Phone Shop.</h1>
+            <p className="vp-sub">
+              From instant billing to inventory tracking and IMEI control, our smart POS system
+              helps mobile shops run faster, reduce errors, and boost profits.
+            </p>
+            <div className="vp-dots">
+              <span className="vp-dot vp-dot-active"/><span className="vp-dot"/><span className="vp-dot"/>
+            </div>
+          </div>
         </div>
 
-        {/* ══ RIGHT — Dark red, white card with form ══ */}
-        <div style={{
-          flex: 1,
-          minWidth: 0,
-          background: "#A31F2A",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 40,
-          position: "relative",
-        }}>
-          <div className="login-fade" style={{
-            width: "100%",
-            maxWidth: 420,
-            background: "#fff",
-            borderRadius: 16,
-            boxShadow: "0 20px 60px rgba(0,0,0,.2)",
-            padding: "40px 44px",
-          }}>
-
-            {/* ── LOGIN VIEW ── */}
-            {view === "login" && <>
-              <div style={{ textAlign: "center", marginBottom: 28 }}>
-                <h2 style={{ color: "#1a1a1a", fontSize: 22, fontWeight: 600, marginBottom: 6 }}>Sign in</h2>
-                <p style={{ color: "#666", fontSize: 14 }}>Enter your credentials to access the POS</p>
-              </div>
-
-              {error && (
-                <div style={{
-                  background: "#fef2f2", border: "1px solid #fecaca",
-                  borderRadius: 10, padding: "12px 14px", marginBottom: 18,
-                  display: "flex", alignItems: "center", gap: 10,
-                }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" style={{ flexShrink: 0 }}>
-                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                  </svg>
-                  <span style={{ color: "#b91c1c", fontSize: 13, lineHeight: 1.5 }}>{error}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <div>
-                  <label style={{ display: "block", color: "#374151", fontSize: 13, fontWeight: 500, marginBottom: 6 }}>Email or username</label>
-                  <input className="login-field" type="email" placeholder="staff@iphonecenter.com"
-                    value={email} onChange={e => setEmail(e.target.value)} required />
-                </div>
-                <div>
-                  <label style={{ display: "block", color: "#374151", fontSize: 13, fontWeight: 500, marginBottom: 6 }}>Password</label>
-                  <div style={{ position: "relative" }}>
-                    <input className="login-field" type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password" value={password}
-                      onChange={e => setPassword(e.target.value)} style={{ paddingRight: 48 }} required />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} style={{
-                      position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)",
-                      background: "none", border: "none", cursor: "pointer",
-                      color: "#6b7280", padding: 0, display: "flex",
-                    }}>
-                      <EyeIcon open={showPassword} />
-                    </button>
+        {/* RIGHT PANEL – reusing existing logic, new card styling */}
+        <div className="vp-panel">
+          <div className="vp-card">
+            {/* LOGIN VIEW (styled like VidProLogin) */}
+            {view === "login" && (
+              <>
+                <div className="vp-card-header" style={{display:"flex",flexDirection:"column",gap:8}}>
+                  <AppleLogo />
+                  <div style={{marginTop:14}}>
+                    <h2 className="vp-title">Welcome Back!</h2>
+                    <p className="vp-title-sub">Log in to access your POS dashboard.</p>
                   </div>
                 </div>
 
-                <div style={{ textAlign: "right" }}>
-                  <button type="button" onClick={() => setView("forgot")} style={{
-                    background: "none", border: "none", cursor: "pointer",
-                    color: "#A31F2A", fontSize: 13, padding: 0, fontFamily: "inherit",
-                  }}>
-                    Forgot password?
-                  </button>
-                </div>
-
-                <div style={{ marginTop: 4 }}>
-                  <button type="submit" className="login-btn" disabled={loading}>
-                    {loading ? <div style={{ width: 22, height: 22, border: "2px solid rgba(255,255,255,.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .8s linear infinite", margin: "0 auto" }} /> : "Sign in"}
-                  </button>
-                </div>
-              </form>
-            </>}
-
-            {/* ── FORGOT VIEW ── */}
-            {view === "forgot" && <>
-              <div style={{ textAlign: "center", marginBottom: 24 }}>
-                <h2 style={{ color: "#1a1a1a", fontSize: 20, fontWeight: 600, marginBottom: 6 }}>Forgot password?</h2>
-                <p style={{ color: "#666", fontSize: 14, lineHeight: 1.6 }}>
-                  Enter your registered email. We'll send a 6-digit OTP to your registered phone.
-                </p>
-              </div>
-
-              {otpError && (
-                <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "12px 14px", marginBottom: 18 }}>
-                  <span style={{ color: "#b91c1c", fontSize: 13 }}>{otpError}</span>
-                </div>
-              )}
-              {otpSuccess && (
-                <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "12px 14px", marginBottom: 18 }}>
-                  <span style={{ color: "#166534", fontSize: 13 }}>{otpSuccess}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleSendOtp} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <div>
-                  <label style={{ display: "block", color: "#374151", fontSize: 13, fontWeight: 500, marginBottom: 6 }}>Email</label>
-                  <input className="login-field" type="email" placeholder="staff@iphonecenter.com"
-                    value={forgotEmail} onChange={e => { setForgotEmail(e.target.value); setOtpError(""); }} required />
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <button type="submit" className="login-btn" disabled={loading || !forgotEmail.trim()}>
-                    {loading ? <div style={{ width: 22, height: 22, border: "2px solid rgba(255,255,255,.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .8s linear infinite", margin: "0 auto" }} /> : "Send OTP"}
-                  </button>
-                  <button type="button" onClick={() => { setView("login"); setOtpError(""); setOtpSuccess(""); setForgotEmail(""); }} style={{
-                    background: "none", border: "1px solid #d1d5db", borderRadius: 10, padding: 12, color: "#6b7280", fontSize: 14, cursor: "pointer", fontFamily: "inherit",
-                  }}>
-                    ← Back to Sign in
-                  </button>
-                </div>
-              </form>
-            </>}
-
-            {/* ── OTP VIEW ── */}
-            {view === "otp" && <>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 20 }}>
-                {["Email", "OTP", "Reset"].map((s, i) => (
-                  <div key={s} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <div style={{
-                      width: 24, height: 24, borderRadius: "50%", fontSize: 11, fontWeight: 700,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      background: i <= 1 ? "#2563eb" : "#e5e7eb", color: i <= 1 ? "#fff" : "#6b7280",
-                    }}>{i + 1}</div>
-                    <span style={{ fontSize: 11, color: i <= 1 ? "#374151" : "#9ca3af" }}>{s}</span>
-                    {i < 2 && <div style={{ width: 16, height: 1, background: "#e5e7eb" }} />}
-                  </div>
-                ))}
-              </div>
-              <div style={{ textAlign: "center", marginBottom: 20 }}>
-                <h2 style={{ color: "#1a1a1a", fontSize: 20, fontWeight: 600, marginBottom: 6 }}>Enter OTP</h2>
-                <p style={{ color: "#666", fontSize: 14 }}>6-digit code sent to your registered phone.</p>
-              </div>
-              {otpError && (
-                <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "12px 14px", marginBottom: 16 }}>
-                  <span style={{ color: "#b91c1c", fontSize: 13 }}>{otpError}</span>
-                </div>
-              )}
-              {otpSuccess && (
-                <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "12px 14px", marginBottom: 16 }}>
-                  <span style={{ color: "#166534", fontSize: 13 }}>{otpSuccess}</span>
-                </div>
-              )}
-              <form onSubmit={handleVerifyOtp} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                  {otp.map((d, i) => (
-                    <input key={i} id={`otp-${i}`}
-                      type="text" inputMode="numeric" maxLength={1} value={d}
-                      onChange={e => handleOtpChange(e.target.value, i)}
-                      onKeyDown={e => handleOtpKey(e, i)}
-                      style={{
-                        width: 44, height: 52, textAlign: "center", fontSize: 22, fontWeight: 700,
-                        background: d ? "#eff6ff" : "#f8f9fa", border: d ? "2px solid #2563eb" : "1px solid #e0e0e0",
-                        borderRadius: 10, color: "#1a1a1a", outline: "none", fontFamily: "inherit",
-                      }}
-                    />
-                  ))}
-                </div>
-                <div style={{ textAlign: "center" }}>
-                  {countdown > 0 ? (
-                    <span style={{ color: "#6b7280", fontSize: 13 }}>Resend in <strong style={{ color: "#2563eb" }}>{countdown}s</strong></span>
-                  ) : (
-                    <button type="button" onClick={handleResendOtp} style={{ background: "none", border: "none", cursor: "pointer", color: "#2563eb", fontSize: 13, fontFamily: "inherit", textDecoration: "underline" }}>
-                      Resend OTP
-                    </button>
-                  )}
-                </div>
-                <button type="submit" className="login-btn" disabled={loading || !otpFilled}>
-                  {loading ? <div style={{ width: 22, height: 22, border: "2px solid rgba(255,255,255,.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .8s linear infinite", margin: "0 auto" }} /> : "Verify OTP"}
-                </button>
-                <button type="button" onClick={() => { setView("forgot"); setOtp(["", "", "", "", "", ""]); setOtpError(""); setOtpSuccess(""); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280", fontSize: 13, fontFamily: "inherit" }}>
-                  ← Change email
-                </button>
-              </form>
-            </>}
-
-            {/* ── RESET VIEW ── */}
-            {view === "reset" && <>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 20 }}>
-                {["Email", "OTP", "Reset"].map((s, i) => (
-                  <div key={s} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <div style={{ width: 24, height: 24, borderRadius: "50%", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", background: "#2563eb", color: "#fff" }}>{i + 1}</div>
-                    <span style={{ fontSize: 11, color: "#374151" }}>{s}</span>
-                    {i < 2 && <div style={{ width: 16, height: 1, background: "#e5e7eb" }} />}
-                  </div>
-                ))}
-              </div>
-              <div style={{ textAlign: "center", marginBottom: 24 }}>
-                <h2 style={{ color: "#1a1a1a", fontSize: 20, fontWeight: 600, marginBottom: 6 }}>Set new password</h2>
-                <p style={{ color: "#666", fontSize: 14 }}>OTP verified. Create your new password.</p>
-              </div>
-              {otpError && (
-                <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "12px 14px", marginBottom: 16 }}>
-                  <span style={{ color: "#b91c1c", fontSize: 13 }}>{otpError}</span>
-                </div>
-              )}
-              {otpSuccess && (
-                <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "12px 14px", marginBottom: 16 }}>
-                  <span style={{ color: "#166534", fontSize: 13 }}>{otpSuccess}</span>
-                </div>
-              )}
-              <form onSubmit={handleReset} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <div>
-                  <label style={{ display: "block", color: "#374151", fontSize: 13, fontWeight: 500, marginBottom: 6 }}>New password</label>
-                  <div style={{ position: "relative" }}>
-                    <input className="login-field" type={showNew ? "text" : "password"} placeholder="Min. 6 characters" value={newPassword}
-                      onChange={e => setNewPassword(e.target.value)} style={{ paddingRight: 48 }} required minLength={6} />
-                    <button type="button" onClick={() => setShowNew(!showNew)} style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#6b7280", padding: 0, display: "flex" }}>
-                      <EyeIcon open={showNew} />
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label style={{ display: "block", color: "#374151", fontSize: 13, fontWeight: 500, marginBottom: 6 }}>Confirm password</label>
-                  <input className="login-field" type="password" placeholder="Confirm your password" value={confirmPassword}
-                    onChange={e => setConfirmPassword(e.target.value)} required minLength={6} />
-                </div>
-                {newPassword.length > 0 && (
-                  <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                    {[4, 6, 8, 10].map((min, i) => (
-                      <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: newPassword.length >= min ? ["#ef4444", "#f59e0b", "#3b82f6", "#22c55e"][i] : "#e5e7eb", transition: "background .2s" }} />
-                    ))}
-                    <span style={{ fontSize: 12, color: "#6b7280", marginLeft: 8 }}>
-                      {["Weak", "Fair", "Good", "Strong"][newPassword.length >= 10 ? 3 : newPassword.length >= 8 ? 2 : newPassword.length >= 6 ? 1 : 0]}
-                    </span>
+                {error && (
+                  <div className="vp-alert vp-alert-err">
+                    {error}
                   </div>
                 )}
-                <div style={{ marginTop: 4 }}>
-                  <button type="submit" className="login-btn" disabled={loading || newPassword.length < 6 || newPassword !== confirmPassword}>
-                    {loading ? <div style={{ width: 22, height: 22, border: "2px solid rgba(255,255,255,.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .8s linear infinite", margin: "0 auto" }} /> : "Reset password"}
-                  </button>
-                </div>
-              </form>
-            </>}
-          </div>
 
-          {/* Footer on red side */}
-          <div style={{ position: "absolute", bottom: 20, left: 0, right: 0, textAlign: "center" }}>
-            <span style={{ color: "rgba(255,255,255,.7)", fontSize: 12 }}>Powered by <span style={{ fontWeight: 600, color: "#fff" }}>LogozoDev</span></span>
+                <form className="vp-form" onSubmit={handleLogin}>
+                  <div className="vp-field">
+                    <label className="vp-label">Email or Username</label>
+                    <input
+                      type="email"
+                      className="vp-input"
+                      placeholder="staff@iphonecenter.com"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="vp-field">
+                    <label className="vp-label">Password</label>
+                    <div className="vp-input-wrap">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        className="vp-input vp-input-pr"
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="vp-eye"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        <EyeIcon open={showPassword} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="vp-row">
+                    <span style={{fontSize:".76rem",color:"#9ca3af"}}>Staff access only</span>
+                    <button
+                      type="button"
+                      className="vp-forgot"
+                      onClick={() => setView("forgot")}
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
+                  <button type="submit" className="vp-btn-login" disabled={loading}>
+                    {loading ? <span className="vp-spinner" /> : "Login"}
+                  </button>
+                </form>
+              </>
+            )}
+
+            {/* EXISTING FORGOT / OTP / RESET VIEWS INSIDE SAME CARD */}
+            {view === "forgot" && (
+              <>
+                <div className="vp-card-header">
+                  <h2 className="vp-title">Forgot Password?</h2>
+                  <p className="vp-title-sub">
+                    Enter your registered email. We'll send a 6-digit OTP to your registered phone.
+                  </p>
+                </div>
+
+                {otpError && (
+                  <div className="vp-alert vp-alert-err">{otpError}</div>
+                )}
+                {otpSuccess && (
+                  <div className="vp-alert vp-alert-ok">{otpSuccess}</div>
+                )}
+
+                <form className="vp-form" onSubmit={handleSendOtp}>
+                  <div className="vp-field">
+                    <label className="vp-label">Email</label>
+                    <input
+                      className="vp-input"
+                      type="email"
+                      placeholder="staff@iphonecenter.com"
+                      value={forgotEmail}
+                      onChange={e => { setForgotEmail(e.target.value); setOtpError(""); }}
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="vp-btn-login"
+                    disabled={loading || !forgotEmail.trim()}
+                  >
+                    {loading ? <span className="vp-spinner" /> : "Send OTP"}
+                  </button>
+                  <button
+                    type="button"
+                    className="vp-back-btn"
+                    onClick={() => { setView("login"); setOtpError(""); setOtpSuccess(""); setForgotEmail(""); }}
+                  >
+                    ← Back to Login
+                  </button>
+                </form>
+              </>
+            )}
+
+            {view === "otp" && (
+              <>
+                <div className="vp-card-header">
+                  <h2 className="vp-title">Enter OTP</h2>
+                  <p className="vp-title-sub">
+                    6-digit code sent to your registered phone.
+                  </p>
+                </div>
+
+                {otpError && (
+                  <div className="vp-alert vp-alert-err">{otpError}</div>
+                )}
+                {otpSuccess && (
+                  <div className="vp-alert vp-alert-ok">{otpSuccess}</div>
+                )}
+
+                <form className="vp-form" onSubmit={handleVerifyOtp}>
+                  <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 4 }}>
+                    {otp.map((d, i) => (
+                      <input
+                        key={i}
+                        id={`otp-${i}`}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={d}
+                        onChange={e => handleOtpChange(e.target.value, i)}
+                        onKeyDown={e => handleOtpKey(e, i)}
+                        className="vp-otp-box"
+                        style={{
+                          borderColor: d ? "#4f8ef7" : "#e5e8f0",
+                          background: d ? "#eef4ff" : "#f8f9fc"
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <div className="vp-resend">
+                    {countdown > 0 ? (
+                      <>Resend in <strong>{countdown}s</strong></>
+                    ) : (
+                      <>
+                        <span>Didn't receive it? </span>
+                        <button type="button" onClick={handleResendOtp}>Resend OTP</button>
+                      </>
+                    )}
+                  </div>
+                  <button
+                    type="submit"
+                    className="vp-btn-login"
+                    disabled={loading || !otpFilled}
+                  >
+                    {loading ? <span className="vp-spinner" /> : "Verify OTP"}
+                  </button>
+                  <button
+                    type="button"
+                    className="vp-back-btn"
+                    onClick={() => { setView("forgot"); setOtp(["", "", "", "", "", ""]); setOtpError(""); setOtpSuccess(""); }}
+                  >
+                    ← Change email
+                  </button>
+                </form>
+              </>
+            )}
+
+            {view === "reset" && (
+              <>
+                <div className="vp-card-header">
+                  <h2 className="vp-title">Set New Password</h2>
+                  <p className="vp-title-sub">
+                    OTP verified. Create your new password.
+                  </p>
+                </div>
+
+                {otpError && (
+                  <div className="vp-alert vp-alert-err">{otpError}</div>
+                )}
+                {otpSuccess && (
+                  <div className="vp-alert vp-alert-ok">{otpSuccess}</div>
+                )}
+
+                <form className="vp-form" onSubmit={handleReset}>
+                  <div className="vp-field">
+                    <label className="vp-label">New password</label>
+                    <div className="vp-input-wrap">
+                      <input
+                        className="vp-input vp-input-pr"
+                        type={showNew ? "text" : "password"}
+                        placeholder="Min. 6 characters"
+                        value={newPassword}
+                        onChange={e => setNewPassword(e.target.value)}
+                        required
+                        minLength={6}
+                      />
+                      <button
+                        type="button"
+                        className="vp-eye"
+                        onClick={() => setShowNew(!showNew)}
+                      >
+                        <EyeIcon open={showNew} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="vp-field">
+                    <label className="vp-label">Confirm password</label>
+                    <input
+                      className="vp-input"
+                      type="password"
+                      placeholder="Confirm your password"
+                      value={confirmPassword}
+                      onChange={e => setConfirmPassword(e.target.value)}
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                  {newPassword.length > 0 && (
+                    <div style={{ display: "flex", gap: 4, alignItems: "center", marginTop: 4 }}>
+                      {[4, 6, 8, 10].map((min, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            flex: 1,
+                            height: 4,
+                            borderRadius: 2,
+                            background: newPassword.length >= min ? ["#ef4444", "#f59e0b", "#3b82f6", "#22c55e"][i] : "#e5e7eb",
+                            transition: "background .2s"
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    type="submit"
+                    className="vp-btn-login"
+                    disabled={loading || newPassword.length < 6 || newPassword !== confirmPassword}
+                  >
+                    {loading ? <span className="vp-spinner" /> : "Reset password"}
+                  </button>
+                </form>
+              </>
+            )}
           </div>
         </div>
       </div>
