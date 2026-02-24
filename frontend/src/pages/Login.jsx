@@ -3,6 +3,7 @@ import { Helmet } from "react-helmet";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl } from "@/lib/api";
+import loginBg from "@/assets/login-bg.jpg";
 
 const AppleLogo = () => (
   <svg viewBox="0 0 814 1000" fill="currentColor" width="28" height="28">
@@ -212,8 +213,11 @@ export default function LoginPage() {
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            background:
-              "linear-gradient(145deg,#0a0500 0%,#130800 55%,#0d0500 100%)",
+            backgroundImage: `url(${loginBg})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            backgroundColor: "#000",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
