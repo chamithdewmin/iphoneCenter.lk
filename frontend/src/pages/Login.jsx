@@ -3,6 +3,7 @@ import { Helmet } from "react-helmet";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl } from "@/lib/api";
+import loginBg from "@/assets/login-bg.jpg";
 import "./Login.css";
 
 const AppleLogo = () => (
@@ -198,7 +199,15 @@ export default function LoginPage() {
       <div className="login-page">
         <div className="page">
           {/* LEFT HERO */}
-          <section className="hero">
+          <section
+            className="hero"
+            style={{
+              backgroundImage: `url(${loginBg})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
+          >
             <div className="hero-bg" />
 
             <nav className="nav a1">
