@@ -220,7 +220,7 @@ export default function LoginPage() {
                 </span>
               </a>
               <div className="hotline">
-                Support&nbsp;<strong>+1 800 275 2273</strong>
+                Support&nbsp;<strong>+94 74 152 5537</strong>
               </div>
             </nav>
 
