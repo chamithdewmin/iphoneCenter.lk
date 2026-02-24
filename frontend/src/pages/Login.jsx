@@ -246,6 +246,8 @@ export default function LoginPage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            backgroundColor: "#ffffff",
+            color: "#111827",
           }}
         >
           <div style={{ width: "100%", maxWidth: 420 }}>
@@ -273,16 +275,17 @@ export default function LoginPage() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.12)",
+                      background: "rgba(15,23,42,0.06)",
+                      border: "1px solid rgba(15,23,42,0.12)",
+                      color: "#111827",
                     }}
                   >
                     <AppleLogo />
                   </div>
-                  <h1 style={{ fontSize: 24, fontWeight: 600 }}>
+                  <h1 style={{ fontSize: 24, fontWeight: 600, color: "#111827" }}>
                     Staff Sign In
                   </h1>
-                  <p style={{ color: "rgba(255,255,255,.6)", fontSize: 13 }}>
+                  <p style={{ color: "#6b7280", fontSize: 13 }}>
                     Enter your credentials to access the POS
                   </p>
                 </div>
@@ -301,7 +304,7 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                <label style={{ fontSize: 12 }}>Email</label>
+                <label style={{ fontSize: 12, color: "#374151" }}>Email</label>
                 <input
                   type="email"
                   required
@@ -310,13 +313,13 @@ export default function LoginPage() {
                   style={{
                     padding: "12px 14px",
                     borderRadius: 10,
-                    border: "1px solid #444",
-                    background: "#050505",
-                    color: "#fff",
+                    border: "1px solid #d1d5db",
+                    background: "#f9fafb",
+                    color: "#111827",
                   }}
                 />
 
-                <label style={{ fontSize: 12, marginTop: 4 }}>Password</label>
+                <label style={{ fontSize: 12, marginTop: 4, color: "#374151" }}>Password</label>
                 <div style={{ position: "relative" }}>
                   <input
                     type={showPassword ? "text" : "password"}
@@ -326,9 +329,9 @@ export default function LoginPage() {
                     style={{
                       padding: "12px 40px 12px 14px",
                       borderRadius: 10,
-                      border: "1px solid #444",
-                      background: "#050505",
-                      color: "#fff",
+                      border: "1px solid #d1d5db",
+                      background: "#f9fafb",
+                      color: "#111827",
                       width: "100%",
                     }}
                   />
@@ -343,7 +346,7 @@ export default function LoginPage() {
                       background: "none",
                       border: "none",
                       cursor: "pointer",
-                      color: "#ccc",
+                      color: "#6b7280",
                     }}
                   >
                     <EyeIcon open={showPassword} />
@@ -357,7 +360,7 @@ export default function LoginPage() {
                     style={{
                       background: "none",
                       border: "none",
-                      color: "rgba(255,180,80,.9)",
+                      color: "#f97316",
                       cursor: "pointer",
                       fontSize: 13,
                     }}
@@ -374,8 +377,8 @@ export default function LoginPage() {
                     padding: "12px 16px",
                     borderRadius: 10,
                     border: "none",
-                    background: "linear-gradient(135deg,#ff7a2a,#ffb347)",
-                    color: "#000",
+                    background: "linear-gradient(135deg,#f97316,#facc15)",
+                    color: "#111827",
                     fontWeight: 600,
                     cursor: loading ? "default" : "pointer",
                   }}
@@ -391,19 +394,20 @@ export default function LoginPage() {
                 onSubmit={handleSendOtp}
                 style={{ display: "flex", flexDirection: "column", gap: 16 }}
               >
-                <h2 style={{ fontSize: 22, fontWeight: 600 }}>Forgot password?</h2>
-                <p style={{ color: "rgba(255,255,255,.6)", fontSize: 13 }}>
+                <h2 style={{ fontSize: 22, fontWeight: 600, color: "#111827" }}>Forgot password?</h2>
+                <p style={{ color: "#6b7280", fontSize: 13 }}>
                   Enter your email to receive an OTP.
                 </p>
 
                 {otpError && (
                   <div
                     style={{
-                      background: "rgba(239,68,68,0.1)",
-                      border: "1px solid rgba(239,68,68,0.3)",
+                      background: "rgba(239,68,68,0.06)",
+                      border: "1px solid rgba(239,68,68,0.25)",
                       borderRadius: 10,
                       padding: "10px 14px",
                       fontSize: 13,
+                      color: "#b91c1c",
                     }}
                   >
                     {otpError}
@@ -424,7 +428,7 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                <label style={{ fontSize: 12 }}>Email</label>
+                <label style={{ fontSize: 12, color: "#374151" }}>Email</label>
                 <input
                   type="email"
                   required
@@ -436,9 +440,9 @@ export default function LoginPage() {
                   style={{
                     padding: "12px 14px",
                     borderRadius: 10,
-                    border: "1px solid #444",
-                    background: "#050505",
-                    color: "#fff",
+                    border: "1px solid #d1d5db",
+                    background: "#f9fafb",
+                    color: "#111827",
                   }}
                 />
 
@@ -449,8 +453,8 @@ export default function LoginPage() {
                     padding: "12px 16px",
                     borderRadius: 10,
                     border: "none",
-                    background: "linear-gradient(135deg,#ff7a2a,#ffb347)",
-                    color: "#000",
+                    background: "linear-gradient(135deg,#f97316,#facc15)",
+                    color: "#111827",
                     fontWeight: 600,
                     cursor: loading ? "default" : "pointer",
                   }}
@@ -470,7 +474,7 @@ export default function LoginPage() {
                     marginTop: 4,
                     background: "none",
                     border: "none",
-                    color: "rgba(255,255,255,.7)",
+                    color: "#4b5563",
                     cursor: "pointer",
                     fontSize: 13,
                   }}
@@ -486,19 +490,20 @@ export default function LoginPage() {
                 onSubmit={handleVerifyOtp}
                 style={{ display: "flex", flexDirection: "column", gap: 16 }}
               >
-                <h2 style={{ fontSize: 22, fontWeight: 600 }}>Enter OTP</h2>
-                <p style={{ color: "rgba(255,255,255,.6)", fontSize: 13 }}>
+                <h2 style={{ fontSize: 22, fontWeight: 600, color: "#111827" }}>Enter OTP</h2>
+                <p style={{ color: "#6b7280", fontSize: 13 }}>
                   We sent a 6-digit code to your email/phone.
                 </p>
 
                 {otpError && (
                   <div
                     style={{
-                      background: "rgba(239,68,68,0.1)",
-                      border: "1px solid rgba(239,68,68,0.3)",
+                      background: "rgba(239,68,68,0.06)",
+                      border: "1px solid rgba(239,68,68,0.25)",
                       borderRadius: 10,
                       padding: "10px 14px",
                       fontSize: 13,
+                      color: "#b91c1c",
                     }}
                   >
                     {otpError}
@@ -522,9 +527,9 @@ export default function LoginPage() {
                         textAlign: "center",
                         fontSize: 22,
                         borderRadius: 10,
-                        border: "1px solid #444",
-                        background: "#050505",
-                        color: "#fff",
+                        border: "1px solid #d1d5db",
+                        background: "#f9fafb",
+                        color: "#111827",
                       }}
                     />
                   ))}
@@ -534,7 +539,7 @@ export default function LoginPage() {
                   {countdown > 0 ? (
                     <span>
                       Resend OTP in{" "}
-                      <span style={{ color: "#ffb347", fontWeight: 600 }}>{countdown}s</span>
+                      <span style={{ color: "#f97316", fontWeight: 600 }}>{countdown}s</span>
                     </span>
                   ) : (
                     <button
@@ -544,7 +549,7 @@ export default function LoginPage() {
                         background: "none",
                         border: "none",
                         cursor: "pointer",
-                        color: "rgba(255,180,80,.9)",
+                        color: "#f97316",
                       }}
                     >
                       Resend OTP
@@ -559,8 +564,8 @@ export default function LoginPage() {
                     padding: "12px 16px",
                     borderRadius: 10,
                     border: "none",
-                    background: "linear-gradient(135deg,#ff7a2a,#ffb347)",
-                    color: "#000",
+                    background: "linear-gradient(135deg,#f97316,#facc15)",
+                    color: "#111827",
                     fontWeight: 600,
                     cursor: loading ? "default" : "pointer",
                   }}
@@ -580,7 +585,7 @@ export default function LoginPage() {
                     marginTop: 4,
                     background: "none",
                     border: "none",
-                    color: "rgba(255,255,255,.7)",
+                    color: "#4b5563",
                     cursor: "pointer",
                     fontSize: 13,
                   }}
@@ -596,26 +601,27 @@ export default function LoginPage() {
                 onSubmit={handleReset}
                 style={{ display: "flex", flexDirection: "column", gap: 16 }}
               >
-                <h2 style={{ fontSize: 22, fontWeight: 600 }}>Set new password</h2>
-                <p style={{ color: "rgba(255,255,255,.6)", fontSize: 13 }}>
+                <h2 style={{ fontSize: 22, fontWeight: 600, color: "#111827" }}>Set new password</h2>
+                <p style={{ color: "#6b7280", fontSize: 13 }}>
                   OTP verified. Create your new password.
                 </p>
 
                 {otpError && (
                   <div
                     style={{
-                      background: "rgba(239,68,68,0.1)",
-                      border: "1px solid rgba(239,68,68,0.3)",
+                      background: "rgba(239,68,68,0.06)",
+                      border: "1px solid rgba(239,68,68,0.25)",
                       borderRadius: 10,
                       padding: "10px 14px",
                       fontSize: 13,
+                      color: "#b91c1c",
                     }}
                   >
                     {otpError}
                   </div>
                 )}
 
-                <label style={{ fontSize: 12 }}>New password</label>
+                <label style={{ fontSize: 12, color: "#374151" }}>New password</label>
                 <input
                   type="password"
                   required
@@ -625,13 +631,13 @@ export default function LoginPage() {
                   style={{
                     padding: "12px 14px",
                     borderRadius: 10,
-                    border: "1px solid #444",
-                    background: "#050505",
-                    color: "#fff",
+                    border: "1px solid #d1d5db",
+                    background: "#f9fafb",
+                    color: "#111827",
                   }}
                 />
 
-                <label style={{ fontSize: 12 }}>Confirm password</label>
+                <label style={{ fontSize: 12, color: "#374151" }}>Confirm password</label>
                 <input
                   type="password"
                   required
@@ -641,9 +647,9 @@ export default function LoginPage() {
                   style={{
                     padding: "12px 14px",
                     borderRadius: 10,
-                    border: "1px solid #444",
-                    background: "#050505",
-                    color: "#fff",
+                    border: "1px solid #d1d5db",
+                    background: "#f9fafb",
+                    color: "#111827",
                   }}
                 />
 
@@ -658,8 +664,8 @@ export default function LoginPage() {
                     padding: "12px 16px",
                     borderRadius: 10,
                     border: "none",
-                    background: "linear-gradient(135deg,#ff7a2a,#ffb347)",
-                    color: "#000",
+                    background: "linear-gradient(135deg,#f97316,#facc15)",
+                    color: "#111827",
                     fontWeight: 600,
                     cursor: loading ? "default" : "pointer",
                   }}
