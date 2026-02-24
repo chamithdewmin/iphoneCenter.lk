@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl } from "@/lib/api";
-import loginBg from "@/assets/login-bg.jpg";
+import "./Login.css";
 
 const AppleLogo = () => (
   <svg viewBox="0 0 814 1000" fill="currentColor" width="28" height="28">
@@ -195,116 +195,60 @@ export default function LoginPage() {
         <title>Login - iphone center.lk</title>
       </Helmet>
 
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          backgroundColor: "#000",
-          color: "#fff",
-          fontFamily:
-            "'SF Pro Display',-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif",
-        }}
-      >
-        {/* Left simple panel */}
-        <div
-          style={{
-            flex: 1,
-            padding: "40px 44px",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            backgroundImage: `url(${loginBg})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-            backgroundColor: "#000",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          {/* dark overlay over background image */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: "rgba(0,0,0,0.55)",
-              pointerEvents: "none",
-            }}
-          />
+      <div className="login-page">
+        <div className="page">
+          {/* LEFT HERO */}
+          <section className="hero">
+            <div className="hero-bg" />
 
-          <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative", zIndex: 1 }}>
-            <AppleLogo />
-            <span className="vp-logo-text" style={{ fontSize: 20, textTransform: "uppercase" }}>
-              iPhone Center
-            </span>
-          </div>
-          <div style={{ position: "relative", zIndex: 1 }} />
-          <div style={{ position: "relative", zIndex: 1 }}>
-            <p
-              style={{
-                color: "rgba(255,255,255,.4)",
-                fontSize: 13,
-                fontStyle: "italic",
-                letterSpacing: "0.05em",
-              }}
-            >
-              "Your Authorized iPhone Destination"
-            </p>
-          </div>
-        </div>
+            <nav className="nav a1">
+              <a className="logo" href="#">
+                <div className="logo-icon">
+                  <AppleLogo />
+                </div>
+                <span className="logo-text vp-logo-text">
+                  iPhone <span>Center</span>
+                </span>
+              </a>
+              <div className="hotline">
+                Support&nbsp;<strong>+1 800 275 2273</strong>
+              </div>
+            </nav>
 
-        {/* Right auth views */}
-        <div
-          style={{
-            width: "44%",
-            minWidth: 420,
-            padding: "60px 52px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "#ffffff",
-            color: "#111827",
-          }}
-        >
-          <div style={{ width: "100%", maxWidth: 420 }}>
+            <div className="hero-inner">
+              <p className="eyebrow a2">Premium Apple Experience</p>
+              <h1 className="headline a3">
+                Welcome to
+                <br />
+                <em>iPhone Center</em>
+              </h1>
+              <p className="tagline a4">
+                Everything your phone shop needs — fast billing, smart inventory, and
+                complete business control in one system.
+              </p>
+            </div>
+
+            <footer className="hero-footer a1">
+              <a href="#">Terms of Service</a>
+              <a href="#">Privacy Policy</a>
+              <a href="#">Contact Us</a>
+            </footer>
+          </section>
+
+          {/* RIGHT PANEL */}
+          <section className="panel">
             {/* LOGIN */}
             {view === "login" && (
-              <form
-                onSubmit={handleLogin}
-                style={{ display: "flex", flexDirection: "column", gap: 16 }}
-              >
-                <div
-                  style={{
-                    marginBottom: 12,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: "999px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: "rgba(15,23,42,0.06)",
-                      border: "1px solid rgba(15,23,42,0.12)",
-                      color: "#111827",
-                    }}
-                  >
-                    <AppleLogo />
-                  </div>
-                  <h1 style={{ fontSize: 24, fontWeight: 600, color: "#111827" }}>
-                    Staff Sign In
-                  </h1>
-                  <p style={{ color: "#6b7280", fontSize: 13 }}>
-                    Enter your credentials to access the POS
-                  </p>
-                </div>
+              <form className="panel-inner" onSubmit={handleLogin}>
+                <p className="panel-eyebrow p1">Welcome Back</p>
+                <h2 className="panel-title p2">
+                  Sign In to
+                  <br />
+                  iPhone Center
+                </h2>
+                <p className="panel-sub p2">
+                  Access your account and manage your devices.
+                </p>
 
                 {error && (
                   <div
@@ -314,105 +258,93 @@ export default function LoginPage() {
                       borderRadius: 10,
                       padding: "10px 14px",
                       fontSize: 13,
+                      marginBottom: 12,
                     }}
                   >
                     {error}
                   </div>
                 )}
 
-                <label style={{ fontSize: 12, color: "#374151" }}>Email</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  style={{
-                    padding: "12px 14px",
-                    borderRadius: 10,
-                    border: "1px solid #d1d5db",
-                    background: "#f9fafb",
-                    color: "#111827",
-                  }}
-                />
-
-                <label style={{ fontSize: 12, marginTop: 4, color: "#374151" }}>Password</label>
-                <div style={{ position: "relative" }}>
+                <div className="form-group p3">
+                  <label className="form-label">Email Address</label>
                   <input
+                    className="form-input"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="john@example.com"
+                  />
+                </div>
+
+                <div className="form-group p4">
+                  <label className="form-label">Password</label>
+                  <input
+                    className="form-input"
                     type={showPassword ? "text" : "password"}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    style={{
-                      padding: "12px 40px 12px 14px",
-                      borderRadius: 10,
-                      border: "1px solid #d1d5db",
-                      background: "#f9fafb",
-                      color: "#111827",
-                      width: "100%",
-                    }}
+                    placeholder="••••••••"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{
-                      position: "absolute",
-                      right: 10,
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      color: "#6b7280",
-                    }}
-                  >
-                    <EyeIcon open={showPassword} />
-                  </button>
                 </div>
 
-                <div style={{ textAlign: "right", marginTop: 4 }}>
+                <div className="forgot-link-row p4">
                   <button
                     type="button"
+                    className="forgot-link"
                     onClick={() => setView("forgot")}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "#000000",
-                      cursor: "pointer",
-                      fontSize: 13,
-                    }}
                   >
                     Forgot password?
                   </button>
                 </div>
 
                 <button
+                  className="submit-btn p5"
                   type="submit"
                   disabled={loading}
-                  style={{
-                    marginTop: 8,
-                    padding: "12px 16px",
-                    borderRadius: 10,
-                    border: "none",
-                    background: "linear-gradient(135deg,#f97316,#facc15)",
-                    color: "#000000",
-                    fontWeight: 600,
-                    cursor: loading ? "default" : "pointer",
-                  }}
                 >
-                  {loading ? "Signing in..." : "Sign in"}
+                  {loading ? "Signing in..." : "Sign In \u2192"}
                 </button>
+
+                <p className="panel-bottom p6" style={{ marginTop: "18px" }}>
+                  Powered by{" "}
+                  <a
+                    href="https://www.logozodev.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    LogozoDev
+                  </a>
+                </p>
               </form>
             )}
 
             {/* FORGOT */}
             {view === "forgot" && (
-              <form
-                onSubmit={handleSendOtp}
-                style={{ display: "flex", flexDirection: "column", gap: 16 }}
-              >
-                <h2 style={{ fontSize: 22, fontWeight: 600, color: "#111827" }}>Forgot password?</h2>
-                <p style={{ color: "#6b7280", fontSize: 13 }}>
-                  Enter your email to receive an OTP.
+              <form className="panel-inner" onSubmit={handleSendOtp}>
+                <button
+                  type="button"
+                  className="back-btn p1"
+                  onClick={() => {
+                    setView("login");
+                    setOtpError("");
+                    setOtpSuccess("");
+                    setForgotEmail("");
+                  }}
+                >
+                  ← Back to Sign In
+                </button>
+
+                <p className="panel-eyebrow p1">Account Recovery</p>
+                <h2 className="panel-title p2">
+                  Forgot Your
+                  <br />
+                  Password?
+                </h2>
+                <p className="panel-sub p2">
+                  No worries. Enter your registered email and we'll send you a secure
+                  reset link instantly.
                 </p>
 
                 {otpError && (
@@ -444,70 +376,55 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                <label style={{ fontSize: 12, color: "#374151" }}>Email</label>
-                <input
-                  type="email"
-                  required
-                  value={forgotEmail}
-                  onChange={(e) => {
-                    setForgotEmail(e.target.value);
-                    setOtpError("");
-                  }}
-                  style={{
-                    padding: "12px 14px",
-                    borderRadius: 10,
-                    border: "1px solid #d1d5db",
-                    background: "#f9fafb",
-                    color: "#111827",
-                  }}
-                />
+                <div className="form-group p3">
+                  <label className="form-label">Email Address</label>
+                  <input
+                    className="form-input"
+                    type="email"
+                    required
+                    value={forgotEmail}
+                    onChange={(e) => {
+                      setForgotEmail(e.target.value);
+                      setOtpError("");
+                    }}
+                    placeholder="john@example.com"
+                  />
+                </div>
 
                 <button
+                  className="submit-btn p4"
                   type="submit"
                   disabled={loading || !forgotEmail.trim()}
-                  style={{
-                    padding: "12px 16px",
-                    borderRadius: 10,
-                    border: "none",
-                    background: "linear-gradient(135deg,#f97316,#facc15)",
-                    color: "#111827",
-                    fontWeight: 600,
-                    cursor: loading ? "default" : "pointer",
-                  }}
                 >
-                  {loading ? "Sending..." : "Send OTP"}
+                  {loading ? "Sending..." : "Send Reset Link \u2192"}
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setView("login");
-                    setOtpError("");
-                    setOtpSuccess("");
-                    setForgotEmail("");
-                  }}
-                  style={{
-                    marginTop: 4,
-                    background: "none",
-                    border: "none",
-                    color: "#4b5563",
-                    cursor: "pointer",
-                    fontSize: 13,
-                  }}
-                >
-                  ← Back to sign in
-                </button>
+                <p className="note-text p5">
+                  Remember your password?{" "}
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setView("login");
+                    }}
+                  >
+                    Sign in here
+                  </a>
+                </p>
               </form>
             )}
 
             {/* OTP */}
             {view === "otp" && (
               <form
+                className="panel-inner"
                 onSubmit={handleVerifyOtp}
                 style={{ display: "flex", flexDirection: "column", gap: 16 }}
               >
-                <h2 style={{ fontSize: 22, fontWeight: 600, color: "#111827" }}>Enter OTP</h2>
-                <p style={{ color: "#6b7280", fontSize: 13 }}>
+                <h2 className="panel-title" style={{ marginBottom: 6 }}>
+                  Enter OTP
+                </h2>
+                <p className="panel-sub" style={{ marginBottom: 12 }}>
                   We sent a 6-digit code to your email/phone.
                 </p>
 
@@ -543,9 +460,9 @@ export default function LoginPage() {
                         textAlign: "center",
                         fontSize: 22,
                         borderRadius: 10,
-                        border: "1px solid #d1d5db",
-                        background: "#f9fafb",
-                        color: "#111827",
+                        border: "1px solid #2a2a2a",
+                        background: "#1a1a1a",
+                        color: "#f0f0f0",
                       }}
                     />
                   ))}
@@ -565,7 +482,7 @@ export default function LoginPage() {
                         background: "none",
                         border: "none",
                         cursor: "pointer",
-                        color: "#f97316",
+                        color: "#bbbbbb",
                       }}
                     >
                       Resend OTP
@@ -574,36 +491,21 @@ export default function LoginPage() {
                 </div>
 
                 <button
+                  className="submit-btn p4"
                   type="submit"
                   disabled={loading || !otpFilled}
-                  style={{
-                    padding: "12px 16px",
-                    borderRadius: 10,
-                    border: "none",
-                    background: "linear-gradient(135deg,#f97316,#facc15)",
-                    color: "#111827",
-                    fontWeight: 600,
-                    cursor: loading ? "default" : "pointer",
-                  }}
                 >
-                  {loading ? "Verifying..." : "Verify OTP"}
+                  {loading ? "Verifying..." : "Verify OTP \u2192"}
                 </button>
 
                 <button
                   type="button"
+                  className="back-btn p5"
                   onClick={() => {
                     setView("forgot");
                     setOtp(["", "", "", "", "", ""]);
                     setOtpError("");
                     setOtpSuccess("");
-                  }}
-                  style={{
-                    marginTop: 4,
-                    background: "none",
-                    border: "none",
-                    color: "#4b5563",
-                    cursor: "pointer",
-                    fontSize: 13,
                   }}
                 >
                   ← Change email
@@ -614,11 +516,14 @@ export default function LoginPage() {
             {/* RESET */}
             {view === "reset" && (
               <form
+                className="panel-inner"
                 onSubmit={handleReset}
                 style={{ display: "flex", flexDirection: "column", gap: 16 }}
               >
-                <h2 style={{ fontSize: 22, fontWeight: 600, color: "#111827" }}>Set new password</h2>
-                <p style={{ color: "#6b7280", fontSize: 13 }}>
+                <h2 className="panel-title" style={{ marginBottom: 6 }}>
+                  Set new password
+                </h2>
+                <p className="panel-sub" style={{ marginBottom: 12 }}>
                   OTP verified. Create your new password.
                 </p>
 
@@ -637,60 +542,44 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                <label style={{ fontSize: 12, color: "#374151" }}>New password</label>
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  style={{
-                    padding: "12px 14px",
-                    borderRadius: 10,
-                    border: "1px solid #d1d5db",
-                    background: "#f9fafb",
-                    color: "#111827",
-                  }}
-                />
+                <div className="form-group">
+                  <label className="form-label">New password</label>
+                  <input
+                    className="form-input"
+                    type="password"
+                    required
+                    minLength={6}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                </div>
 
-                <label style={{ fontSize: 12, color: "#374151" }}>Confirm password</label>
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  style={{
-                    padding: "12px 14px",
-                    borderRadius: 10,
-                    border: "1px solid #d1d5db",
-                    background: "#f9fafb",
-                    color: "#111827",
-                  }}
-                />
+                <div className="form-group">
+                  <label className="form-label">Confirm password</label>
+                  <input
+                    className="form-input"
+                    type="password"
+                    required
+                    minLength={6}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </div>
 
                 <button
+                  className="submit-btn p4"
                   type="submit"
                   disabled={
                     loading ||
                     newPassword.length < 6 ||
                     newPassword !== confirmPassword
                   }
-                  style={{
-                    padding: "12px 16px",
-                    borderRadius: 10,
-                    border: "none",
-                    background: "linear-gradient(135deg,#f97316,#facc15)",
-                    color: "#111827",
-                    fontWeight: 600,
-                    cursor: loading ? "default" : "pointer",
-                  }}
                 >
-                  {loading ? "Saving..." : "Reset password"}
+                  {loading ? "Saving..." : "Reset password \u2192"}
                 </button>
               </form>
             )}
-          </div>
+          </section>
         </div>
       </div>
     </>
