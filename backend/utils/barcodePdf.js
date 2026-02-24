@@ -10,8 +10,9 @@ const A4_HEIGHT_PT = 841.89;
 const BARCODE_OPTIONS = {
   bcid: 'code128',
   scale: 2,
-  height: 12,
-  includetext: false,
+  height: 8,              // less height
+  includetext: true,       // barcode number below the bars
+  textxalign: 'center',
 };
 
 /**
@@ -41,7 +42,7 @@ async function generateSingleBarcodePdf(barcode, _productName = '') {
     doc.on('error', reject);
 
     const imgWidth = 180;
-    const imgHeight = 70;
+    const imgHeight = 56;
     const x = (A4_WIDTH_PT - imgWidth) / 2;
     const y = (A4_HEIGHT_PT - imgHeight) / 2;
 

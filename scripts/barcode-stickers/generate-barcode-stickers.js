@@ -52,21 +52,22 @@ const GAP_Y = 12;
 const CELL_WIDTH = (A4_WIDTH_PT - MARGIN_LEFT - MARGIN_RIGHT - (COLS - 1) * GAP_X) / COLS;
 const CELL_HEIGHT = (A4_HEIGHT_PT - MARGIN_TOP - MARGIN_BOTTOM - (ROWS - 1) * GAP_Y) / ROWS;
 
-// Barcode dimensions (scanner-friendly: sufficient scale and bar height)
+// Barcode dimensions (slightly less height; number shown below bars)
 const BARCODE_IMG_WIDTH = Math.min(CELL_WIDTH - 6, 140);
-const BARCODE_IMG_HEIGHT = 72;
+const BARCODE_IMG_HEIGHT = 58;
 
-// Code128 options optimized for scanner reliability (no text under barcode)
+// Code128: number below bars, reduced bar height
 const BARCODE_OPTIONS = {
   bcid: 'code128',
   scale: 2,
-  height: 12,
-  includetext: false,  // no text – barcode image only
+  height: 8,              // less height (was 12)
+  includetext: true,       // barcode number below the bars
+  textxalign: 'center',
   padding: 2,
 };
 
 /**
- * Generate a Code128 barcode as PNG buffer (bars only, no text).
+ * Generate a Code128 barcode as PNG buffer (bars + number below).
  */
 async function generateBarcodePng(code) {
   return bwipjs.toBuffer({
