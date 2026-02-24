@@ -40,6 +40,7 @@ router.get('/profile', authenticate, authController.getProfile);
 // IMPORTANT: Do NOT add express-validator middleware here - validation is done in the controller
 // This avoids field name confusion (e.g., "username" vs "email")
 router.post('/forgot-password', authController.requestPasswordResetOTP);
+router.post('/verify-reset-otp', authController.verifyResetOTP);
 router.post('/reset-password', [
     body('username').trim().notEmpty().withMessage('Username, email, or phone is required'),
     body('otp').trim().notEmpty().withMessage('OTP is required'),

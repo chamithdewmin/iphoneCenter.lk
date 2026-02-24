@@ -737,6 +737,68 @@ const requestPasswordResetOTP = async (req, res, next) => {
 const passwordResetService = require('../services/passwordResetService');
 
 /**
+ * Verify OTP only (no password change). Used so the frontend can show "Invalid OTP" before the password form.
+ * Does not consume/delete the OTP so the same code can be used in reset-password.
+ */
+const verifyResetOTP = async (req, res, next) => {
+    const logCtx = { path: '/api/auth/verify-reset-otp', method: req.method };
+    try {
+        const identifier = (req.body?.username ?? req.body?.email ?? '').trim().toLowerCase();
+        const otpInput = req.body?.otp ? String(req.body.otp).trim() : '';
+        if (!identifier || identifier.length < 3) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email or username is required'
+            });
+        }
+        if (!otpInput) {
+            return res.status(400).json({
+                success: false,
+                message: 'OTP is required'
+            });
+        }
+        const attemptCheck = passwordResetService.checkOtpAttemptLimit(identifier);
+        if (!attemptCheck.allowed) {
+            return res.status(429).json({
+                success: false,
+                message: attemptCheck.message
+            });
+        }
+        const { findUserByIdentifier, getStoredOTP, getOtpLookupKeys, validateOtp } = passwordResetService;
+        const result = await findUserByIdentifier(executeQuery, identifier);
+        if (result.error) {
+            logger.error('Verify OTP DB error', { ...logCtx, message: result.error });
+            return res.status(500).json({
+                success: false,
+                message: 'Something went wrong. Please try again.'
+            });
+        }
+        if (!result.user) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid or expired OTP. Please try again or request a new code.'
+            });
+        }
+        const user = result.user;
+        const otpKeys = getOtpLookupKeys(user, identifier);
+        const { stored: storedOTP } = getStoredOTP(otpStore, otpKeys);
+        // Pass empty array so we do NOT delete OTP (user will use same OTP in reset-password)
+        const validation = validateOtp(otpStore, storedOTP, otpInput, []);
+        if (!validation.valid) {
+            logger.warn('Verify OTP: invalid or expired', { ...logCtx, userId: user.id });
+            return res.status(400).json({
+                success: false,
+                message: validation.message || 'Invalid or expired OTP. Please try again or request a new code.'
+            });
+        }
+        return res.json({ success: true, message: 'OTP verified. You can now set a new password.' });
+    } catch (error) {
+        logger.error('Verify OTP error', { ...logCtx, message: error?.message });
+        next(error);
+    }
+};
+
+/**
  * Verify OTP and reset password.
  * Accepts username OR phone (Sri Lanka: 0771234567, 771234567, +94771234567).
  * Prevents user enumeration: same generic message for invalid/not-found/expired.
@@ -852,5 +914,6 @@ module.exports = {
     logout,
     getProfile,
     requestPasswordResetOTP,
+    verifyResetOTP,
     resetPasswordWithOTP
 };

@@ -128,13 +128,31 @@ export default function LoginPage() {
     }
   };
 
-  const handleVerifyOtp = (e) => {
+  const handleVerifyOtp = async (e) => {
     e.preventDefault();
     if (!otp.every((d) => d !== "")) {
       setOtpError("Please enter the complete OTP code");
       return;
     }
-    setView("reset");
+    setOtpError("");
+    setOtpSuccess("");
+    const code = otp.join("");
+    const normalizedEmail = (forgotEmail || "").trim().toLowerCase();
+    setLoading(true);
+    const { ok, data } = await publicFetch("/api/auth/verify-reset-otp", {
+      method: "POST",
+      body: JSON.stringify({
+        username: normalizedEmail,
+        otp: code,
+      }),
+    });
+    setLoading(false);
+    if (ok) {
+      setOtpSuccess(data?.message || "OTP verified.");
+      setView("reset");
+    } else {
+      setOtpError(data?.message || "Invalid or expired OTP. Please try again or request a new code.");
+    }
   };
 
   const handleReset = async (e) => {
