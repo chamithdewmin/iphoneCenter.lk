@@ -255,9 +255,31 @@ export default function LoginPage() {
                 onSubmit={handleLogin}
                 style={{ display: "flex", flexDirection: "column", gap: 16 }}
               >
-                <div style={{ textAlign: "center", marginBottom: 8 }}>
-                  <AppleLogo />
-                  <h1 style={{ fontSize: 24, fontWeight: 600, marginTop: 8 }}>
+                <div
+                  style={{
+                    marginBottom: 12,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: "999px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                    }}
+                  >
+                    <AppleLogo />
+                  </div>
+                  <h1 style={{ fontSize: 24, fontWeight: 600 }}>
                     Staff Sign In
                   </h1>
                   <p style={{ color: "rgba(255,255,255,.6)", fontSize: 13 }}>
