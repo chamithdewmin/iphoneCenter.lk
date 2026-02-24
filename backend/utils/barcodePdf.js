@@ -1,23 +1,26 @@
 /**
- * Generate a single barcode as a printable PDF (A4, one barcode centered).
+ * Generate a single barcode PDF in exact label size (50mm × 25mm) for sticker printers.
+ * Page size: 50mm × 25mm. Margins: 0.
  */
 const bwipjs = require('bwip-js');
 const PDFDocument = require('pdfkit');
 
-const A4_WIDTH_PT = 595.28;
-const A4_HEIGHT_PT = 841.89;
+// Label size (mm) – must match physical label for sticker printer
+const LABEL_WIDTH_MM = 50;
+const LABEL_HEIGHT_MM = 25;
+const MM_TO_PT = 72 / 25.4;
+const LABEL_WIDTH_PT = LABEL_WIDTH_MM * MM_TO_PT;
+const LABEL_HEIGHT_PT = LABEL_HEIGHT_MM * MM_TO_PT;
 
 const BARCODE_OPTIONS = {
   bcid: 'code128',
   scale: 2,
-  height: 8,              // less height
-  includetext: true,       // barcode number below the bars
+  height: 6,
+  includetext: true,
   textxalign: 'center',
+  padding: 1,
 };
 
-/**
- * Generate Code128 barcode as PNG buffer.
- */
 async function generateBarcodePng(text) {
   return bwipjs.toBuffer({
     ...BARCODE_OPTIONS,
@@ -26,7 +29,7 @@ async function generateBarcodePng(text) {
 }
 
 /**
- * Generate a PDF with one barcode only (no text), centered on A4.
+ * Generate a PDF with one barcode; page size 50mm × 25mm, margins 0.
  * @param {string} barcode - Barcode value to encode
  * @param {string} [_productName] - Unused; kept for API compatibility
  * @returns {Promise<Buffer>}
@@ -35,18 +38,16 @@ async function generateSingleBarcodePdf(barcode, _productName = '') {
   const pngBuffer = await generateBarcodePng(barcode);
 
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: 'A4', margin: 0 });
+    const pageSize = [LABEL_WIDTH_PT, LABEL_HEIGHT_PT];
+    const doc = new PDFDocument({ size: pageSize, margin: 0 });
     const chunks = [];
     doc.on('data', (chunk) => chunks.push(chunk));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
 
-    const imgWidth = 180;
-    const imgHeight = 56;
-    const x = (A4_WIDTH_PT - imgWidth) / 2;
-    const y = (A4_HEIGHT_PT - imgHeight) / 2;
-
-    doc.image(pngBuffer, x, y, { width: imgWidth, height: imgHeight });
+    const imgWidth = LABEL_WIDTH_PT - 4;
+    const imgHeight = LABEL_HEIGHT_PT - 14;
+    doc.image(pngBuffer, 0, 0, { width: imgWidth, height: imgHeight });
     doc.end();
   });
 }
