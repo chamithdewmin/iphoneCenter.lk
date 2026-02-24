@@ -1,0 +1,15 @@
+{
+  "name": "barcode-stickers",
+  "version": "1.0.0",
+  "description": "Generate Code128 barcode sticker PDF for A4 printing",
+  "main": "generate-barcode-stickers.js",
+  "scripts": {
+    "generate": "node generate-barcode-stickers.js",
+    "view": "node open-viewer.js",
+    "serve": "node serve-viewer.js"
+  },
+  "dependencies": {
+    "bwip-js": "^4.1.0",
+    "pdfkit": "^0.15.0"
+  }
+}
