@@ -396,7 +396,7 @@ export default function LoginPage() {
                   type="submit"
                   disabled={loading || !forgotEmail.trim()}
                 >
-                  {loading ? "Sending..." : "Send OTP"}
+                  {loading ? "Sending..." : "Send OTP \u2192"}
                 </button>
 
                 <p className="note-text p5">
