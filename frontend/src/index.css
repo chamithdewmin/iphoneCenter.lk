@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -159,6 +161,13 @@
   
   .text-foreground {
     color: var(--foreground) !important;
+  }
+
+  /* Logo text – Syne 700 as requested */
+  .vp-logo-text {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.05em;
   }
 
   /* Page titles: solid white instead of gradient (no mixed white/gray) */

@@ -218,7 +218,7 @@ export default function LoginPage() {
         >
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <AppleLogo />
-            <span style={{ fontSize: 20, fontWeight: 600, letterSpacing: "0.05em" }}>
+            <span className="vp-logo-text" style={{ fontSize: 20, textTransform: "uppercase" }}>
               iPhone Center
             </span>
           </div>
