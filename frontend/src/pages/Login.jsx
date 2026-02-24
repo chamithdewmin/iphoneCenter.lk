@@ -218,16 +218,28 @@ export default function LoginPage() {
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
             backgroundColor: "#000",
+            position: "relative",
+            overflow: "hidden",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {/* dark overlay over background image */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(0,0,0,0.55)",
+              pointerEvents: "none",
+            }}
+          />
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative", zIndex: 1 }}>
             <AppleLogo />
             <span className="vp-logo-text" style={{ fontSize: 20, textTransform: "uppercase" }}>
               iPhone Center
             </span>
           </div>
-          <div />
-          <div>
+          <div style={{ position: "relative", zIndex: 1 }} />
+          <div style={{ position: "relative", zIndex: 1 }}>
             <p
               style={{
                 color: "rgba(255,255,255,.4)",
@@ -364,7 +376,7 @@ export default function LoginPage() {
                     style={{
                       background: "none",
                       border: "none",
-                      color: "#f97316",
+                      color: "#000000",
                       cursor: "pointer",
                       fontSize: 13,
                     }}
@@ -382,7 +394,7 @@ export default function LoginPage() {
                     borderRadius: 10,
                     border: "none",
                     background: "linear-gradient(135deg,#f97316,#facc15)",
-                    color: "#111827",
+                    color: "#000000",
                     fontWeight: 600,
                     cursor: loading ? "default" : "pointer",
                   }}
