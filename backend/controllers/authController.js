@@ -663,7 +663,7 @@ const requestPasswordResetOTP = async (req, res, next) => {
         
         let smsResult;
         try {
-            const message = `Your password reset OTP for iphone center.lk is: ${otp}. Valid for 10 minutes.`;
+            const message = `iPhone Center password reset code: ${otp}\nValid for 10 minutes. Do not share this code with anyone.`;
             logger.info(`Attempting to send SMS to ${smsPhone} for user ${user.username}`);
             smsResult = await sendSMS(smsPhone, message);
             logger.info(`SMS send result:`, { success: smsResult?.success, error: smsResult?.error });
