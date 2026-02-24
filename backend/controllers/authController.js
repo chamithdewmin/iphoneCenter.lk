@@ -631,7 +631,7 @@ const requestPasswordResetOTP = async (req, res, next) => {
 
         // Generate 6-digit OTP
         const otp = crypto.randomInt(100000, 999999).toString();
-        const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+        const expiresAt = Date.now() + 60 * 1000; // 1 minute
 
         // Store OTP keyed by user's phone (so reset-password can find it when lookup by email)
         otpStore.set(otpStoreKey, {
@@ -663,7 +663,7 @@ const requestPasswordResetOTP = async (req, res, next) => {
         
         let smsResult;
         try {
-            const message = `iPhone Center password reset code: ${otp}\nValid for 10 minutes. Do not share this code with anyone.`;
+            const message = `iPhone Center password reset code: ${otp}\nValid for 1 minute. Do not share this code with anyone.`;
             logger.info(`Attempting to send SMS to ${smsPhone} for user ${user.username}`);
             smsResult = await sendSMS(smsPhone, message);
             logger.info(`SMS send result:`, { success: smsResult?.success, error: smsResult?.error });
