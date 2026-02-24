@@ -1,11 +1,6 @@
 # Barcode sticker PDF generator
 
-Generates a printable A4 PDF of **Code128** barcodes for sticker sheets. Each sticker shows:
-- The barcode (scanner-friendly)
-- The barcode number **once** under the barcode
-- The product name below that
-
-Optimized so all common barcode scanners can read the codes reliably.
+Generates a **Code128** barcode PDF in **exact label size** for sticker printers (e.g. 50mm × 25mm). Each page is one label; margins are 0 so the PDF matches the physical label and prints correctly.
 
 ---
 
@@ -60,12 +55,9 @@ Optimized so all common barcode scanners can read the codes reliably.
 
 ## Layout and options
 
-- **Paper:** A4  
-- **Grid:** 4 columns × 8 rows (32 stickers per page)  
-- **Spacing:** Gaps between stickers for cutting (`GAP_X`, `GAP_Y` in the script)  
-- **Barcode:** Code128, scale 2, bar height 12 – sized for reliable scanning by hand-held and fixed scanners  
-
-You can change `COLS`, `ROWS`, `MARGIN_*`, `GAP_X`, and `GAP_Y` at the top of `generate-barcode-stickers.js` to match your sticker sheet.
+- **Page size:** 50mm × 25mm (one label per page). Change `LABEL_WIDTH_MM` and `LABEL_HEIGHT_MM` in the script if your labels are different.
+- **Margins:** 0 (required for sticker printers).
+- **Barcode:** Code128 with number below the bars; scaled to fit the label.
 
 ---
 

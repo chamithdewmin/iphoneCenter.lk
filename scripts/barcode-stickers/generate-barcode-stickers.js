@@ -1,8 +1,7 @@
 /**
  * Barcode Sticker PDF Generator
- * Takes an array of { code, name }, generates scanner-friendly Code128 barcodes,
- * and arranges them on A4 with spacing for sticker cutting.
- * Usage: node generate-barcode-stickers.js
+ * Generates one label per page in exact label size (50mm × 25mm) for sticker printers.
+ * Margins: 0. Usage: node generate-barcode-stickers.js
  */
 
 const fs = require('fs');
@@ -12,6 +11,18 @@ const PDFDocument = require('pdfkit');
 
 // ============ CONFIGURATION ============
 const OUTPUT_FILE = path.join(__dirname, 'barcode_stickers.pdf');
+
+/**
+ * Label size – must match your sticker sheet for correct printing.
+ * Page size = label size; one label per page.
+ */
+const LABEL_WIDTH_MM = 50;
+const LABEL_HEIGHT_MM = 25;
+
+// Convert mm to points (1 mm = 72/25.4 pt)
+const MM_TO_PT = 72 / 25.4;
+const LABEL_WIDTH_PT = LABEL_WIDTH_MM * MM_TO_PT;   // ~141.73 pt
+const LABEL_HEIGHT_PT = LABEL_HEIGHT_MM * MM_TO_PT; // ~70.87 pt
 
 /**
  * Input: array of objects with:
@@ -29,41 +40,18 @@ const ITEMS = [
   { code: '777888999000', name: 'Sample Product E' },
 ];
 
-// A4 dimensions in points (210mm x 297mm)
-const A4_WIDTH_PT = 595.28;
-const A4_HEIGHT_PT = 841.89;
+// Barcode image size to fit inside 50×25mm with number below (no margins)
+const BARCODE_IMG_WIDTH_PT = LABEL_WIDTH_PT - 4;   // full width minus small padding
+const BARCODE_IMG_HEIGHT_PT = LABEL_HEIGHT_PT - 14; // leave room for human-readable text
 
-// Sticker layout: columns and rows per page
-const COLS = 4;
-const ROWS = 8;
-const STICKERS_PER_PAGE = COLS * ROWS;
-
-// Margins (points)
-const MARGIN_TOP = 40;
-const MARGIN_LEFT = 30;
-const MARGIN_RIGHT = 30;
-const MARGIN_BOTTOM = 40;
-
-// Spacing between stickers for cutting
-const GAP_X = 10;
-const GAP_Y = 12;
-
-// Cell size per sticker
-const CELL_WIDTH = (A4_WIDTH_PT - MARGIN_LEFT - MARGIN_RIGHT - (COLS - 1) * GAP_X) / COLS;
-const CELL_HEIGHT = (A4_HEIGHT_PT - MARGIN_TOP - MARGIN_BOTTOM - (ROWS - 1) * GAP_Y) / ROWS;
-
-// Barcode dimensions (slightly less height; number shown below bars)
-const BARCODE_IMG_WIDTH = Math.min(CELL_WIDTH - 6, 140);
-const BARCODE_IMG_HEIGHT = 58;
-
-// Code128: number below bars, reduced bar height
+// Code128: number below bars, compact for small label
 const BARCODE_OPTIONS = {
   bcid: 'code128',
   scale: 2,
-  height: 8,              // less height (was 12)
-  includetext: true,       // barcode number below the bars
+  height: 6,
+  includetext: true,
   textxalign: 'center',
-  padding: 2,
+  padding: 1,
 };
 
 /**
@@ -77,11 +65,12 @@ async function generateBarcodePng(code) {
 }
 
 /**
- * Generate PDF with all stickers: barcode (code once underneath) + product name below.
+ * Generate PDF: one label (50mm × 25mm) per page, 0 margins, one barcode per page.
  */
 async function generatePdf(items) {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: 'A4', margin: 0 });
+    const pageSize = [LABEL_WIDTH_PT, LABEL_HEIGHT_PT];
+    const doc = new PDFDocument({ size: pageSize, margin: 0 });
     const chunks = [];
     doc.on('data', (chunk) => chunks.push(chunk));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
@@ -89,61 +78,34 @@ async function generatePdf(items) {
 
     const total = items.length;
     let index = 0;
-    let pageNum = 0;
 
-    function drawPage(callback) {
-      pageNum++;
-      if (pageNum > 1) doc.addPage({ size: 'A4' });
-
-      let drawn = 0;
-      const maxThisPage = Math.min(STICKERS_PER_PAGE, total - index);
-
-      function placeNext() {
-        if (drawn >= maxThisPage) {
-          callback();
-          return;
-        }
-
-        const col = drawn % COLS;
-        const row = Math.floor(drawn / COLS);
-        const { code } = items[index];
-        const isLastOnPage = drawn === maxThisPage - 1;
-        index++;
-        drawn++;
-
-        const x = MARGIN_LEFT + col * (CELL_WIDTH + GAP_X);
-        const y = MARGIN_TOP + row * (CELL_HEIGHT + GAP_Y);
-
-        generateBarcodePng(code)
-          .then((pngBuffer) => {
-            doc.image(pngBuffer, x, y, {
-              width: BARCODE_IMG_WIDTH,
-              height: BARCODE_IMG_HEIGHT,
-            });
-
-            if (isLastOnPage) {
-              callback();
-            } else {
-              placeNext();
-            }
-          })
-          .catch((err) => {
-            reject(err);
-          });
-      }
-
-      placeNext();
-    }
-
-    function loop() {
+    function placeNext() {
       if (index >= total) {
         doc.end();
         return;
       }
-      drawPage(loop);
+
+      if (index > 0) {
+        doc.addPage({ size: pageSize, margin: 0 });
+      }
+
+      const { code } = items[index];
+      index++;
+
+      generateBarcodePng(code)
+        .then((pngBuffer) => {
+          const x = 0;
+          const y = 0;
+          doc.image(pngBuffer, x, y, {
+            width: BARCODE_IMG_WIDTH_PT,
+            height: BARCODE_IMG_HEIGHT_PT,
+          });
+          placeNext();
+        })
+        .catch((err) => reject(err));
     }
 
-    loop();
+    placeNext();
   });
 }
 
@@ -153,6 +115,7 @@ async function main() {
     : [{ code: '123456789012', name: 'Sample Product' }];
 
   console.log('Generating barcode stickers for', items.length, 'items...');
+  console.log('Page size:', LABEL_WIDTH_MM, 'mm ×', LABEL_HEIGHT_MM, 'mm, margins: 0');
 
   try {
     const pdfBuffer = await generatePdf(items);
