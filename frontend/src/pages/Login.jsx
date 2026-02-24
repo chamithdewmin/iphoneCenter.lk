@@ -383,7 +383,7 @@ export default function LoginPage() {
                     cursor: loading ? "default" : "pointer",
                   }}
                 >
-                  {loading ? "Signing in..." : "Sign In to POS"}
+                  {loading ? "Signing in..." : "Sign in"}
                 </button>
               </form>
             )}
