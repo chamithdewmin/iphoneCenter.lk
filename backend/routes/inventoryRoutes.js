@@ -52,6 +52,7 @@ router.put('/transfers/:id/complete', authenticate, requireManager, inventoryCon
 
 // Barcode
 router.get('/barcode/generate/:productId', authenticate, requireManager, inventoryController.generateBarcodeForProduct);
+router.get('/barcode/pdf/:barcode', authenticate, inventoryController.downloadBarcodePdf);
 router.get('/barcode/validate/:barcode', authenticate, inventoryController.validateBarcode);
 
 module.exports = router;

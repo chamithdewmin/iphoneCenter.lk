@@ -3,6 +3,7 @@ const { generateBarcode, validateIMEI, isAdmin } = require('../utils/helpers');
 const { getEffectiveUserId } = require('../utils/userResolution');
 const logger = require('../utils/logger');
 const { createProduct } = require('./createProductHandler');
+const { generateSingleBarcodePdf } = require('../utils/barcodePdf');
 
 /**
  * Get all products
@@ -608,6 +609,35 @@ const validateBarcode = async (req, res, next) => {
 };
 
 /**
+ * Download single barcode as PDF (print-ready, one barcode per page).
+ * Query: productName (optional).
+ */
+const downloadBarcodePdf = async (req, res, next) => {
+    try {
+        const { barcode } = req.params;
+        const productName = (req.query.productName || '').trim();
+
+        if (!barcode) {
+            return res.status(400).json({
+                success: false,
+                message: 'Barcode is required'
+            });
+        }
+
+        const pdfBuffer = await generateSingleBarcodePdf(barcode, productName);
+        const filename = `barcode_${(productName || barcode).replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+        res.send(pdfBuffer);
+    } catch (error) {
+        logger.error('Download barcode PDF error:', error);
+        next(error);
+    }
+};
+
+/**
  * Update product (Admin/Manager only)
  */
 const updateProduct = async (req, res, next) => {
@@ -763,5 +793,6 @@ module.exports = {
     transferStock,
     completeTransfer,
     generateBarcodeForProduct,
-    validateBarcode
+    validateBarcode,
+    downloadBarcodePdf
 };

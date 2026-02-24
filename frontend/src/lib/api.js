@@ -153,3 +153,34 @@ export const authFetch = async (path, options = {}, retried = false) => {
   const data = await res.json().catch(() => ({}));
   return { ok: res.ok, status: res.status, data };
 };
+
+/**
+ * Authenticated fetch for binary responses (e.g. PDF). Returns { ok, blob }.
+ * On 401, tries refresh once and retries. Use for download/print endpoints.
+ */
+export const authFetchBlob = async (path, options = {}, retried = false) => {
+  const base = getApiUrl();
+  const url = path.startsWith('http') ? path : `${base}${path.startsWith('/') ? path : `/${path}`}`;
+  const token = getAccessToken();
+  const headers = {
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...options.headers,
+  };
+  const fetchOptions = { ...options, headers, credentials: 'omit' };
+  if ((options.method || 'GET').toUpperCase() === 'GET') {
+    fetchOptions.cache = fetchOptions.cache ?? 'no-store';
+  }
+  const res = await fetch(url, fetchOptions);
+  if (res.status === 401 && !retried) {
+    const newToken = await refreshAccessToken();
+    if (newToken) return authFetchBlob(path, options, true);
+    clearTokens();
+    return { ok: false, status: 401, blob: null };
+  }
+  if (res.status === 401) {
+    clearTokens();
+    return { ok: false, status: 401, blob: null };
+  }
+  const blob = await res.blob();
+  return { ok: res.ok, status: res.status, blob };
+};

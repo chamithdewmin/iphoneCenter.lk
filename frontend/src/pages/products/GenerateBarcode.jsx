@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Download, Barcode, Search, Package, RefreshCw } from 'lucide-react';
-import { authFetch } from '@/lib/api';
+import { Download, Barcode, Search, Package, RefreshCw, Printer } from 'lucide-react';
+import { authFetch, authFetchBlob } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -81,17 +81,52 @@ const GenerateBarcode = () => {
     fetchProducts();
   };
 
-  const handleDownload = () => {
+  const getPdfPath = () => {
+    if (!selectedProduct?.barcode) return null;
+    const barcode = encodeURIComponent(selectedProduct.barcode);
+    const productName = encodeURIComponent(selectedProduct.name || selectedProduct.sku || '');
+    return `/api/inventory/barcode/pdf/${barcode}${productName ? `?productName=${productName}` : ''}`;
+  };
+
+  const handleDownloadPdf = async () => {
     if (!selectedProduct?.barcode) return;
+    const path = getPdfPath();
+    const { ok, blob } = await authFetchBlob(path);
+    if (!ok || !blob) {
+      toast({
+        title: 'Download failed',
+        description: 'Could not generate barcode PDF',
+        variant: 'destructive',
+      });
+      return;
+    }
     const name = (selectedProduct.name || selectedProduct.sku || 'product').replace(/\s+/g, '_');
-    const blob = new Blob([selectedProduct.barcode], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `barcode_${name}_${selectedProduct.barcode}.txt`;
+    a.download = `barcode_${name}.pdf`;
     a.click();
     URL.revokeObjectURL(url);
-    toast({ title: 'Downloaded', description: 'Barcode saved to file' });
+    toast({ title: 'Downloaded', description: 'Barcode PDF saved' });
+  };
+
+  const handlePrintBarcode = async () => {
+    if (!selectedProduct?.barcode) return;
+    const path = getPdfPath();
+    const { ok, blob } = await authFetchBlob(path);
+    if (!ok || !blob) {
+      toast({
+        title: 'Print failed',
+        description: 'Could not load barcode PDF',
+        variant: 'destructive',
+      });
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url, '_blank', 'noopener');
+    if (w) w.onload = () => URL.revokeObjectURL(url);
+    else URL.revokeObjectURL(url);
+    toast({ title: 'Opened in new tab', description: 'Use Ctrl+P to print the barcode' });
   };
 
   return (
@@ -195,10 +230,16 @@ const GenerateBarcode = () => {
                       <p className="text-sm text-muted-foreground">{selectedProduct.name || selectedProduct.sku}</p>
                       <p className="text-xs text-muted-foreground mt-1">Saved to database</p>
                     </div>
-                    <Button className="w-full" onClick={handleDownload}>
-                      <Download className="w-4 h-4 mr-2" />
-                      Download barcode (txt)
-                    </Button>
+                    <div className="flex flex-col gap-2">
+                      <Button className="w-full" onClick={handleDownloadPdf}>
+                        <Download className="w-4 h-4 mr-2" />
+                        Download barcode (PDF)
+                      </Button>
+                      <Button variant="outline" className="w-full" onClick={handlePrintBarcode}>
+                        <Printer className="w-4 h-4 mr-2" />
+                        Open to print
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-12">
