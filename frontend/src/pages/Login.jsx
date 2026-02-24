@@ -441,77 +441,79 @@ export default function LoginPage() {
           <div className="gp" style={{width:"100%",maxWidth:380}}>
 
             {/* ── LOGIN VIEW ── */}
-            {view === "login" && <>
-              <div style={{textAlign:"center",marginBottom:36}}>
-                <div style={{
-                  display:"inline-flex",alignItems:"center",justifyContent:"center",
-                  width:62,height:62,borderRadius:20,
-                  background:"linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.03))",
-                  border:"1px solid rgba(255,255,255,.12)", marginBottom:18, color:"#fff",
-                }}>
-                  <AppleLogo/>
-                </div>
-                <h1 style={{color:"#fff",fontSize:26,fontWeight:600,letterSpacing:"-0.02em",marginBottom:6}}>Staff Sign In</h1>
-                <p style={{color:"rgba(255,255,255,.38)",fontSize:13}}>Enter your credentials to access the POS</p>
-              </div>
-
-              {error && (
-                <div style={{
-                  background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)",
-                  borderRadius:12, padding:"12px 16px", marginBottom:20,
-                  display:"flex", alignItems:"center", gap:10,
-                }}>
-                  <div style={{width:20,height:20,borderRadius:"50%",background:"rgba(239,68,68,0.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(239,68,68,0.9)" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
+            {view === "login" && (
+              <>
+                <div style={{textAlign:"center",marginBottom:36}}>
+                  <div style={{
+                    display:"inline-flex",alignItems:"center",justifyContent:"center",
+                    width:62,height:62,borderRadius:20,
+                    background:"linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.03))",
+                    border:"1px solid rgba(255,255,255,.12)", marginBottom:18, color:"#fff",
+                  }}>
+                    <AppleLogo/>
                   </div>
-                  <span style={{color:"rgba(239,68,68,0.9)",fontSize:13,lineHeight:1.5}}>{error}</span>
+                  <h1 style={{color:"#fff",fontSize:26,fontWeight:600,letterSpacing:"-0.02em",marginBottom:6}}>Staff Sign In</h1>
+                  <p style={{color:"rgba(255,255,255,.38)",fontSize:13}}>Enter your credentials to access the POS</p>
                 </div>
 
-              <form onSubmit={handleLogin} style={{display:"flex",flexDirection:"column",gap:14}}>
-                <div className="fr">
-                  <label style={{display:"block",color:"rgba(255,255,255,.55)",fontSize:12,marginBottom:7,letterSpacing:"0.03em",textTransform:"uppercase"}}>Email Address</label>
-                  <input className="ifield" type="email" placeholder="staff@iphonecenter.com"
-                    value={email} onChange={e=>setEmail(e.target.value)} required/>
-                </div>
-                <div className="fr">
-                  <label style={{display:"block",color:"rgba(255,255,255,.55)",fontSize:12,marginBottom:7,letterSpacing:"0.03em",textTransform:"uppercase"}}>Password</label>
-                  <div style={{position:"relative"}}>
-                    <input className="ifield" type={showPassword?"text":"password"}
-                      placeholder="Enter your password" value={password}
-                      onChange={e=>setPassword(e.target.value)} style={{paddingRight:50}} required/>
-                    <button type="button" onClick={()=>setShowPassword(!showPassword)} style={{
-                      position:"absolute",right:16,top:"50%",transform:"translateY(-50%)",
-                      background:"none",border:"none",cursor:"pointer",
-                      color:"rgba(255,255,255,.35)",padding:0,display:"flex",transition:"color .2s",
-                    }}
-                    onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,.7)"}
-                    onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,.35)"}>
-                      <EyeIcon open={showPassword}/>
-                    </button>
+                {error && (
+                  <div style={{
+                    background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)",
+                    borderRadius:12, padding:"12px 16px", marginBottom:20,
+                    display:"flex", alignItems:"center", gap:10,
+                  }}>
+                    <div style={{width:20,height:20,borderRadius:"50%",background:"rgba(239,68,68,0.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(239,68,68,0.9)" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                      </svg>
+                    </div>
+                    <span style={{color:"rgba(239,68,68,0.9)",fontSize:13,lineHeight:1.5}}>{error}</span>
                   </div>
                 )}
 
-                <div className="fr" style={{textAlign:"right"}}>
-                  <button type="button" onClick={()=>setView("forgot")} style={{
-                    background:"none",border:"none",cursor:"pointer",
-                    color:"rgba(255,120,40,.75)",fontSize:13,padding:0,transition:"color .2s",fontFamily:"inherit",
-                  }}
-                  onMouseEnter={e=>{e.currentTarget.style.color="var(--primary)";}}
-                  onMouseLeave={e=>e.currentTarget.style.color="rgba(255,120,40,.75)"}>
-                    Forgot password?
-                  </button>
+                <form onSubmit={handleLogin} style={{display:"flex",flexDirection:"column",gap:14}}>
+                  <div className="fr">
+                    <label style={{display:"block",color:"rgba(255,255,255,.55)",fontSize:12,marginBottom:7,letterSpacing:"0.03em",textTransform:"uppercase"}}>Email Address</label>
+                    <input className="ifield" type="email" placeholder="staff@iphonecenter.com"
+                      value={email} onChange={e=>setEmail(e.target.value)} required/>
+                  </div>
+                  <div className="fr">
+                    <label style={{display:"block",color:"rgba(255,255,255,.55)",fontSize:12,marginBottom:7,letterSpacing:"0.03em",textTransform:"uppercase"}}>Password</label>
+                    <div style={{position:"relative"}}>
+                      <input className="ifield" type={showPassword?"text":"password"}
+                        placeholder="Enter your password" value={password}
+                        onChange={e=>setPassword(e.target.value)} style={{paddingRight:50}} required/>
+                      <button type="button" onClick={()=>setShowPassword(!showPassword)} style={{
+                        position:"absolute",right:16,top:"50%",transform:"translateY(-50%)",
+                        background:"none",border:"none",cursor:"pointer",
+                        color:"rgba(255,255,255,.35)",padding:0,display:"flex",transition:"color .2s",
+                      }}
+                      onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,.7)"}
+                      onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,.35)"}>
+                        <EyeIcon open={showPassword}/>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="fr" style={{textAlign:"right"}}>
+                    <button type="button" onClick={()=>setView("forgot")} style={{
+                      background:"none",border:"none",cursor:"pointer",
+                      color:"rgba(255,120,40,.75)",fontSize:13,padding:0,transition:"color .2s",fontFamily:"inherit",
+                    }}
+                    onMouseEnter={e=>{e.currentTarget.style.color="var(--primary)";}}
+                    onMouseLeave={e=>e.currentTarget.style.color="rgba(255,120,40,.75)"}>
+                      Forgot password?
+                    </button>
+                  </div>
+
+                  <div className="fr" style={{marginTop:4}}>
+                    <button type="submit" className="lbtn" disabled={loading}>
+                      {loading ? <div style={{width:20,height:20,border:"2px solid rgba(255,255,255,.25)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite",margin:"0 auto"}}/> : "Sign In to POS"}
+                    </button>
+                  </div>
                 </form>
               </>
             )}
-
-                <div className="fr" style={{marginTop:4}}>
-                  <button type="submit" className="lbtn" disabled={loading}>
-                    {loading ? <div style={{width:20,height:20,border:"2px solid rgba(255,255,255,.25)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite",margin:"0 auto"}}/> : "Sign In to POS"}
-                  </button>
-                </div>
-              )}
 
               {otpSuccess && (
                 <div style={{
