@@ -114,6 +114,11 @@ export default function LoginPage() {
     next[i] = val;
     setOtp(next);
     setOtpError("");
+
+    if (val && i < otp.length - 1) {
+      const nextInput = document.getElementById(`otp-${i + 1}`);
+      nextInput?.focus();
+    }
   };
 
   const handleOtpKey = (e, i) => {
@@ -220,7 +225,7 @@ export default function LoginPage() {
                 </span>
               </a>
               <div className="hotline">
-                Support&nbsp;<strong>+94 74 152 5537</strong>
+                Hotline Support&nbsp;<strong>+94 74 152 5537</strong>
               </div>
             </nav>
 
@@ -452,7 +457,7 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
                   {otp.map((d, i) => (
                     <input
                       key={i}
@@ -464,11 +469,11 @@ export default function LoginPage() {
                       onChange={(e) => handleOtpChange(e.target.value, i)}
                       onKeyDown={(e) => handleOtpKey(e, i)}
                       style={{
-                        width: 40,
-                        height: 48,
+                        width: 60,
+                        height: 60,
                         textAlign: "center",
-                        fontSize: 22,
-                        borderRadius: 10,
+                        fontSize: 24,
+                        borderRadius: 14,
                         border: "1px solid #2a2a2a",
                         background: "#1a1a1a",
                         color: "#f0f0f0",
