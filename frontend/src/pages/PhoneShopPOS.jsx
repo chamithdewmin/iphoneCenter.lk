@@ -20,11 +20,6 @@ const IconTrash = () => (
     <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
   </svg>
 );
-const IconRefresh = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.75"/>
-  </svg>
-);
 const IconCart = () => (
   <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#4a5568" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
@@ -391,30 +386,9 @@ export default function PhoneShopPOS() {
           <div style={{ width: 480, background: "#13161e", borderLeft: "1px solid #1e2433", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
             {/* Header */}
-            <div style={{ background: "#0f1117", borderBottom: "1px solid #1e2433", padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 15 }}>Order Details</div>
-                <div style={{ color: "#8b9ab0", fontSize: 11, marginTop: 2 }}>{cart.reduce((s, i) => s + i.qty, 0)} items · ${subtotal.toFixed(2)}</div>
-              </div>
-              <button
-                type="button"
-                onClick={() => { setCart([]); setDiscount(''); }}
-                style={{
-                  background: "#171922",
-                  border: "1px solid #2a3347",
-                  borderRadius: 12,
-                  width: 32,
-                  height: 32,
-                  padding: 0,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-                aria-label="Reset cart"
-              >
-                <IconRefresh />
-              </button>
+            <div style={{ background: "#0f1117", borderBottom: "1px solid #1e2433", padding: "14px 18px" }}>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>Order Details</div>
+              <div style={{ color: "#8b9ab0", fontSize: 11, marginTop: 2 }}>{cart.reduce((s, i) => s + i.qty, 0)} items · ${subtotal.toFixed(2)}</div>
             </div>
 
             {/* Customer (required for Pay Now) */}
