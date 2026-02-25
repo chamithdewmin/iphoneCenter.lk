@@ -283,11 +283,11 @@ export default function PhoneShopPOS() {
         .add-btn:hover { opacity: 0.9; }
       `}</style>
 
-      <div style={{ fontFamily: SYS_FONT, background: "#0c0e14", color: "#fff", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+      <div style={{ fontFamily: SYS_FONT, background: "#0c0e14", color: "#fff", height: "100vh", minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div style={{ display: "flex", flex: 1, minHeight: 0, overflow: "hidden" }}>
 
           {/* ── LEFT: Products ── */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", padding: "16px 18px", gap: 12 }}>
+          <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden", padding: "16px 18px", gap: 12 }}>
 
             {/* Search bar */}
             <div style={{ position: "relative" }}>
@@ -382,8 +382,8 @@ export default function PhoneShopPOS() {
             </div>
           </div>
 
-          {/* ── RIGHT: Order panel (wider) ── */}
-          <div style={{ width: 480, background: "#13161e", borderLeft: "1px solid #1e2433", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          {/* ── RIGHT: Order panel — fits viewport; only cart list scrolls when many items ── */}
+          <div style={{ width: 480, flexShrink: 0, background: "#13161e", borderLeft: "1px solid #1e2433", display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
 
             {/* Header */}
             <div style={{ background: "#0f1117", borderBottom: "1px solid #1e2433", padding: "14px 18px" }}>
@@ -428,8 +428,8 @@ export default function PhoneShopPOS() {
               ))}
             </div>
 
-            {/* Cart items */}
-            <div style={{ flex: 1, overflowY: "auto" }}>
+            {/* Cart items — only this area scrolls when many products */}
+            <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
               {cart.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "50px 20px" }}>
                   <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><IconCart /></div>
