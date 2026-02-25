@@ -316,12 +316,13 @@ const AddUser = () => {
                   </div>
                 </div>
 
-                <div className="mt-3 text-xs text-muted-foreground space-y-1">
-                  <p className="font-medium flex items-center gap-2 text-foreground/80">
-                    <Shield className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>Password must include:</span>
-                  </p>
-                  <ul className="mt-1 space-y-1">
+                <div className="mt-3 text-xs text-muted-foreground">
+                  <div className="inline-block rounded-md border border-emerald-500/50 bg-emerald-500/5 px-3 py-2 shadow-sm">
+                    <p className="font-medium flex items-center gap-2 text-foreground/80 mb-1">
+                      <Shield className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>Password must include:</span>
+                    </p>
+                    <ul className="space-y-1">
                     <li className="flex items-center gap-2">
                       <CheckCircle2
                         className={`w-3.5 h-3.5 ${
@@ -372,7 +373,8 @@ const AddUser = () => {
                         Include at least one symbol
                       </span>
                     </li>
-                  </ul>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
