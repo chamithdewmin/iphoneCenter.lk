@@ -15,7 +15,8 @@ import {
   Trash2,
   Pencil,
   Calendar,
-  User
+  User,
+  CheckCircle2,
 } from 'lucide-react';
 import Loading from '@/components/Loading';
 import { authFetch } from '@/lib/api';
@@ -31,6 +32,27 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+
+const getPasswordRuleState = (password, name, username) => {
+  const value = password || '';
+  const lower = value.toLowerCase();
+  const personalTokens = [name, username]
+    .filter(Boolean)
+    .map((v) => v.toLowerCase().replace(/\s+/g, ''));
+
+  const sanitized = lower.replace(/\s+/g, '');
+
+  const noPersonal =
+    value.length > 0 && !personalTokens.some((token) => token && sanitized.includes(token));
+
+  return {
+    length: value.length >= 8,
+    upper: /[A-Z]/.test(value),
+    number: /\d/.test(value),
+    symbol: /[^A-Za-z0-9]/.test(value),
+    noPersonal,
+  };
+};
 
 const Users = () => {
   const { toast } = useToast();
@@ -61,6 +83,8 @@ const Users = () => {
 
   const roles = ['admin', 'manager', 'staff', 'cashier'];
   const roleNeedsWarehouse = formData.role === 'manager' || formData.role === 'staff' || formData.role === 'cashier';
+
+  const passwordRules = getPasswordRuleState(formData.password, formData.name, formData.username);
 
   const fetchBranches = useCallback(async () => {
     const { ok, data } = await authFetch('/api/branches');
@@ -140,10 +164,10 @@ const Users = () => {
       });
       return;
     }
-    if (formData.password.length < 6) {
+    if (formData.password.length < 8) {
       toast({
         title: 'Validation Error',
-        description: 'Password must be at least 6 characters',
+        description: 'Password must be at least 8 characters',
         variant: 'destructive',
       });
       return;
@@ -554,6 +578,7 @@ const Users = () => {
                       onChange={handleChange}
                       placeholder="Enter password"
                       className="mt-1"
+                      minLength={8}
                       required
                     />
                   </div>
@@ -567,8 +592,70 @@ const Users = () => {
                       onChange={handleChange}
                       placeholder="Confirm password"
                       className="mt-1"
+                      minLength={8}
                       required
                     />
+                  </div>
+                </div>
+
+                <div className="mt-3 text-xs text-muted-foreground">
+                  <div className="inline-block rounded-md border border-emerald-500/50 bg-emerald-500/5 px-3 py-2 shadow-sm">
+                    <p className="font-medium flex items-center gap-2 text-foreground/80 mb-1">
+                      <Shield className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>Password must include:</span>
+                    </p>
+                    <ul className="space-y-1">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2
+                          className={`w-3.5 h-3.5 ${
+                            passwordRules.length ? 'text-emerald-500' : 'text-muted-foreground opacity-40'
+                          }`}
+                        />
+                        <span className={passwordRules.length ? 'text-emerald-500' : 'text-muted-foreground'}>
+                          Be at least 8 characters
+                        </span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2
+                          className={`w-3.5 h-3.5 ${
+                            passwordRules.noPersonal ? 'text-emerald-500' : 'text-muted-foreground opacity-40'
+                          }`}
+                        />
+                        <span className={passwordRules.noPersonal ? 'text-emerald-500' : 'text-muted-foreground'}>
+                          Not contain your name or username
+                        </span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2
+                          className={`w-3.5 h-3.5 ${
+                            passwordRules.upper ? 'text-emerald-500' : 'text-muted-foreground opacity-40'
+                          }`}
+                        />
+                        <span className={passwordRules.upper ? 'text-emerald-500' : 'text-muted-foreground'}>
+                          Include at least one uppercase letter
+                        </span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2
+                          className={`w-3.5 h-3.5 ${
+                            passwordRules.number ? 'text-emerald-500' : 'text-muted-foreground opacity-40'
+                          }`}
+                        />
+                        <span className={passwordRules.number ? 'text-emerald-500' : 'text-muted-foreground'}>
+                          Include at least one number
+                        </span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2
+                          className={`w-3.5 h-3.5 ${
+                            passwordRules.symbol ? 'text-emerald-500' : 'text-muted-foreground opacity-40'
+                          }`}
+                        />
+                        <span className={passwordRules.symbol ? 'text-emerald-500' : 'text-muted-foreground'}>
+                          Include at least one symbol
+                        </span>
+                      </li>
+                    </ul>
                   </div>
                 </div>
               </div>
@@ -688,10 +775,10 @@ const Users = () => {
                   });
                   return;
                 }
-                if (formData.password && formData.password.length < 6) {
+                if (formData.password && formData.password.length < 8) {
                   toast({
                     title: 'Validation Error',
-                    description: 'Password must be at least 6 characters',
+                    description: 'Password must be at least 8 characters',
                     variant: 'destructive',
                   });
                   return;

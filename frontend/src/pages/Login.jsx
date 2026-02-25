@@ -234,8 +234,11 @@ export default function LoginPage() {
     const code = otp.join("");
     const normalizedEmail = (forgotEmail || "").trim().toLowerCase();
 
-    if (newPassword.length < 8) {
-      setOtpError("Password must be at least 8 characters");
+    const ruleState = getPasswordRuleState(newPassword, { email: forgotEmail });
+    const rulesOk = Object.values(ruleState).every(Boolean);
+
+    if (!rulesOk) {
+      setOtpError("Password does not meet all requirements");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -290,6 +293,9 @@ export default function LoginPage() {
   if (error) notifications.push({ type: "error", message: error });
   if (otpError) notifications.push({ type: "error", message: otpError });
   if (otpSuccess) notifications.push({ type: "success", message: otpSuccess });
+
+  const passwordRules = getPasswordRuleState(newPassword, { email: forgotEmail });
+  const allPasswordRulesOk = Object.values(passwordRules).every(Boolean);
 
   useEffect(() => {
     if (!error && !otpError && !otpSuccess) return;
@@ -628,6 +634,19 @@ export default function LoginPage() {
                       <EyeIcon open={showConfirmPassword} />
                     </button>
                   </div>
+                  {newPassword &&
+                    confirmPassword &&
+                    newPassword !== confirmPassword && (
+                      <p
+                        style={{
+                          fontSize: 12,
+                          color: "#fca5a5",
+                          marginTop: 4,
+                        }}
+                      >
+                        Passwords do not match.
+                      </p>
+                    )}
                 </div>
 
                 <PasswordChecklist password={newPassword} email={forgotEmail} />
@@ -637,7 +656,8 @@ export default function LoginPage() {
                   type="submit"
                   disabled={
                     loading ||
-                    newPassword.length < 8 ||
+                    !allPasswordRulesOk ||
+                    !newPassword ||
                     newPassword !== confirmPassword
                   }
                 >
