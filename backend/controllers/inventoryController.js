@@ -110,7 +110,8 @@ const getBranchStock = async (req, res, next) => {
 
         if (branchId === 'all' && isAdmin(req)) {
             const [stock] = await executeQuery(
-                `SELECT p.id AS product_id, p.name AS product_name, p.sku, p.base_price, p.category, p.brand,
+                `SELECT p.id AS product_id, p.name AS product_name, p.sku,
+                        p.base_price, p.wholesale_price, p.retail_price, p.category, p.brand,
                         (SELECT b2.barcode FROM barcodes b2 WHERE b2.product_id = p.id AND b2.is_active = TRUE LIMIT 1) AS barcode,
                         COALESCE(agg.total_quantity, 0) AS quantity, COALESCE(agg.total_reserved, 0) AS reserved_quantity
                  FROM products p
@@ -131,7 +132,8 @@ const getBranchStock = async (req, res, next) => {
         }
 
         const [stock] = await executeQuery(
-            `SELECT bs.*, p.name as product_name, p.sku, p.base_price, p.category, p.brand, b.barcode
+            `SELECT bs.*, p.name as product_name, p.sku,
+                    p.base_price, p.wholesale_price, p.retail_price, p.category, p.brand, b.barcode
              FROM branch_stock bs
              INNER JOIN products p ON bs.product_id = p.id AND p.is_active = TRUE
              LEFT JOIN barcodes b ON b.product_id = p.id AND b.is_active = TRUE
@@ -646,7 +648,7 @@ const updateProduct = async (req, res, next) => {
         await connection.beginTransaction();
 
         const { id } = req.params;
-        const { name, sku, description, category, brand, basePrice } = req.body;
+        const { name, sku, description, category, brand, basePrice, wholesalePrice, retailPrice } = req.body;
 
         if (!name || !name.trim()) {
             await connection.rollback();
@@ -664,11 +666,41 @@ const updateProduct = async (req, res, next) => {
             });
         }
 
-        if (!basePrice || parseFloat(basePrice) < 0) {
+        let base = basePrice != null ? parseFloat(basePrice) : NaN;
+        let wholesale = wholesalePrice != null ? parseFloat(wholesalePrice) : NaN;
+        let retail = retailPrice != null ? parseFloat(retailPrice) : NaN;
+
+        if (Number.isNaN(retail) && !Number.isNaN(base)) {
+            retail = base;
+        }
+        if (Number.isNaN(base) && !Number.isNaN(retail)) {
+            base = retail;
+        }
+        if (Number.isNaN(wholesale)) {
+            wholesale = retail;
+        }
+
+        if (Number.isNaN(base) || base < 0) {
             await connection.rollback();
             return res.status(400).json({
                 success: false,
-                message: 'Valid base price is required'
+                message: 'Valid base price / retail price is required'
+            });
+        }
+
+        if (!Number.isNaN(wholesale) && wholesale < 0) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'Wholesale price cannot be negative'
+            });
+        }
+
+        if (!Number.isNaN(wholesale) && !Number.isNaN(retail) && wholesale > retail) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'Wholesale price cannot be higher than retail price'
             });
         }
 
@@ -703,9 +735,14 @@ const updateProduct = async (req, res, next) => {
         // Update product
         await connection.execute(
             `UPDATE products 
-             SET name = ?, sku = ?, description = ?, category = ?, brand = ?, base_price = ?, updated_at = CURRENT_TIMESTAMP
+             SET name = ?, sku = ?, description = ?, category = ?, brand = ?, 
+                 wholesale_price = ?, retail_price = ?, base_price = ?, updated_at = CURRENT_TIMESTAMP
              WHERE id = ?`,
-            [name.trim(), sku.trim(), description?.trim() || null, category?.trim() || null, brand?.trim() || null, parseFloat(basePrice), id]
+            [name.trim(), sku.trim(), description?.trim() || null, category?.trim() || null, brand?.trim() || null,
+             Number.isNaN(wholesale) ? null : wholesale,
+             Number.isNaN(retail) ? base : retail,
+             base,
+             id]
         );
 
         await connection.commit();

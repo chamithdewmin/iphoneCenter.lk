@@ -132,7 +132,11 @@ Authorization: Bearer <access_token>
     "description": "string (optional)",
     "category": "string (optional)",
     "brand": "string (optional)",
-    "basePrice": "number (required)"
+    "wholesalePrice": "number (required, buying cost)",
+    "retailPrice": "number (required, selling price)",
+    "basePrice": "number (optional, defaults to retailPrice)",
+    "initialQuantity": "number (optional)",
+    "branchId": "number (optional, required for admin)"
   }
   ```
 

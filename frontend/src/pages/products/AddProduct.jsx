@@ -32,6 +32,8 @@ const AddProduct = () => {
     sku: '',
     year: new Date().getFullYear(),
     price: '',
+    wholesalePrice: '',
+    retailPrice: '',
     stock: '',
     imei: '',
     description: '',
@@ -98,6 +100,8 @@ const AddProduct = () => {
               sku: product.sku || '',
               year: new Date().getFullYear(),
               price: product.base_price || product.basePrice || '',
+              wholesalePrice: product.wholesale_price || '',
+              retailPrice: product.retail_price || product.base_price || product.basePrice || '',
               stock: '',
               imei: '',
               description: product.description || '',
@@ -135,11 +139,25 @@ const AddProduct = () => {
       return;
     }
     const sku = formData.sku?.trim() || formData.imei?.trim() || `SKU-${Date.now()}`;
-    const basePrice = Number(formData.price);
-    if (Number.isNaN(basePrice) || basePrice < 0) {
-      toast({ title: 'Validation Error', description: 'Valid base price is required', variant: 'destructive' });
+    const wholesale = formData.wholesalePrice !== '' ? Number(formData.wholesalePrice) : NaN;
+    const retail = formData.retailPrice !== '' ? Number(formData.retailPrice) : NaN;
+
+    if (Number.isNaN(wholesale) || wholesale < 0) {
+      toast({ title: 'Validation Error', description: 'Valid wholesale price is required', variant: 'destructive' });
       return;
     }
+
+    if (Number.isNaN(retail) || retail < 0) {
+      toast({ title: 'Validation Error', description: 'Valid retail price is required', variant: 'destructive' });
+      return;
+    }
+
+    if (wholesale > retail) {
+      toast({ title: 'Validation Error', description: 'Wholesale price cannot be higher than retail price', variant: 'destructive' });
+      return;
+    }
+
+    const basePrice = retail;
     setLoading(true);
 
     if (isEditMode) {
@@ -153,6 +171,8 @@ const AddProduct = () => {
           category: formData.category || null,
           brand: formData.brand || null,
           basePrice: Number(basePrice),
+          wholesalePrice: Number(wholesale),
+          retailPrice: Number(retail),
         }),
       });
       setLoading(false);
@@ -174,6 +194,8 @@ const AddProduct = () => {
           category: formData.category || null,
           brand: formData.brand || null,
           basePrice: Number(basePrice),
+          wholesalePrice: Number(wholesale),
+          retailPrice: Number(retail),
           initialQuantity,
           ...(branchId ? { branchId } : {}),
         }),
@@ -343,14 +365,29 @@ const AddProduct = () => {
                 <h2 className="text-xl font-semibold mb-4">Pricing & Stock</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="price">Price (LKR) *</Label>
+                    <Label htmlFor="wholesalePrice">Wholesale price (LKR) *</Label>
                     <Input
-                      id="price"
-                      name="price"
+                      id="wholesalePrice"
+                      name="wholesalePrice"
                       type="number"
-                      value={formData.price}
+                      value={formData.wholesalePrice}
                       onChange={handleChange}
-                      placeholder="0.00"
+                      placeholder="Buying cost"
+                      min="0"
+                      step="0.01"
+                      className="mt-1 text-foreground bg-background"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="retailPrice">Retail price (LKR) *</Label>
+                    <Input
+                      id="retailPrice"
+                      name="retailPrice"
+                      type="number"
+                      value={formData.retailPrice}
+                      onChange={handleChange}
+                      placeholder="Selling price"
                       min="0"
                       step="0.01"
                       className="mt-1 text-foreground bg-background"

@@ -115,9 +115,9 @@ async function createSaleTransactionExample(branchId, userId, saleData) {
         for (const item of validatedItems) {
             // Insert sale item
             await connection.execute(
-                `INSERT INTO sale_items (sale_id, product_id, imei, quantity, unit_price, discount_amount, subtotal) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [saleId, item.productId, item.imei, item.quantity, item.unitPrice, item.discount, item.subtotal]
+                `INSERT INTO sale_items (sale_id, product_id, imei, quantity, unit_price, cost_price, discount_amount, subtotal) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [saleId, item.productId, item.imei, item.quantity, item.unitPrice, item.costPrice || 0, item.discount, item.subtotal]
             );
 
             // Update stock (decrease quantity)

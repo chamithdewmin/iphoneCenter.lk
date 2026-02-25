@@ -146,6 +146,8 @@ CREATE TABLE IF NOT EXISTS products (
     description TEXT,
     category VARCHAR(100),
     brand VARCHAR(100),
+    wholesale_price DECIMAL(10, 2),
+    retail_price DECIMAL(10, 2),
     base_price DECIMAL(10, 2) NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -281,6 +283,7 @@ CREATE TABLE IF NOT EXISTS sale_items (
     imei VARCHAR(20) NULL,
     quantity INT NOT NULL,
     unit_price DECIMAL(10, 2) NOT NULL,
+    cost_price DECIMAL(10, 2),
     discount_amount DECIMAL(10, 2) DEFAULT 0,
     subtotal DECIMAL(10, 2) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -288,6 +291,28 @@ CREATE TABLE IF NOT EXISTS sale_items (
 CREATE INDEX IF NOT EXISTS idx_sale_items_sale_id ON sale_items(sale_id);
 CREATE INDEX IF NOT EXISTS idx_sale_items_product_id ON sale_items(product_id);
 CREATE INDEX IF NOT EXISTS idx_sale_items_imei ON sale_items(imei);
+
+CREATE TABLE IF NOT EXISTS expenses (
+    id SERIAL PRIMARY KEY,
+    branch_id INT REFERENCES branches(id) ON DELETE CASCADE,
+    amount DECIMAL(10, 2) NOT NULL,
+    category VARCHAR(100),
+    description TEXT,
+    expense_date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_expenses_branch_date ON expenses(branch_id, expense_date);
+
+CREATE TABLE IF NOT EXISTS other_income (
+    id SERIAL PRIMARY KEY,
+    branch_id INT REFERENCES branches(id) ON DELETE CASCADE,
+    amount DECIMAL(10, 2) NOT NULL,
+    category VARCHAR(100),
+    description TEXT,
+    income_date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_other_income_branch_date ON other_income(branch_id, income_date);
 
 CREATE TABLE IF NOT EXISTS payments (
     id SERIAL PRIMARY KEY,

@@ -26,6 +26,8 @@ CREATE TABLE products (
     description TEXT,
     category VARCHAR(100),
     brand VARCHAR(100),
+    wholesale_price DECIMAL(10, 2),
+    retail_price DECIMAL(10, 2),
     base_price DECIMAL(10, 2) NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

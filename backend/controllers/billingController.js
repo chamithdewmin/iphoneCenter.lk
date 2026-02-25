@@ -104,7 +104,7 @@ const createSale = async (req, res, next) => {
             // If IMEI is provided, validate it
             if (imei) {
                 const [imeiRecord] = await connection.execute(
-                    'SELECT id, status FROM product_imeis WHERE imei = ? AND branch_id = ?',
+                    'SELECT id, status, purchase_price FROM product_imeis WHERE imei = ? AND branch_id = ?',
                     [imei, branchId]
                 );
 
@@ -117,6 +117,38 @@ const createSale = async (req, res, next) => {
                 }
             }
 
+            // Determine cost price for profit tracking
+            let costPrice = null;
+
+            // 1) Prefer IMEI-specific purchase price when available
+            if (imei) {
+                const [imeiRecord] = await connection.execute(
+                    'SELECT purchase_price FROM product_imeis WHERE imei = ? AND branch_id = ?',
+                    [imei, branchId]
+                );
+                if (imeiRecord.length > 0 && imeiRecord[0].purchase_price != null) {
+                    costPrice = Number(imeiRecord[0].purchase_price);
+                }
+            }
+
+            // 2) Fallback to product wholesale price (or base_price)
+            if (costPrice == null || Number.isNaN(costPrice)) {
+                const [productRows] = await connection.execute(
+                    'SELECT wholesale_price, base_price FROM products WHERE id = ?',
+                    [productId]
+                );
+                if (productRows.length > 0) {
+                    const row = productRows[0];
+                    const wholesale = row.wholesale_price != null ? Number(row.wholesale_price) : undefined;
+                    const base = row.base_price != null ? Number(row.base_price) : undefined;
+                    costPrice = !Number.isNaN(wholesale) && wholesale != null ? wholesale : base;
+                }
+            }
+
+            if (costPrice == null || Number.isNaN(costPrice)) {
+                costPrice = 0;
+            }
+
             const itemDiscount = parseFloat(discount) || 0;
             const itemSubtotal = (parseFloat(unitPrice) * parseInt(quantity)) - itemDiscount;
             subtotal += itemSubtotal;
@@ -125,6 +157,7 @@ const createSale = async (req, res, next) => {
                 productId,
                 quantity,
                 unitPrice: parseFloat(unitPrice),
+                costPrice: Number(costPrice),
                 discount: itemDiscount,
                 subtotal: itemSubtotal,
                 imei: imei || null
@@ -170,9 +203,9 @@ const createSale = async (req, res, next) => {
         for (const item of saleItems) {
             // Insert sale item
             await connection.execute(
-                `INSERT INTO sale_items (sale_id, product_id, imei, quantity, unit_price, discount_amount, subtotal) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [saleId, item.productId, item.imei, item.quantity, item.unitPrice, item.discount, item.subtotal]
+                `INSERT INTO sale_items (sale_id, product_id, imei, quantity, unit_price, cost_price, discount_amount, subtotal) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [saleId, item.productId, item.imei, item.quantity, item.unitPrice, item.costPrice, item.discount, item.subtotal]
             );
 
             // Update stock

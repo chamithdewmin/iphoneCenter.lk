@@ -71,8 +71,9 @@ const getProfitReport = async (req, res, next) => {
                         DATE(s.created_at) as sale_date,
                         COUNT(s.id) as total_sales,
                         SUM(s.total_amount) as total_revenue,
-                        SUM(si.quantity * si.unit_price) as total_cost,
-                        SUM(s.total_amount) - SUM(si.quantity * si.unit_price) as gross_profit,
+                        SUM(si.quantity * si.unit_price) as sales_income,
+                        SUM(si.quantity * COALESCE(si.cost_price, 0)) as total_wholesale_cost,
+                        SUM(si.quantity * si.unit_price) - SUM(si.quantity * COALESCE(si.cost_price, 0)) as gross_profit,
                         SUM(s.discount_amount) as total_discount,
                         SUM(s.tax_amount) as total_tax
                      FROM sales s
@@ -102,14 +103,93 @@ const getProfitReport = async (req, res, next) => {
         query += ' GROUP BY s.branch_id, b.name, DATE(s.created_at) ORDER BY sale_date DESC';
 
         const [results] = await executeQuery(query, params);
+        const profitRows = Array.isArray(results) ? results : [];
 
-        // Calculate profit margin
-        const data = results.map(row => ({
-            ...row,
-            profit_margin: row.total_revenue > 0 
-                ? ((row.gross_profit / row.total_revenue) * 100).toFixed(2) 
-                : 0
-        }));
+        // Fetch expenses for the same period
+        let expenseQuery = `SELECT branch_id, DATE(expense_date) as expense_date, SUM(amount) as total_expenses
+                            FROM expenses WHERE 1=1`;
+        const expenseParams = [];
+
+        if (!isAdmin(req)) {
+            expenseQuery += ' AND branch_id = ?';
+            expenseParams.push(userBranchId);
+        } else if (branchId) {
+            expenseQuery += ' AND branch_id = ?';
+            expenseParams.push(branchId);
+        }
+        if (startDate) {
+            expenseQuery += ' AND DATE(expense_date) >= ?';
+            expenseParams.push(startDate);
+        }
+        if (endDate) {
+            expenseQuery += ' AND DATE(expense_date) <= ?';
+            expenseParams.push(endDate);
+        }
+        expenseQuery += ' GROUP BY branch_id, DATE(expense_date)';
+
+        const [expenseResults] = await executeQuery(expenseQuery, expenseParams);
+        const expenseRows = Array.isArray(expenseResults) ? expenseResults : [];
+
+        // Fetch other income for the same period
+        let incomeQuery = `SELECT branch_id, DATE(income_date) as income_date, SUM(amount) as total_other_income
+                           FROM other_income WHERE 1=1`;
+        const incomeParams = [];
+
+        if (!isAdmin(req)) {
+            incomeQuery += ' AND branch_id = ?';
+            incomeParams.push(userBranchId);
+        } else if (branchId) {
+            incomeQuery += ' AND branch_id = ?';
+            incomeParams.push(branchId);
+        }
+        if (startDate) {
+            incomeQuery += ' AND DATE(income_date) >= ?';
+            incomeParams.push(startDate);
+        }
+        if (endDate) {
+            incomeQuery += ' AND DATE(income_date) <= ?';
+            incomeParams.push(endDate);
+        }
+        incomeQuery += ' GROUP BY branch_id, DATE(income_date)';
+
+        const [incomeResults] = await executeQuery(incomeQuery, incomeParams);
+        const incomeRows = Array.isArray(incomeResults) ? incomeResults : [];
+
+        // Build lookup maps for quick access
+        const expenseMap = new Map();
+        expenseRows.forEach((row) => {
+            const key = `${row.branch_id}|${row.expense_date}`;
+            expenseMap.set(key, parseFloat(row.total_expenses) || 0);
+        });
+
+        const incomeMap = new Map();
+        incomeRows.forEach((row) => {
+            const key = `${row.branch_id}|${row.income_date}`;
+            incomeMap.set(key, parseFloat(row.total_other_income) || 0);
+        });
+
+        // Calculate profit margin + net profit per row
+        const data = profitRows.map((row) => {
+            const key = `${row.branch_id}|${row.sale_date}`;
+            const totalExpenses = expenseMap.get(key) || 0;
+            const totalOtherIncome = incomeMap.get(key) || 0;
+
+            const totalRevenue = parseFloat(row.total_revenue) || 0;
+            const salesIncome = parseFloat(row.sales_income) || 0;
+            const totalWholesaleCost = parseFloat(row.total_wholesale_cost) || 0;
+
+            const netProfit = (salesIncome + totalOtherIncome) - totalExpenses - totalWholesaleCost;
+
+            return {
+                ...row,
+                total_expenses: totalExpenses,
+                total_other_income: totalOtherIncome,
+                net_profit: netProfit,
+                profit_margin: totalRevenue > 0
+                    ? ((row.gross_profit / totalRevenue) * 100).toFixed(2)
+                    : 0
+            };
+        });
 
         res.json({
             success: true,

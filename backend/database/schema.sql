@@ -101,6 +101,8 @@ CREATE TABLE products (
     description TEXT,
     category VARCHAR(100),
     brand VARCHAR(100),
+    wholesale_price DECIMAL(10, 2) NULL,
+    retail_price DECIMAL(10, 2) NULL,
     base_price DECIMAL(10, 2) NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -243,6 +245,7 @@ CREATE TABLE sale_items (
     imei VARCHAR(20) NULL,
     quantity INT NOT NULL,
     unit_price DECIMAL(10, 2) NOT NULL,
+    cost_price DECIMAL(10, 2) NULL,
     discount_amount DECIMAL(10, 2) DEFAULT 0,
     subtotal DECIMAL(10, 2) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -251,6 +254,32 @@ CREATE TABLE sale_items (
     INDEX idx_imei (imei),
     FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Operating expenses (rent, salaries, utilities, etc.)
+CREATE TABLE expenses (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    branch_id INT,
+    amount DECIMAL(10, 2) NOT NULL,
+    category VARCHAR(100),
+    description TEXT,
+    expense_date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_expenses_branch_date (branch_id, expense_date),
+    FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Other income (repairs, services, commissions, etc.)
+CREATE TABLE other_income (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    branch_id INT,
+    amount DECIMAL(10, 2) NOT NULL,
+    category VARCHAR(100),
+    description TEXT,
+    income_date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_other_income_branch_date (branch_id, income_date),
+    FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Payments table (for partial payments and due tracking)

@@ -21,7 +21,30 @@ async function createProduct(req, res, next) {
     try {
         const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
         const sku = typeof req.body.sku === 'string' ? req.body.sku.trim() : '';
-        const base_price = Number(req.body.base_price ?? req.body.basePrice);
+
+        let base_price = Number(req.body.base_price ?? req.body.basePrice);
+        let wholesale_price = Number(req.body.wholesale_price ?? req.body.wholesalePrice);
+        let retail_price = Number(req.body.retail_price ?? req.body.retailPrice);
+
+        // Normalize NaN values to undefined for easier fallback logic
+        if (Number.isNaN(base_price)) base_price = undefined;
+        if (Number.isNaN(wholesale_price)) wholesale_price = undefined;
+        if (Number.isNaN(retail_price)) retail_price = undefined;
+
+        // Prefer explicit retail price as base price
+        if (retail_price != null && base_price == null) {
+            base_price = retail_price;
+        }
+
+        // If only base price is provided, use it as retail price too
+        if (base_price != null && retail_price == null) {
+            retail_price = base_price;
+        }
+
+        // If wholesale is missing, fall back to retail/base (will still allow profit report to work)
+        if (wholesale_price == null && retail_price != null) {
+            wholesale_price = retail_price;
+        }
 
         if (!name) {
             return res.status(400).json({ success: false, message: 'Product name is required' });
@@ -30,7 +53,15 @@ async function createProduct(req, res, next) {
             return res.status(400).json({ success: false, message: 'SKU is required' });
         }
         if (base_price === undefined || base_price === null || Number.isNaN(base_price) || base_price < 0) {
-            return res.status(400).json({ success: false, message: 'Valid base price is required (0 or greater)' });
+            return res.status(400).json({ success: false, message: 'Valid base price / retail price is required (0 or greater)' });
+        }
+
+        if (wholesale_price != null && wholesale_price < 0) {
+            return res.status(400).json({ success: false, message: 'Wholesale price cannot be negative' });
+        }
+
+        if (wholesale_price != null && retail_price != null && wholesale_price > retail_price) {
+            return res.status(400).json({ success: false, message: 'Wholesale price cannot be higher than retail price' });
         }
 
         const { description, category, brand, initialQuantity, branchId: bodyBranchId } = req.body || {};
@@ -75,8 +106,8 @@ async function createProduct(req, res, next) {
         }
 
         const [result] = await connection.execute(
-            'INSERT INTO products (name, sku, description, category, brand, base_price) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
-            [name, sku, description || null, category || null, brand || null, base_price]
+            'INSERT INTO products (name, sku, description, category, brand, wholesale_price, retail_price, base_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id',
+            [name, sku, description || null, category || null, brand || null, wholesale_price ?? base_price, retail_price ?? base_price, base_price]
         );
 
         const productId = result.insertId || (result.rows && result.rows[0] && result.rows[0].id);
