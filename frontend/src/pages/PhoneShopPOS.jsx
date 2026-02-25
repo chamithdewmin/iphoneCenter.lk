@@ -44,6 +44,11 @@ const IconTag = () => (
     <line x1="7" y1="7" x2="7.01" y2="7"/>
   </svg>
 );
+const IconRefresh = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.75"/>
+  </svg>
+);
 
 // Fallback when API returns no products (e.g. offline or empty DB)
 const FALLBACK_PRODUCTS = [
@@ -386,9 +391,30 @@ export default function PhoneShopPOS() {
           <div style={{ width: 480, flexShrink: 0, background: "#13161e", borderLeft: "1px solid #1e2433", display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
 
             {/* Header */}
-            <div style={{ background: "#0f1117", borderBottom: "1px solid #1e2433", padding: "14px 18px" }}>
-              <div style={{ fontWeight: 700, fontSize: 15 }}>Order Details</div>
-              <div style={{ color: "#8b9ab0", fontSize: 11, marginTop: 2 }}>{cart.reduce((s, i) => s + i.qty, 0)} items · ${subtotal.toFixed(2)}</div>
+            <div style={{ background: "#0f1117", borderBottom: "1px solid #1e2433", padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>Order Details</div>
+                <div style={{ color: "#8b9ab0", fontSize: 11, marginTop: 2 }}>{cart.reduce((s, i) => s + i.qty, 0)} items · ${subtotal.toFixed(2)}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                style={{
+                  background: "#171922",
+                  border: "1px solid #2a3347",
+                  borderRadius: 12,
+                  width: 32,
+                  height: 32,
+                  padding: 0,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                aria-label="Refresh page"
+              >
+                <IconRefresh />
+              </button>
             </div>
 
             {/* Customer (required for Pay Now) */}
