@@ -27,11 +27,13 @@ const Layout = () => {
     }
   }, [user?.role, pathname, navigate]);
 
+  const isPOSFullScreen = pathname === '/phone-shop-pos';
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="lg:pl-[var(--sidebar-width,240px)] transition-all duration-200">
-        <main className="p-4 lg:p-6">
+      <div className={isPOSFullScreen ? 'h-screen overflow-hidden lg:pl-[var(--sidebar-width,240px)]' : 'lg:pl-[var(--sidebar-width,240px)] transition-all duration-200'}>
+        <main className={isPOSFullScreen ? 'h-full overflow-hidden p-0' : 'p-4 lg:p-6'}>
           <Outlet />
         </main>
       </div>

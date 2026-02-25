@@ -283,7 +283,7 @@ export default function PhoneShopPOS() {
         .add-btn:hover { opacity: 0.9; }
       `}</style>
 
-      <div style={{ fontFamily: SYS_FONT, background: "#0c0e14", color: "#fff", height: "100vh", minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div style={{ fontFamily: SYS_FONT, background: "#0c0e14", color: "#fff", height: "100%", minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ display: "flex", flex: 1, minHeight: 0, overflow: "hidden" }}>
 
           {/* ── LEFT: Products ── */}
