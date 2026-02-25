@@ -40,6 +40,62 @@ const ErrorIcon = () => (
   </svg>
 );
 
+const getPasswordRuleState = (password, { email } = {}) => {
+  const value = password || "";
+  const lower = value.toLowerCase();
+  const emailName = (email || "").split("@")[0]?.toLowerCase() || "";
+
+  return {
+    length: value.length >= 12,
+    upper: /[A-Z]/.test(value),
+    number: /\d/.test(value),
+    symbol: /[^A-Za-z0-9]/.test(value),
+    noPersonal: value.length > 0 ? !(emailName && lower.includes(emailName)) : false,
+  };
+};
+
+const PasswordChecklist = ({ password, email }) => {
+  const hasValue = (password || "").length > 0;
+  const rules = getPasswordRuleState(password, { email });
+
+  const items = [
+    { key: "length", label: "Be at least 12 characters" },
+    { key: "noPersonal", label: "Not contain your email or username" },
+    { key: "upper", label: "Include at least one uppercase letter" },
+    { key: "number", label: "Include at least one number" },
+    { key: "symbol", label: "Include at least one symbol" },
+  ];
+
+  return (
+    <div className="password-rules">
+      <p className="password-rules-title">Password must include:</p>
+      <ul>
+        {items.map((item) => {
+          const ok = hasValue && rules[item.key];
+          return (
+            <li key={item.key} className={ok ? "password-rule password-rule--ok" : "password-rule"}>
+              <span className="password-rule-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="14"
+                  height="14"
+                  fill="none"
+                  stroke={ok ? "#22c55e" : "#4b5563"}
+                  strokeWidth="2"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M8.5 12.5 11 15l4.5-5.5" />
+                </svg>
+              </span>
+              <span className="password-rule-text">{item.label}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+};
+
 const publicFetch = async (path, options = {}) => {
   const base = getApiUrl();
   const url = path.startsWith("http") ? path : `${base}${path.startsWith("/") ? path : `/${path}`}`;
@@ -295,7 +351,7 @@ export default function LoginPage() {
             {view === "login" && (
               <form className="panel-inner" onSubmit={handleLogin}>
                 <p className="panel-eyebrow p1">Welcome Back</p>
-                <h2 className="panel-title p2">Sign in to your account</h2>
+                <h2 className="panel-title p2">Sign in</h2>
                 <p className="panel-sub p2">
                   Enter your email and password to sign in.
                 </p>
@@ -561,6 +617,8 @@ export default function LoginPage() {
                     </button>
                   </div>
                 </div>
+
+                <PasswordChecklist password={newPassword} email={forgotEmail} />
 
                 <button
                   className="submit-btn p4"

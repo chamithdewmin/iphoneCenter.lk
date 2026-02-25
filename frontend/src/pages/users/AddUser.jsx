@@ -1,12 +1,33 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
-import { Save, UserPlus, X, Shield } from 'lucide-react';
+import { Save, UserPlus, X, Shield, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+
+const getPasswordRuleState = (password, name, username) => {
+  const value = password || '';
+  const lower = value.toLowerCase();
+  const personalTokens = [name, username]
+    .filter(Boolean)
+    .map((v) => v.toLowerCase().replace(/\s+/g, ''));
+
+  const sanitized = lower.replace(/\s+/g, '');
+
+  const noPersonal =
+    value.length > 0 && !personalTokens.some((token) => token && sanitized.includes(token));
+
+  return {
+    length: value.length >= 12,
+    upper: /[A-Z]/.test(value),
+    number: /\d/.test(value),
+    symbol: /[^A-Za-z0-9]/.test(value),
+    noPersonal,
+  };
+};
 
 const AddUser = () => {
   const navigate = useNavigate();
@@ -26,6 +47,8 @@ const AddUser = () => {
 
   const roles = ['admin', 'manager', 'staff', 'cashier'];
   const roleNeedsWarehouse = formData.role === 'manager' || formData.role === 'staff' || formData.role === 'cashier';
+
+  const passwordRules = getPasswordRuleState(formData.password, formData.name, formData.username);
 
   const fetchBranches = useCallback(async () => {
     const { ok, data } = await authFetch('/api/branches');
@@ -289,6 +312,65 @@ const AddUser = () => {
                       required
                     />
                   </div>
+                </div>
+
+                <div className="mt-3 text-xs text-muted-foreground space-y-1">
+                  <p className="font-medium flex items-center gap-2 text-foreground/80">
+                    <Shield className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Password must include:</span>
+                  </p>
+                  <ul className="mt-1 space-y-1">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2
+                        className={`w-3.5 h-3.5 ${
+                          passwordRules.length ? 'text-emerald-500' : 'text-muted-foreground opacity-40'
+                        }`}
+                      />
+                      <span className={passwordRules.length ? 'text-emerald-500' : 'text-muted-foreground'}>
+                        Be at least 12 characters
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2
+                        className={`w-3.5 h-3.5 ${
+                          passwordRules.noPersonal ? 'text-emerald-500' : 'text-muted-foreground opacity-40'
+                        }`}
+                      />
+                      <span className={passwordRules.noPersonal ? 'text-emerald-500' : 'text-muted-foreground'}>
+                        Not contain your name or username
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2
+                        className={`w-3.5 h-3.5 ${
+                          passwordRules.upper ? 'text-emerald-500' : 'text-muted-foreground opacity-40'
+                        }`}
+                      />
+                      <span className={passwordRules.upper ? 'text-emerald-500' : 'text-muted-foreground'}>
+                        Include at least one uppercase letter
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2
+                        className={`w-3.5 h-3.5 ${
+                          passwordRules.number ? 'text-emerald-500' : 'text-muted-foreground opacity-40'
+                        }`}
+                      />
+                      <span className={passwordRules.number ? 'text-emerald-500' : 'text-muted-foreground'}>
+                        Include at least one number
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2
+                        className={`w-3.5 h-3.5 ${
+                          passwordRules.symbol ? 'text-emerald-500' : 'text-muted-foreground opacity-40'
+                        }`}
+                      />
+                      <span className={passwordRules.symbol ? 'text-emerald-500' : 'text-muted-foreground'}>
+                        Include at least one symbol
+                      </span>
+                    </li>
+                  </ul>
                 </div>
               </div>
             </div>

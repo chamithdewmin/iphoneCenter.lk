@@ -298,6 +298,46 @@
   font-size: 1.1rem;
 }
 
+.login-page .password-rules {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.login-page .password-rules-title {
+  margin-bottom: 3px;
+  color: #9ca3af;
+}
+
+.login-page .password-rules ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.login-page .password-rule {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.login-page .password-rule-icon {
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-page .password-rule-text {
+  color: #9ca3af;
+}
+
+.login-page .password-rule--ok .password-rule-text {
+  color: #4ade80;
+}
+
 .login-page .login-notifications {
   position: absolute;
   right: 32px;
