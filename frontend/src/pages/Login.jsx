@@ -46,7 +46,7 @@ const getPasswordRuleState = (password, { email } = {}) => {
   const emailName = (email || "").split("@")[0]?.toLowerCase() || "";
 
   return {
-    length: value.length >= 12,
+    length: value.length >= 8,
     upper: /[A-Z]/.test(value),
     number: /\d/.test(value),
     symbol: /[^A-Za-z0-9]/.test(value),
@@ -59,7 +59,7 @@ const PasswordChecklist = ({ password, email }) => {
   const rules = getPasswordRuleState(password, { email });
 
   const items = [
-    { key: "length", label: "Be at least 12 characters" },
+    { key: "length", label: "Be at least 8 characters" },
     { key: "noPersonal", label: "Not contain your email or username" },
     { key: "upper", label: "Include at least one uppercase letter" },
     { key: "number", label: "Include at least one number" },
@@ -234,8 +234,8 @@ export default function LoginPage() {
     const code = otp.join("");
     const normalizedEmail = (forgotEmail || "").trim().toLowerCase();
 
-    if (newPassword.length < 6) {
-      setOtpError("Password must be at least 6 characters");
+    if (newPassword.length < 8) {
+      setOtpError("Password must be at least 8 characters");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -593,7 +593,7 @@ export default function LoginPage() {
                       className="form-input password-input-large"
                       type={showNewPassword ? "text" : "password"}
                       required
-                      minLength={6}
+                      minLength={8}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                     />
@@ -615,7 +615,7 @@ export default function LoginPage() {
                       className="form-input password-input-large"
                       type={showConfirmPassword ? "text" : "password"}
                       required
-                      minLength={6}
+                      minLength={8}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                     />
@@ -637,7 +637,7 @@ export default function LoginPage() {
                   type="submit"
                   disabled={
                     loading ||
-                    newPassword.length < 6 ||
+                    newPassword.length < 8 ||
                     newPassword !== confirmPassword
                   }
                 >

@@ -372,15 +372,15 @@
 }
 
 .login-page .login-notification--success {
-  background: rgba(34, 197, 94, 0.12);
-  border-color: rgba(34, 197, 94, 0.4);
-  color: #bbf7d0;
+  background: #052e16;
+  border-color: #16a34a;
+  color: #dcfce7;
 }
 
 .login-page .login-notification--error {
-  background: rgba(239, 68, 68, 0.12);
-  border-color: rgba(239, 68, 68, 0.4);
-  color: #fecaca;
+  background: #3f0505;
+  border-color: #f87171;
+  color: #fee2e2;
 }
 
 .login-page .login-notification--success .login-notification-icon {
@@ -388,7 +388,7 @@
 }
 
 .login-page .login-notification--error .login-notification-icon {
-  color: #fca5a5;
+  color: #fecaca;
 }
 
 .login-page .form-input::placeholder {

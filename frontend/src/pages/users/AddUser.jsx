@@ -21,7 +21,7 @@ const getPasswordRuleState = (password, name, username) => {
     value.length > 0 && !personalTokens.some((token) => token && sanitized.includes(token));
 
   return {
-    length: value.length >= 12,
+    length: value.length >= 8,
     upper: /[A-Z]/.test(value),
     number: /\d/.test(value),
     symbol: /[^A-Za-z0-9]/.test(value),
@@ -95,10 +95,10 @@ const AddUser = () => {
       });
       return;
     }
-    if (formData.password.length < 6) {
+    if (formData.password.length < 8) {
       toast({
         title: 'Validation Error',
-        description: 'Password must be at least 6 characters',
+        description: 'Password must be at least 8 characters',
         variant: 'destructive',
       });
       return;
@@ -296,6 +296,7 @@ const AddUser = () => {
                       onChange={handleChange}
                       placeholder="Enter password"
                       className="mt-1"
+                      minLength={8}
                       required
                     />
                   </div>
@@ -309,6 +310,7 @@ const AddUser = () => {
                       onChange={handleChange}
                       placeholder="Confirm password"
                       className="mt-1"
+                      minLength={8}
                       required
                     />
                   </div>
@@ -327,7 +329,7 @@ const AddUser = () => {
                         }`}
                       />
                       <span className={passwordRules.length ? 'text-emerald-500' : 'text-muted-foreground'}>
-                        Be at least 12 characters
+                        Be at least 8 characters
                       </span>
                     </li>
                     <li className="flex items-center gap-2">
