@@ -25,7 +25,10 @@ const createProductValidation = [
     body('category').optional({ values: 'null' }).isString().withMessage('Category must be a string').bail().isLength({ max: 100 }).withMessage('Category too long'),
     body('brand').optional({ values: 'null' }).isString().withMessage('Brand must be a string').bail().isLength({ max: 100 }).withMessage('Brand too long'),
     body('initialQuantity').optional().isInt({ min: 0 }).withMessage('Initial quantity must be 0 or greater').toInt(),
-    body('branchId').optional().isInt({ min: 1 }).withMessage('Branch ID must be a positive integer').toInt()
+    body('branchId').optional().isInt({ min: 1 }).withMessage('Branch ID must be a positive integer').toInt(),
+    body('inventory_type').optional().isIn(['unique', 'quantity']).withMessage('Inventory type must be unique or quantity'),
+    body('category_id').optional().isInt({ min: 1 }).withMessage('Category ID must be a positive integer').toInt(),
+    body('stock').optional().isInt({ min: 0 }).withMessage('Stock must be 0 or greater').toInt()
 ];
 
 // Routes

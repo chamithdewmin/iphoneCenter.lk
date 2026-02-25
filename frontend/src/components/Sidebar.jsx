@@ -94,6 +94,7 @@ const menuGroups = [
         label: 'Inventory',
         permission: 'inventory',
         children: [
+          { to: '/inventory/add-devices', label: 'Add Devices (IMEI)', icon: Package, includeRoles: ['admin', 'manager'] },
           { to: '/inventory/stock-view', label: 'Product Stock View', icon: Package },
           { to: '/inventory/low-stock-alert', label: 'Low Stock Alert', icon: AlertTriangle },
           { to: '/inventory/stock-adjustment', label: 'Stock Adjustment', icon: Settings },
@@ -157,17 +158,23 @@ const menuGroups = [
 function filterMenuByPermissions(items, permissions, userRole) {
   if (!permissions) return items;
   return items.filter((item) => {
-    // Show only to specific roles (e.g. Expenses for admin only)
     if (item.includeRoles && item.includeRoles.length > 0) {
       if (!userRole || !item.includeRoles.includes(userRole.toLowerCase())) return false;
     }
-    // Exclude items for specific roles (e.g., exclude admin from Billing Terminal)
     if (item.excludeRoles && userRole && item.excludeRoles.includes(userRole.toLowerCase())) {
       return false;
     }
     const required = item.permission;
-    if (!required) return true;
-    return permissions[required] === true;
+    if (required && permissions[required] !== true) return false;
+    if (item.children?.length) {
+      const filteredChildren = item.children.filter((child) => {
+        if (child.includeRoles?.length && (!userRole || !child.includeRoles.includes(userRole.toLowerCase()))) return false;
+        if (child.excludeRoles?.length && userRole && child.excludeRoles.includes(userRole.toLowerCase())) return false;
+        return true;
+      });
+      item.children = filteredChildren;
+    }
+    return true;
   });
 }
 

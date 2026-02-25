@@ -64,7 +64,8 @@ async function createProduct(req, res, next) {
             return res.status(400).json({ success: false, message: 'Wholesale price cannot be higher than retail price' });
         }
 
-        const { description, category, brand, initialQuantity, branchId: bodyBranchId } = req.body || {};
+        const { description, category, brand, initialQuantity, branchId: bodyBranchId, inventory_type: inventoryType, category_id: categoryId, stock: initialStock } = req.body || {};
+        const invType = (inventoryType && String(inventoryType).toLowerCase()) === 'unique' ? 'unique' : 'quantity';
 
         connection = await getConnection();
         await connection.beginTransaction();
@@ -105,9 +106,11 @@ async function createProduct(req, res, next) {
             return res.status(409).json({ success: false, message: 'SKU already exists' });
         }
 
+        const catId = categoryId != null && categoryId !== '' ? parseInt(categoryId, 10) : null;
         const [result] = await connection.execute(
-            'INSERT INTO products (name, sku, description, category, brand, wholesale_price, retail_price, base_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id',
-            [name, sku, description || null, category || null, brand || null, wholesale_price ?? base_price, retail_price ?? base_price, base_price]
+            `INSERT INTO products (name, sku, description, category, brand, wholesale_price, retail_price, base_price, inventory_type, category_id, stock)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+            [name, sku, description || null, category || null, brand || null, wholesale_price ?? base_price, retail_price ?? base_price, base_price, invType, Number.isNaN(catId) ? null : catId, invType === 'quantity' ? (Math.max(0, parseInt(initialStock, 10) || 0)) : 0]
         );
 
         const productId = result.insertId || (result.rows && result.rows[0] && result.rows[0].id);
@@ -120,12 +123,18 @@ async function createProduct(req, res, next) {
         const barcode = generateBarcode(productId, sku);
         await connection.execute('INSERT INTO barcodes (product_id, barcode) VALUES (?, ?)', [productId, barcode]);
 
-        const qty = Math.max(0, parseInt(initialQuantity, 10) || 0);
-        if (qty >= 0 && branchIdForStock) {
+        if (invType === 'quantity') {
+            const qty = Math.max(0, parseInt(initialQuantity, 10) || parseInt(initialStock, 10) || 0);
             await connection.execute(
-                'INSERT INTO branch_stock (branch_id, product_id, quantity) VALUES (?, ?, ?) ON CONFLICT (branch_id, product_id) DO UPDATE SET quantity = branch_stock.quantity + EXCLUDED.quantity',
-                [branchIdForStock, productId, qty]
+                'UPDATE products SET stock = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                [qty, productId]
             );
+            if (qty >= 0 && branchIdForStock) {
+                await connection.execute(
+                    'INSERT INTO branch_stock (branch_id, product_id, quantity) VALUES (?, ?, ?) ON CONFLICT (branch_id, product_id) DO UPDATE SET quantity = branch_stock.quantity + EXCLUDED.quantity',
+                    [branchIdForStock, productId, qty]
+                );
+            }
         }
 
         await connection.commit();

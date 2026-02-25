@@ -13,8 +13,14 @@ DO $$ BEGIN
     CREATE TYPE user_role AS ENUM ('admin', 'manager', 'cashier', 'staff');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
-    CREATE TYPE imei_status AS ENUM ('available', 'sold', 'reserved', 'transferred', 'returned');
+    CREATE TYPE imei_status AS ENUM ('available', 'sold', 'reserved', 'transferred', 'returned', 'in_stock');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+-- Add in_stock for hybrid POS (existing DBs created before in_stock existed)
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid WHERE t.typname = 'imei_status' AND e.enumlabel = 'in_stock') THEN
+        ALTER TYPE imei_status ADD VALUE 'in_stock';
+    END IF;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 DO $$ BEGIN
     CREATE TYPE transfer_status AS ENUM ('pending', 'in_transit', 'completed', 'cancelled');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
@@ -158,6 +164,23 @@ CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
 CREATE INDEX IF NOT EXISTS idx_products_brand ON products(brand);
 CREATE INDEX IF NOT EXISTS idx_products_is_active ON products(is_active);
 
+-- Hybrid POS: inventory_type (unique | quantity), product.stock for quantity products, category_id FK
+DO $$ BEGIN
+    ALTER TABLE products ADD COLUMN inventory_type VARCHAR(20) DEFAULT 'quantity';
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN
+    ALTER TABLE products ADD COLUMN stock INT DEFAULT 0;
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN
+    ALTER TABLE products ADD COLUMN category_id INT NULL REFERENCES categories(id) ON DELETE SET NULL;
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+-- Backfill: existing products are quantity; stock from branch_stock sum; category_id from category name
+UPDATE products SET inventory_type = COALESCE(NULLIF(TRIM(inventory_type), ''), 'quantity') WHERE inventory_type IS NULL OR TRIM(inventory_type) = '';
+UPDATE products p SET stock = COALESCE((SELECT SUM(bs.quantity) FROM branch_stock bs WHERE bs.product_id = p.id), 0) WHERE p.stock IS NULL OR p.inventory_type = 'quantity';
+UPDATE products p SET category_id = (SELECT c.id FROM categories c WHERE c.name = p.category LIMIT 1) WHERE p.category_id IS NULL AND p.category IS NOT NULL AND TRIM(p.category) <> '';
+CREATE INDEX IF NOT EXISTS idx_products_inventory_type ON products(inventory_type);
+CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id);
+
 CREATE TABLE IF NOT EXISTS branch_stock (
     id SERIAL PRIMARY KEY,
     branch_id INT NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
@@ -194,6 +217,8 @@ CREATE INDEX IF NOT EXISTS idx_product_imeis_product_id ON product_imeis(product
 CREATE INDEX IF NOT EXISTS idx_product_imeis_branch_id ON product_imeis(branch_id);
 CREATE INDEX IF NOT EXISTS idx_product_imeis_status ON product_imeis(status);
 CREATE INDEX IF NOT EXISTS idx_product_imeis_sale_id ON product_imeis(sale_id);
+-- Hybrid POS: treat 'available' as in_stock (migrate to in_stock so one canonical value)
+UPDATE product_imeis SET status = 'in_stock' WHERE status = 'available';
 
 CREATE TABLE IF NOT EXISTS barcodes (
     id SERIAL PRIMARY KEY,
@@ -301,6 +326,16 @@ CREATE TABLE IF NOT EXISTS expenses (
     expense_date DATE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+-- Migrate old column names to expense_date (add_expenses_table.pg.sql used "date"; some deploys had "expire_date")
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'expenses' AND column_name = 'date')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'expenses' AND column_name = 'expense_date') THEN
+        ALTER TABLE expenses RENAME COLUMN date TO expense_date;
+    ELSIF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'expenses' AND column_name = 'expire_date')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'expenses' AND column_name = 'expense_date') THEN
+        ALTER TABLE expenses RENAME COLUMN expire_date TO expense_date;
+    END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS idx_expenses_branch_date ON expenses(branch_id, expense_date);
 
 CREATE TABLE IF NOT EXISTS other_income (

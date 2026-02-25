@@ -6,51 +6,58 @@ const { createProduct } = require('./createProductHandler');
 const { generateSingleBarcodePdf } = require('../utils/barcodePdf');
 
 /**
- * Get all products
+ * Get all products (hybrid: inventory_type, stock = product.stock for quantity, device count for unique)
  */
 const getAllProducts = async (req, res, next) => {
     try {
-        const { search, category, brand } = req.query;
+        const { search, category, brand, inventory_type: invType } = req.query;
 
-        const query = `SELECT p.*, b.barcode,
-                       COALESCE(bs.total_quantity, 0) AS quantity
+        const query = `SELECT p.*, c.name AS category_name, b.barcode,
+                       COALESCE(p.inventory_type, 'quantity') AS inventory_type,
+                       CASE WHEN COALESCE(p.inventory_type, 'quantity') = 'quantity'
+                            THEN COALESCE(p.stock, 0)
+                            ELSE (SELECT COUNT(*)::int FROM product_imeis pi
+                                  WHERE pi.product_id = p.id AND pi.status IN ('in_stock', 'available'))
+                       END AS stock
                        FROM products p
+                       LEFT JOIN categories c ON c.id = p.category_id
                        LEFT JOIN barcodes b ON b.product_id = p.id AND b.is_active = TRUE
-                       LEFT JOIN (
-                           SELECT product_id, SUM(quantity) AS total_quantity
-                           FROM branch_stock
-                           GROUP BY product_id
-                       ) bs ON bs.product_id = p.id
                        WHERE p.is_active = TRUE`;
         const params = [];
 
         if (search) {
             params.push(`%${search}%`, `%${search}%`, `%${search}%`);
-            // query already has WHERE 1=1; add AND (p.name LIKE ? OR ...)
+            // add AND (p.name LIKE ? OR ...)
         }
         let fullQuery = query;
         if (search) {
             fullQuery += ' AND (p.name LIKE ? OR p.sku LIKE ? OR p.brand LIKE ?)';
         }
         if (category) {
-            fullQuery += ' AND p.category = ?';
-            params.push(category);
+            fullQuery += ' AND (p.category = ? OR c.name = ?)';
+            params.push(category, category);
         }
         if (brand) {
             fullQuery += ' AND p.brand = ?';
             params.push(brand);
+        }
+        if (invType === 'unique' || invType === 'quantity') {
+            fullQuery += ' AND COALESCE(p.inventory_type, ?) = ?';
+            params.push('quantity', invType);
         }
 
         fullQuery += ' ORDER BY p.name ASC';
 
         const [rows] = await executeQuery(fullQuery, params);
         const products = (rows || []).map((row) => {
-            const { barcode, quantity: qty, ...rest } = row;
+            const { barcode, stock: st, category_name, ...rest } = row;
+            const stockVal = parseInt(st, 10) || 0;
             return {
                 ...rest,
+                category_name: category_name || row.category || null,
                 barcode: barcode || null,
-                quantity: parseInt(qty, 10) || 0,
-                stock: parseInt(qty, 10) || 0, // alias for compatibility
+                quantity: stockVal,
+                stock: stockVal,
             };
         });
 
@@ -65,14 +72,23 @@ const getAllProducts = async (req, res, next) => {
 };
 
 /**
- * Get product by ID
+ * Get product by ID (include inventory_type, stock, category_id/category_name)
  */
 const getProductById = async (req, res, next) => {
     try {
         const { id } = req.params;
 
         const [products] = await executeQuery(
-            'SELECT * FROM products WHERE id = ? AND is_active = TRUE',
+            `SELECT p.*, c.name AS category_name,
+                    COALESCE(p.inventory_type, 'quantity') AS inventory_type,
+                    CASE WHEN COALESCE(p.inventory_type, 'quantity') = 'quantity'
+                         THEN COALESCE(p.stock, 0)
+                         ELSE (SELECT COUNT(*)::int FROM product_imeis pi
+                               WHERE pi.product_id = p.id AND pi.status IN ('in_stock', 'available'))
+                    END AS stock
+             FROM products p
+             LEFT JOIN categories c ON c.id = p.category_id
+             WHERE p.id = ? AND p.is_active = TRUE`,
             [id]
         );
 
@@ -83,9 +99,16 @@ const getProductById = async (req, res, next) => {
             });
         }
 
+        const row = products[0];
+        const stockVal = parseInt(row.stock, 10) || 0;
         res.json({
             success: true,
-            data: products[0]
+            data: {
+                ...row,
+                category_name: row.category_name || row.category || null,
+                stock: stockVal,
+                quantity: stockVal,
+            }
         });
     } catch (error) {
         logger.error('Get product error:', error);
@@ -95,7 +118,7 @@ const getProductById = async (req, res, next) => {
 
 
 /**
- * Get stock for a branch (or all branches aggregated when branchId=all for admin)
+ * Get stock for a branch (or all branches when branchId=all). Hybrid: quantity = product.stock, unique = device count.
  */
 const getBranchStock = async (req, res, next) => {
     try {
@@ -111,14 +134,15 @@ const getBranchStock = async (req, res, next) => {
         if (branchId === 'all' && isAdmin(req)) {
             const [stock] = await executeQuery(
                 `SELECT p.id AS product_id, p.name AS product_name, p.sku,
-                        p.base_price, p.wholesale_price, p.retail_price, p.category, p.brand,
+                        p.base_price, p.wholesale_price, p.retail_price, p.category, p.brand, p.category_id,
+                        COALESCE(p.inventory_type, 'quantity') AS inventory_type,
                         (SELECT b2.barcode FROM barcodes b2 WHERE b2.product_id = p.id AND b2.is_active = TRUE LIMIT 1) AS barcode,
-                        COALESCE(agg.total_quantity, 0) AS quantity, COALESCE(agg.total_reserved, 0) AS reserved_quantity
+                        CASE WHEN COALESCE(p.inventory_type, 'quantity') = 'quantity'
+                             THEN COALESCE(p.stock, 0)
+                             ELSE (SELECT COUNT(*)::int FROM product_imeis pi WHERE pi.product_id = p.id AND pi.status IN ('in_stock', 'available'))
+                        END AS quantity,
+                        0 AS reserved_quantity
                  FROM products p
-                 LEFT JOIN (
-                     SELECT product_id, SUM(quantity) AS total_quantity, SUM(reserved_quantity) AS total_reserved
-                     FROM branch_stock GROUP BY product_id
-                 ) agg ON agg.product_id = p.id
                  WHERE p.is_active = TRUE
                  ORDER BY p.name ASC`
             );
@@ -132,19 +156,31 @@ const getBranchStock = async (req, res, next) => {
         }
 
         const [stock] = await executeQuery(
-            `SELECT bs.*, p.name as product_name, p.sku,
-                    p.base_price, p.wholesale_price, p.retail_price, p.category, p.brand, b.barcode
-             FROM branch_stock bs
-             INNER JOIN products p ON bs.product_id = p.id AND p.is_active = TRUE
-             LEFT JOIN barcodes b ON b.product_id = p.id AND b.is_active = TRUE
-             WHERE bs.branch_id = ?
+            `SELECT p.id AS product_id, p.name AS product_name, p.sku, p.category, p.brand, p.category_id,
+                    COALESCE(p.inventory_type, 'quantity') AS inventory_type,
+                    p.base_price, p.wholesale_price, p.retail_price,
+                    (SELECT b.barcode FROM barcodes b WHERE b.product_id = p.id AND b.is_active = TRUE LIMIT 1) AS barcode,
+                    CASE WHEN COALESCE(p.inventory_type, 'quantity') = 'quantity'
+                         THEN COALESCE(p.stock, 0)
+                         ELSE (SELECT COUNT(*)::int FROM product_imeis pi WHERE pi.product_id = p.id AND pi.branch_id = ? AND pi.status IN ('in_stock', 'available'))
+                    END AS quantity,
+                    COALESCE(bs.reserved_quantity, 0) AS reserved_quantity,
+                    bs.branch_id
+             FROM products p
+             LEFT JOIN branch_stock bs ON bs.product_id = p.id AND bs.branch_id = ?
+             WHERE p.is_active = TRUE
              ORDER BY p.name ASC`,
-            [branchId]
+            [branchId, branchId]
         );
 
         res.json({
             success: true,
-            data: stock
+            data: (stock || []).map((row) => ({
+                ...row,
+                id: row.product_id,
+                quantity: parseInt(row.quantity, 10) || 0,
+                reserved_quantity: parseInt(row.reserved_quantity, 10) || 0,
+            }))
         });
     } catch (error) {
         logger.error('Get branch stock error:', error);
@@ -153,7 +189,7 @@ const getBranchStock = async (req, res, next) => {
 };
 
 /**
- * Update stock quantity
+ * Update stock quantity (quantity products only; unique products use Add Devices)
  */
 const updateStock = async (req, res, next) => {
     const connection = await getConnection();
@@ -187,41 +223,55 @@ const updateStock = async (req, res, next) => {
             });
         }
 
-        // Check if stock record exists
+        const [productRows] = await connection.execute(
+            'SELECT id, inventory_type FROM products WHERE id = ? AND is_active = TRUE',
+            [productId]
+        );
+        if (productRows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ success: false, message: 'Product not found' });
+        }
+        const invType = (productRows[0].inventory_type || 'quantity').toLowerCase();
+        if (invType === 'unique') {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'Stock for unique (IMEI) products is managed via Add Devices. Adjust stock by adding or removing devices.'
+            });
+        }
+
+        const qty = Math.max(0, parseInt(quantity, 10) || 0);
+        await connection.execute(
+            'UPDATE products SET stock = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [qty, productId]
+        );
+
         const [existing] = await connection.execute(
             'SELECT id FROM branch_stock WHERE branch_id = ? AND product_id = ?',
             [branchId, productId]
         );
-
         if (existing.length > 0) {
-            // Update existing stock
             const updates = ['quantity = ?'];
-            const params = [quantity];
-
+            const params = [qty];
             if (minStockLevel !== undefined) {
                 updates.push('min_stock_level = ?');
                 params.push(minStockLevel);
             }
-
             params.push(branchId, productId);
-
             await connection.execute(
-                `UPDATE branch_stock SET ${updates.join(', ')} 
-                 WHERE branch_id = ? AND product_id = ?`,
+                `UPDATE branch_stock SET ${updates.join(', ')} WHERE branch_id = ? AND product_id = ?`,
                 params
             );
         } else {
-            // Create new stock record
             await connection.execute(
-                `INSERT INTO branch_stock (branch_id, product_id, quantity, min_stock_level) 
-                 VALUES (?, ?, ?, ?)`,
-                [branchId, productId, quantity, minStockLevel || 0]
+                'INSERT INTO branch_stock (branch_id, product_id, quantity, min_stock_level) VALUES (?, ?, ?, ?)',
+                [branchId, productId, qty, minStockLevel || 0]
             );
         }
 
         await connection.commit();
 
-        logger.info(`Stock updated: Branch ${branchId}, Product ${productId}, Quantity ${quantity}`);
+        logger.info(`Stock updated: Branch ${branchId}, Product ${productId}, Quantity ${qty}`);
 
         res.json({
             success: true,
@@ -237,7 +287,7 @@ const updateStock = async (req, res, next) => {
 };
 
 /**
- * Add IMEI to product
+ * Add IMEI/device to product (unique products only). Supports single IMEI or bulk (imeis array).
  */
 const addIMEI = async (req, res, next) => {
     const connection = await getConnection();
@@ -245,63 +295,81 @@ const addIMEI = async (req, res, next) => {
         await connection.beginTransaction();
 
         const branchId = req.branchId || req.user.branch_id;
-        const { productId, imei, purchasePrice } = req.body;
+        const { productId, imei: singleImei, imeis: bulkImeis, purchasePrice } = req.body;
 
-        if (!productId || !imei) {
+        const imeiList = Array.isArray(bulkImeis) && bulkImeis.length > 0
+            ? bulkImeis.map((i) => (typeof i === 'string' ? i.trim() : String(i).trim())).filter(Boolean)
+            : (singleImei != null && String(singleImei).trim() ? [String(singleImei).trim()] : []);
+
+        if (!productId || imeiList.length === 0) {
             await connection.rollback();
             return res.status(400).json({
                 success: false,
-                message: 'Product ID and IMEI are required'
+                message: 'Product ID and at least one IMEI are required (or use imeis array for bulk)'
             });
         }
 
-        if (!validateIMEI(imei)) {
+        const [productRows] = await connection.execute(
+            'SELECT id, inventory_type FROM products WHERE id = ? AND is_active = TRUE',
+            [productId]
+        );
+        if (productRows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ success: false, message: 'Product not found' });
+        }
+        const invType = (productRows[0].inventory_type || 'quantity').toLowerCase();
+        if (invType !== 'unique') {
             await connection.rollback();
             return res.status(400).json({
                 success: false,
-                message: 'Invalid IMEI format (must be 15 digits)'
+                message: 'Devices (IMEI) can only be added to products with inventory type "unique". Change product to unique or use stock for quantity products.'
             });
         }
 
-        // Check if IMEI already exists
-        const [existing] = await connection.execute(
-            'SELECT id FROM product_imeis WHERE imei = ?',
-            [imei]
-        );
-
-        if (existing.length > 0) {
+        if (!branchId) {
             await connection.rollback();
-            return res.status(409).json({
+            return res.status(400).json({
                 success: false,
-                message: 'IMEI already exists'
+                message: 'Branch is required. Set branch context or send branchId.'
             });
         }
 
-        // Add IMEI
-        const [result] = await connection.execute(
-            `INSERT INTO product_imeis (product_id, branch_id, imei, purchase_price, status) 
-             VALUES (?, ?, ?, ?, 'available') RETURNING id`,
-            [productId, branchId, imei, purchasePrice || null]
-        );
+        const added = [];
+        const errors = [];
+        const statusVal = 'in_stock';
 
-        // Update stock quantity (PostgreSQL upsert)
-        await connection.execute(
-            `INSERT INTO branch_stock (branch_id, product_id, quantity) 
-             VALUES (?, ?, 1)
-             ON CONFLICT (branch_id, product_id) DO UPDATE SET quantity = branch_stock.quantity + 1`,
-            [branchId, productId]
-        );
+        for (const imei of imeiList) {
+            if (!validateIMEI(imei)) {
+                errors.push({ imei, error: 'Invalid IMEI format (15 digits)' });
+                continue;
+            }
+            const [existing] = await connection.execute(
+                'SELECT id FROM product_imeis WHERE imei = ?',
+                [imei]
+            );
+            if (existing.length > 0) {
+                errors.push({ imei, error: 'IMEI already exists' });
+                continue;
+            }
+            const [result] = await connection.execute(
+                `INSERT INTO product_imeis (product_id, branch_id, imei, purchase_price, status) 
+                 VALUES (?, ?, ?, ?, ?) RETURNING id`,
+                [productId, branchId, imei, purchasePrice || null, statusVal]
+            );
+            const id = result.insertId ?? (result.rows && result.rows[0] && result.rows[0].id);
+            added.push({ id, imei });
+        }
 
         await connection.commit();
 
-        logger.info(`IMEI added: ${imei} for Product ${productId}`);
+        logger.info(`IMEI(s) added: ${added.length} for Product ${productId}${errors.length ? `; ${errors.length} failed` : ''}`);
 
         res.status(201).json({
             success: true,
-            message: 'IMEI added successfully',
+            message: added.length ? `${added.length} device(s) added successfully` : 'No devices added',
             data: {
-                id: result.insertId,
-                imei
+                added,
+                errors: errors.length ? errors : undefined,
             }
         });
     } catch (error) {
@@ -648,7 +716,7 @@ const updateProduct = async (req, res, next) => {
         await connection.beginTransaction();
 
         const { id } = req.params;
-        const { name, sku, description, category, brand, basePrice, wholesalePrice, retailPrice } = req.body;
+        const { name, sku, description, category, brand, basePrice, wholesalePrice, retailPrice, inventory_type: inventoryType, category_id: categoryId, stock: stockVal } = req.body;
 
         if (!name || !name.trim()) {
             await connection.rollback();
@@ -732,18 +800,32 @@ const updateProduct = async (req, res, next) => {
             });
         }
 
-        // Update product
+        const invType = (inventoryType && String(inventoryType).toLowerCase()) || null;
+        const catId = categoryId != null && categoryId !== '' ? parseInt(categoryId, 10) : null;
+        const stockNum = stockVal != null && stockVal !== '' ? parseInt(stockVal, 10) : null;
+
         await connection.execute(
             `UPDATE products 
              SET name = ?, sku = ?, description = ?, category = ?, brand = ?, 
-                 wholesale_price = ?, retail_price = ?, base_price = ?, updated_at = CURRENT_TIMESTAMP
+                 wholesale_price = ?, retail_price = ?, base_price = ?,
+                 inventory_type = COALESCE(?, inventory_type),
+                 category_id = ?,
+                 updated_at = CURRENT_TIMESTAMP
              WHERE id = ?`,
             [name.trim(), sku.trim(), description?.trim() || null, category?.trim() || null, brand?.trim() || null,
              Number.isNaN(wholesale) ? null : wholesale,
              Number.isNaN(retail) ? base : retail,
              base,
+             invType || 'quantity',
+             Number.isNaN(catId) ? null : catId,
              id]
         );
+        if (invType === 'quantity' && stockNum !== null && !Number.isNaN(stockNum) && stockNum >= 0) {
+            await connection.execute(
+                'UPDATE products SET stock = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                [stockNum, id]
+            );
+        }
 
         await connection.commit();
 

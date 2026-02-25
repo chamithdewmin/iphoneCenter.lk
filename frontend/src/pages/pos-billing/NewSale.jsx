@@ -35,6 +35,10 @@ const NewSale = () => {
   const [discount, setDiscount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [showImeiModal, setShowImeiModal] = useState(false);
+  const [selectedProductForImei, setSelectedProductForImei] = useState(null);
+  const [imeiDevices, setImeiDevices] = useState([]);
+  const [imeiLoading, setImeiLoading] = useState(false);
   const { cart, addToCart, removeFromCart, updateQuantity, clearCart, getTotal, getTax, getGrandTotal } = useCart();
   const { toast } = useToast();
 
@@ -80,6 +84,7 @@ const NewSale = () => {
       base_price: row.base_price,
       quantity: row.quantity ?? 0,
       barcode: row.barcode,
+      inventory_type: row.inventory_type || 'quantity',
     }));
     setProducts(normalized);
     setFilteredProducts(normalized);
@@ -179,6 +184,39 @@ const NewSale = () => {
     setShowCustomerModal(true);
   };
 
+  const handleProductClick = async (product) => {
+    const inStock = (product.stock || 0) > 0;
+    if (!inStock) return;
+    if (product.inventory_type === 'unique') {
+      setSelectedProductForImei(product);
+      setShowImeiModal(true);
+      setImeiDevices([]);
+      setImeiLoading(true);
+      const branchId = user?.branchId || '';
+      const url = `/api/inventory/imei?productId=${product.id}&status=in_stock${branchId ? `&branchId=${branchId}` : ''}`;
+      const { ok, data } = await authFetch(url);
+      setImeiLoading(false);
+      if (ok && Array.isArray(data?.data)) {
+        setImeiDevices(data.data);
+        if (data.data.length === 0) {
+          toast({ title: 'No devices', description: 'No available IMEIs for this product. Add devices in Inventory → Add Devices.', variant: 'destructive' });
+        }
+      } else {
+        toast({ title: 'Failed to load devices', description: data?.message || 'Try again', variant: 'destructive' });
+      }
+      return;
+    }
+    addToCart(product, 1);
+  };
+
+  const handleSelectImei = (device) => {
+    if (!selectedProductForImei) return;
+    addToCart(selectedProductForImei, 1, null, device.imei);
+    setShowImeiModal(false);
+    setSelectedProductForImei(null);
+    setImeiDevices([]);
+  };
+
   const handleCheckout = async (holdInvoice = false) => {
     if (isAdmin) return;
     if (cart.length === 0) {
@@ -201,6 +239,7 @@ const NewSale = () => {
       quantity: item.quantity,
       unitPrice: item.price,
       discount: 0,
+      ...(item.imei ? { imei: item.imei } : {}),
     }));
 
     setCheckoutLoading(true);
@@ -327,6 +366,47 @@ const NewSale = () => {
           </div>
         )}
 
+        {/* IMEI picker for unique products */}
+        {showImeiModal && selectedProductForImei && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-card rounded-xl border border-secondary shadow-lg max-w-md w-full max-h-[80vh] flex flex-col"
+            >
+              <div className="p-4 border-b border-secondary flex items-center justify-between">
+                <h3 className="text-lg font-bold">Select device (IMEI) – {selectedProductForImei.name}</h3>
+                <button
+                  type="button"
+                  onClick={() => { setShowImeiModal(false); setSelectedProductForImei(null); setImeiDevices([]); }}
+                  className="p-1 hover:bg-secondary rounded"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="overflow-y-auto p-4 space-y-2">
+                {imeiLoading ? (
+                  <Loading text="Loading devices…" fullScreen={false} />
+                ) : imeiDevices.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No available devices. Add devices in Inventory → Add Devices.</p>
+                ) : (
+                  imeiDevices.map((d) => (
+                    <button
+                      key={d.id || d.imei}
+                      type="button"
+                      onClick={() => handleSelectImei(d)}
+                      className="w-full text-left p-3 rounded-lg border border-secondary hover:bg-primary/10 hover:border-primary transition-colors"
+                    >
+                      <span className="font-mono font-medium">{d.imei}</span>
+                      {d.purchase_price != null && <span className="text-muted-foreground text-sm block">Cost: LKR {Number(d.purchase_price).toLocaleString()}</span>}
+                    </button>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+
         {/* Barcode Input Modal */}
         {showBarcodeInput && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -394,7 +474,7 @@ const NewSale = () => {
                           className={`bg-secondary rounded-lg overflow-hidden border border-secondary transition-all ${
                             inStock ? 'hover:border-primary cursor-pointer' : 'opacity-75 cursor-not-allowed'
                           }`}
-                          onClick={() => inStock && addToCart(product, 1)}
+                          onClick={() => handleProductClick(product)}
                         >
                           <div className="aspect-square bg-secondary relative">
                             <img
@@ -479,6 +559,7 @@ const NewSale = () => {
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-sm truncate">{brand} {model}</h3>
                           <p className="text-xs text-muted-foreground">LKR {item.price?.toLocaleString() || '0'}</p>
+                          {item.imei && <p className="text-xs font-mono text-muted-foreground">IMEI {item.imei}</p>}
                         </div>
                         <button
                           onClick={() => removeFromCart(item.id, item.selectedColor)}
@@ -492,7 +573,7 @@ const NewSale = () => {
                           <button
                             onClick={() => updateQuantity(item.id, item.selectedColor, item.quantity - 1)}
                             className="p-1 hover:bg-card rounded transition-colors"
-                            disabled={item.quantity <= 1}
+                            disabled={item.quantity <= 1 || item.imei}
                           >
                             <Minus className="w-4 h-4" />
                           </button>
@@ -500,6 +581,7 @@ const NewSale = () => {
                           <button
                             onClick={() => updateQuantity(item.id, item.selectedColor, item.quantity + 1)}
                             className="p-1 hover:bg-card rounded transition-colors"
+                            disabled={!!item.imei}
                           >
                             <Plus className="w-4 h-4" />
                           </button>

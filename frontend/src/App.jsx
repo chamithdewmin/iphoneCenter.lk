@@ -83,6 +83,7 @@ import SelectCustomer from './pages/pos-billing/SelectCustomer';
 import PaymentMethods from './pages/pos-billing/PaymentMethods';
 
 // Inventory
+import AddDevices from './pages/inventory/AddDevices';
 import StockView from './pages/inventory/StockView';
 import LowStockAlert from './pages/inventory/LowStockAlert';
 import StockAdjustment from './pages/inventory/StockAdjustment';
@@ -143,6 +144,7 @@ function App() {
         <Route path="trading/purchase/add" element={<AddPurchase />} />
 
         {/* Inventory */}
+        <Route path="inventory/add-devices" element={<AddDevices />} />
         <Route path="inventory/stock-view" element={<StockView />} />
         <Route path="inventory/low-stock-alert" element={<LowStockAlert />} />
         <Route path="inventory/stock-adjustment" element={<StockAdjustment />} />

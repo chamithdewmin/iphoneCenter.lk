@@ -20,6 +20,7 @@ module.exports = {
     
     IMEI_STATUS: {
         AVAILABLE: 'available',
+        IN_STOCK: 'in_stock',
         SOLD: 'sold',
         RESERVED: 'reserved',
         TRANSFERRED: 'transferred',

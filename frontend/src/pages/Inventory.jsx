@@ -63,6 +63,7 @@ const Inventory = () => {
       sku: row.sku,
       brand: row.brand,
       category: row.category,
+      inventory_type: row.inventory_type || 'quantity',
       base_price: row.base_price,
       basePrice: row.base_price,
       quantity: row.quantity ?? 0,
@@ -238,7 +239,9 @@ const Inventory = () => {
                           LKR {(row.base_price ?? row.basePrice ?? 0).toLocaleString()}
                         </td>
                         <td className="px-4 py-3">
-                          {canEdit && editingId === productId ? (
+                          {row.inventory_type === 'unique' ? (
+                            <span title="Stock = device count. Use Add Devices to change.">{qty}</span>
+                          ) : canEdit && editingId === productId ? (
                             <div className="flex items-center gap-2">
                               <input
                                 type="number"

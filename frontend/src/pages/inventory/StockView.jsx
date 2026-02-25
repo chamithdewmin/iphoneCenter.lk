@@ -59,6 +59,8 @@ const StockView = () => {
       name: row.product_name ?? row.name,
       sku: row.sku,
       brand: row.brand,
+      category: row.category,
+      inventory_type: row.inventory_type || 'quantity',
       base_price: row.base_price,
       basePrice: row.base_price,
       quantity: row.quantity ?? 0,
@@ -237,6 +239,8 @@ const StockView = () => {
                 <thead className="bg-secondary">
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Product</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">Category</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">Type</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Brand</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Stock</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
@@ -259,6 +263,12 @@ const StockView = () => {
                             <p className="font-medium">{product.name || product.sku || 'N/A'}</p>
                             <p className="text-xs text-muted-foreground">ID: {product.id}</p>
                           </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm">{product.category || '—'}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${product.inventory_type === 'unique' ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400' : 'bg-secondary text-foreground'}`}>
+                            {product.inventory_type === 'unique' ? 'Unique (IMEI)' : 'Quantity'}
+                          </span>
                         </td>
                         <td className="px-4 py-3 text-sm">{product.brand || 'N/A'}</td>
                         <td className="px-4 py-3">

@@ -38,6 +38,8 @@ const AddProduct = () => {
     imei: '',
     description: '',
     category: '',
+    category_id: '',
+    inventory_type: 'quantity',
   });
 
   const fetchBranches = useCallback(async () => {
@@ -102,10 +104,12 @@ const AddProduct = () => {
               price: product.base_price || product.basePrice || '',
               wholesalePrice: product.wholesale_price || '',
               retailPrice: product.retail_price || product.base_price || product.basePrice || '',
-              stock: '',
+              stock: product.stock ?? product.quantity ?? '',
               imei: '',
               description: product.description || '',
-              category: product.category || '',
+              category: product.category || product.category_name || '',
+              category_id: product.category_id ?? '',
+              inventory_type: product.inventory_type || 'quantity',
             });
           }
         } catch (error) {
@@ -161,19 +165,24 @@ const AddProduct = () => {
     setLoading(true);
 
     if (isEditMode) {
-      // Update existing product
+      const payload = {
+        name,
+        sku,
+        description: formData.description || null,
+        category: formData.category || null,
+        brand: formData.brand || null,
+        basePrice: Number(basePrice),
+        wholesalePrice: Number(wholesale),
+        retailPrice: Number(retail),
+        inventory_type: formData.inventory_type || 'quantity',
+        category_id: formData.category_id || null,
+      };
+      if (formData.inventory_type === 'quantity') {
+        payload.stock = Math.max(0, parseInt(formData.stock, 10) || 0);
+      }
       const { ok, data } = await authFetch(`/api/inventory/products/${id}`, {
         method: 'PUT',
-        body: JSON.stringify({
-          name,
-          sku,
-          description: formData.description || null,
-          category: formData.category || null,
-          brand: formData.brand || null,
-          basePrice: Number(basePrice),
-          wholesalePrice: Number(wholesale),
-          retailPrice: Number(retail),
-        }),
+        body: JSON.stringify(payload),
       });
       setLoading(false);
       if (!ok) {
@@ -182,9 +191,8 @@ const AddProduct = () => {
       }
       toast({ title: 'Product Updated', description: `${name} has been updated successfully` });
     } else {
-      // Create new product
-      const initialQuantity = Math.max(0, parseInt(formData.stock, 10) || 0);
       const branchId = isAdmin ? formData.branchId : (user?.branchId ?? '');
+      const initialQuantity = formData.inventory_type === 'quantity' ? Math.max(0, parseInt(formData.stock, 10) || 0) : 0;
       const { ok, data, status } = await authFetch('/api/inventory/products', {
         method: 'POST',
         body: JSON.stringify({
@@ -196,7 +204,10 @@ const AddProduct = () => {
           basePrice: Number(basePrice),
           wholesalePrice: Number(wholesale),
           retailPrice: Number(retail),
+          inventory_type: formData.inventory_type || 'quantity',
+          category_id: formData.category_id || null,
           initialQuantity,
+          stock: initialQuantity,
           ...(branchId ? { branchId } : {}),
         }),
       });
@@ -305,7 +316,14 @@ const AddProduct = () => {
                       id="category"
                       name="category"
                       value={formData.category}
-                      onChange={handleChange}
+                      onChange={(e) => {
+                        const opt = categories.find((c) => c.name === e.target.value);
+                        setFormData((prev) => ({
+                          ...prev,
+                          category: e.target.value,
+                          category_id: opt ? String(opt.id) : '',
+                        }));
+                      }}
                       disabled={loadingCategories}
                       className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
                     >
@@ -317,6 +335,36 @@ const AddProduct = () => {
                       ))}
                     </select>
                     {loadingCategories && <p className="text-sm text-muted-foreground mt-1">Loading categories…</p>}
+                  </div>
+                  <div>
+                    <Label>Inventory type</Label>
+                    <div className="flex gap-4 mt-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="inventory_type"
+                          value="quantity"
+                          checked={formData.inventory_type === 'quantity'}
+                          onChange={() => setFormData((prev) => ({ ...prev, inventory_type: 'quantity' }))}
+                          className="rounded border-input"
+                        />
+                        <span>Quantity (normal stock)</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="inventory_type"
+                          value="unique"
+                          checked={formData.inventory_type === 'unique'}
+                          onChange={() => setFormData((prev) => ({ ...prev, inventory_type: 'unique' }))}
+                          className="rounded border-input"
+                        />
+                        <span>Unique (IMEI / serial tracked)</span>
+                      </label>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Quantity: stock by number. Unique: one device per IMEI; add devices on the Add Devices page.
+                    </p>
                   </div>
                   <div>
                     <Label htmlFor="model">Model *</Label>
@@ -394,19 +442,26 @@ const AddProduct = () => {
                       required
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="stock">Stock Quantity</Label>
-                    <Input
-                      id="stock"
-                      name="stock"
-                      type="number"
-                      value={formData.stock}
-                      onChange={handleChange}
-                      placeholder="0"
-                      min="0"
-                      className="mt-1 text-foreground bg-background"
-                    />
-                  </div>
+                  {formData.inventory_type === 'quantity' && (
+                    <div>
+                      <Label htmlFor="stock">Stock quantity</Label>
+                      <Input
+                        id="stock"
+                        name="stock"
+                        type="number"
+                        value={formData.stock}
+                        onChange={handleChange}
+                        placeholder="0"
+                        min="0"
+                        className="mt-1 text-foreground bg-background"
+                      />
+                    </div>
+                  )}
+                  {formData.inventory_type === 'unique' && (
+                    <div className="md:col-span-2 lg:col-span-3 flex items-center gap-2 p-3 rounded-md bg-muted/50 text-sm text-muted-foreground">
+                      Stock is managed via devices (IMEI). Add devices on the <strong>Add Devices</strong> page after saving this product.
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -75,7 +75,7 @@ const createSale = async (req, res, next) => {
         let subtotal = 0;
         const saleItems = [];
 
-        // Validate items and check stock (use resolved branchId)
+        // Validate items and check stock (hybrid: quantity = product.stock, unique = device/IMEI)
         for (const item of items) {
             const { productId, quantity, unitPrice, discount, imei } = item;
 
@@ -87,32 +87,56 @@ const createSale = async (req, res, next) => {
                 });
             }
 
-            // Check stock availability
-            const [stock] = await connection.execute(
-                'SELECT quantity, reserved_quantity FROM branch_stock WHERE branch_id = ? AND product_id = ?',
-                [branchId, productId]
+            const [productRows] = await connection.execute(
+                'SELECT id, inventory_type, stock FROM products WHERE id = ? AND is_active = TRUE',
+                [productId]
             );
-
-            if (stock.length === 0 || stock[0].quantity - stock[0].reserved_quantity < quantity) {
+            if (productRows.length === 0) {
                 await connection.rollback();
                 return res.status(400).json({
                     success: false,
-                    message: `Insufficient stock for product ID ${productId}`
+                    message: `Product ID ${productId} not found`
                 });
             }
+            const invType = (productRows[0].inventory_type || 'quantity').toLowerCase();
 
-            // If IMEI is provided, validate it
-            if (imei) {
+            if (invType === 'unique') {
+                if (!imei || !String(imei).trim()) {
+                    await connection.rollback();
+                    return res.status(400).json({
+                        success: false,
+                        message: `Unique product ${productId} requires IMEI per unit`
+                    });
+                }
+                if (parseInt(quantity, 10) !== 1) {
+                    await connection.rollback();
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Unique products must be sold one unit (one IMEI) per line'
+                    });
+                }
                 const [imeiRecord] = await connection.execute(
                     'SELECT id, status, purchase_price FROM product_imeis WHERE imei = ? AND branch_id = ?',
                     [imei, branchId]
                 );
-
-                if (imeiRecord.length === 0 || imeiRecord[0].status !== 'available') {
+                if (imeiRecord.length === 0 || !['available', 'in_stock'].includes(imeiRecord[0].status)) {
                     await connection.rollback();
                     return res.status(400).json({
                         success: false,
-                        message: `IMEI ${imei} is not available`
+                        message: `IMEI ${imei} is not available for sale`
+                    });
+                }
+            } else {
+                const [stock] = await connection.execute(
+                    'SELECT stock FROM products WHERE id = ?',
+                    [productId]
+                );
+                const available = stock.length > 0 ? (parseInt(stock[0].stock, 10) || 0) : 0;
+                if (available < parseInt(quantity, 10)) {
+                    await connection.rollback();
+                    return res.status(400).json({
+                        success: false,
+                        message: `Insufficient stock for product ID ${productId}`
                     });
                 }
             }
@@ -199,26 +223,27 @@ const createSale = async (req, res, next) => {
             });
         }
 
-        // Create sale items and update stock
+        // Create sale items and update stock (hybrid)
         for (const item of saleItems) {
-            // Insert sale item
             await connection.execute(
                 `INSERT INTO sale_items (sale_id, product_id, imei, quantity, unit_price, cost_price, discount_amount, subtotal) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
                 [saleId, item.productId, item.imei, item.quantity, item.unitPrice, item.costPrice, item.discount, item.subtotal]
             );
 
-            // Update stock
-            await connection.execute(
-                'UPDATE branch_stock SET quantity = quantity - ? WHERE branch_id = ? AND product_id = ?',
-                [item.quantity, branchId, item.productId]
-            );
-
-            // Update IMEI status if provided
             if (item.imei) {
                 await connection.execute(
                     'UPDATE product_imeis SET status = ?, sale_id = ? WHERE imei = ? AND branch_id = ?',
                     [IMEI_STATUS.SOLD, saleId, item.imei, branchId]
+                );
+            } else {
+                await connection.execute(
+                    'UPDATE products SET stock = stock - ? WHERE id = ?',
+                    [item.quantity, item.productId]
+                );
+                await connection.execute(
+                    'UPDATE branch_stock SET quantity = quantity - ? WHERE branch_id = ? AND product_id = ?',
+                    [item.quantity, branchId, item.productId]
                 );
             }
         }
@@ -496,19 +521,21 @@ const cancelSale = async (req, res, next) => {
             [id]
         );
 
-        // Restore stock and IMEI
+        // Restore stock and IMEI (hybrid)
         for (const item of saleItems) {
-            // Restore stock
-            await connection.execute(
-                'UPDATE branch_stock SET quantity = quantity + ? WHERE branch_id = ? AND product_id = ?',
-                [item.quantity, sale.branch_id, item.product_id]
-            );
-
-            // Restore IMEI if exists
             if (item.imei) {
                 await connection.execute(
                     'UPDATE product_imeis SET status = ?, sale_id = NULL WHERE imei = ?',
-                    [IMEI_STATUS.AVAILABLE, item.imei]
+                    [IMEI_STATUS.IN_STOCK, item.imei]
+                );
+            } else {
+                await connection.execute(
+                    'UPDATE products SET stock = stock + ? WHERE id = ?',
+                    [item.quantity, item.product_id]
+                );
+                await connection.execute(
+                    'UPDATE branch_stock SET quantity = quantity + ? WHERE branch_id = ? AND product_id = ?',
+                    [item.quantity, sale.branch_id, item.product_id]
                 );
             }
         }

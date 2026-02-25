@@ -18,24 +18,34 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
 
-  const addToCart = (product, quantity = 1, selectedColor = null) => {
-    const existingItem = cart.find(item => item.id === product.id && item.selectedColor === selectedColor);
+  const addToCart = (product, quantity = 1, selectedColor = null, imei = null) => {
+    const existingItem = imei
+      ? cart.find(item => item.id === product.id && item.imei === imei)
+      : cart.find(item => item.id === product.id && item.selectedColor === (selectedColor || product.colors?.[0] || 'default') && !item.imei);
+
     const brand = product.brand || product.make || '';
-    const model = product.model || '';
-    
-    if (existingItem) {
+    const model = product.model || product.name || '';
+
+    if (existingItem && !imei) {
       setCart(cart.map(item =>
-        item.id === product.id && item.selectedColor === selectedColor
+        item.id === product.id && item.selectedColor === (selectedColor || product.colors?.[0] || 'default') && !item.imei
           ? { ...item, quantity: item.quantity + quantity }
           : item
       ));
+    } else if (existingItem && imei) {
+      return;
     } else {
-      setCart([...cart, { ...product, quantity, selectedColor: selectedColor || product.colors?.[0] || 'default' }]);
+      setCart([...cart, {
+        ...product,
+        quantity: imei ? 1 : quantity,
+        selectedColor: imei ? imei : (selectedColor || product.colors?.[0] || 'default'),
+        ...(imei ? { imei } : {}),
+      }]);
     }
 
     toast({
       title: "Added to cart",
-      description: `${brand} ${model} added successfully`,
+      description: imei ? `${model} (IMEI ${imei}) added` : `${brand} ${model} added successfully`,
     });
   };
 
