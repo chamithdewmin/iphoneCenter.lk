@@ -102,10 +102,12 @@
 }
 
 .login-page .logo-text {
-  font-size: 1.7rem;
+  font-size: 1.6rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: #f0f0f0;
+  position: relative;
+  top: 2px;
 }
 
 .login-page .logo-text span {

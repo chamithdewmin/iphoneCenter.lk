@@ -1033,53 +1033,7 @@ const CashFlow = () => {
           </span>
         </div>
 
-        {/* Hero: big profit number + subtitle + sparkline + comparison + target */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl border-2 border-primary/30 bg-primary/5 p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-        >
-          <div>
-            <p className="text-sm font-medium text-muted-foreground mb-1">{periodLabel} — Net profit</p>
-            <p className={`text-4xl font-bold ${currentProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-              {settings.currency} {currentProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-            </p>
-            {comparisonText && (
-              <p className={`text-sm mt-1 ${comparisonText.positive === true ? 'text-green-600 dark:text-green-400' : comparisonText.positive === false ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
-                {comparisonText.text}
-              </p>
-            )}
-            {targetStatus && (
-              <p className={`text-sm mt-1 ${targetStatus.hit ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>
-                {targetStatus.text}
-              </p>
-            )}
-          </div>
-          <div className="flex flex-col sm:flex-row items-start gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-primary">
-                {currentIncome > 0 ? `${profitInsight.margin.toFixed(0)}%` : '—'}
-              </span>
-              <span className="text-sm text-muted-foreground">margin</span>
-              <span
-                className="text-muted-foreground cursor-help"
-                title="Profit as % of income (profit ÷ income × 100)"
-              >
-                <HelpCircle className="w-4 h-4 inline" />
-              </span>
-            </div>
-            {chartData.length > 0 && (
-              <div className="w-full md:w-48 h-12">
-                <ResponsiveContainer width="100%" height={48}>
-                  <LineChart data={chartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
-                    <Line type="monotone" dataKey="profit" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} isAnimationActive={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-                <p className="text-xs text-muted-foreground mt-0.5">Profit trend (last 7 months)</p>
-              </div>
-            )}
-          </div>
-        </motion.div>
+        {/* Net profit hero card removed as requested */}
 
         {/* Optional profit target */}
         <div className="flex flex-wrap items-center gap-2">
