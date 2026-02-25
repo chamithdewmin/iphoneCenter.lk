@@ -298,6 +298,59 @@
   font-size: 1.1rem;
 }
 
+.login-page .login-notifications {
+  position: absolute;
+  right: 32px;
+  bottom: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 320px;
+  z-index: 3;
+}
+
+.login-page .login-notification {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  border: 1px solid transparent;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(14px);
+}
+
+.login-page .login-notification-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-page .login-notification-text {
+  color: #e5e5e5;
+}
+
+.login-page .login-notification--success {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #bbf7d0;
+}
+
+.login-page .login-notification--error {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fecaca;
+}
+
+.login-page .login-notification--success .login-notification-icon {
+  color: #4ade80;
+}
+
+.login-page .login-notification--error .login-notification-icon {
+  color: #fca5a5;
+}
+
 .login-page .form-input::placeholder {
   color: #383838;
 }

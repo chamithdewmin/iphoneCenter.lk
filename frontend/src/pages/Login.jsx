@@ -25,6 +25,21 @@ const EyeIcon = ({ open }) =>
     </svg>
   );
 
+const SuccessIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="10" />
+    <path d="M8 12.5 11 15l5-6" />
+  </svg>
+);
+
+const ErrorIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 7v7" />
+    <circle cx="12" cy="16" r="0.8" />
+  </svg>
+);
+
 const publicFetch = async (path, options = {}) => {
   const base = getApiUrl();
   const url = path.startsWith("http") ? path : `${base}${path.startsWith("/") ? path : `/${path}`}`;
@@ -215,6 +230,11 @@ export default function LoginPage() {
 
   const otpFilled = otp.every((d) => d !== "");
 
+  const notifications = [];
+  if (error) notifications.push({ type: "error", message: error });
+  if (otpError) notifications.push({ type: "error", message: otpError });
+  if (otpSuccess) notifications.push({ type: "success", message: otpSuccess });
+
   return (
     <>
       <Helmet>
@@ -275,29 +295,10 @@ export default function LoginPage() {
             {view === "login" && (
               <form className="panel-inner" onSubmit={handleLogin}>
                 <p className="panel-eyebrow p1">Welcome Back</p>
-                <h2 className="panel-title p2">
-                  Sign In to
-                  <br />
-                  iPhone Center
-                </h2>
+                <h2 className="panel-title p2">Sign in to your account</h2>
                 <p className="panel-sub p2">
-                  Access your account and manage your shop.
+                  Enter your email and password to sign in.
                 </p>
-
-                {error && (
-                  <div
-                    style={{
-                      background: "rgba(239,68,68,0.1)",
-                      border: "1px solid rgba(239,68,68,0.3)",
-                      borderRadius: 10,
-                      padding: "10px 14px",
-                      fontSize: 13,
-                      marginBottom: 12,
-                    }}
-                  >
-                    {error}
-                  </div>
-                )}
 
                 <div className="form-group p3">
                   <label className="form-label">Email Address</label>
@@ -381,35 +382,6 @@ export default function LoginPage() {
                   reset link instantly.
                 </p>
 
-                {otpError && (
-                  <div
-                    style={{
-                      background: "rgba(239,68,68,0.06)",
-                      border: "1px solid rgba(239,68,68,0.25)",
-                      borderRadius: 10,
-                      padding: "10px 14px",
-                      fontSize: 13,
-                      color: "#b91c1c",
-                    }}
-                  >
-                    {otpError}
-                  </div>
-                )}
-
-                {otpSuccess && (
-                  <div
-                    style={{
-                      background: "rgba(48,209,88,0.1)",
-                      border: "1px solid rgba(48,209,88,0.3)",
-                      borderRadius: 10,
-                      padding: "10px 14px",
-                      fontSize: 13,
-                    }}
-                  >
-                    {otpSuccess}
-                  </div>
-                )}
-
                 <div className="form-group p3">
                   <label className="form-label">Email Address</label>
                   <input
@@ -461,21 +433,6 @@ export default function LoginPage() {
                 <p className="panel-sub" style={{ marginBottom: 12 }}>
                   We sent a 6-digit code to your registered phone. Code is valid for 1 minute.
                 </p>
-
-                {otpError && (
-                  <div
-                    style={{
-                      background: "rgba(239,68,68,0.06)",
-                      border: "1px solid rgba(239,68,68,0.25)",
-                      borderRadius: 10,
-                      padding: "10px 14px",
-                      fontSize: 13,
-                      color: "#b91c1c",
-                    }}
-                  >
-                    {otpError}
-                  </div>
-                )}
 
                 <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
                   {otp.map((d, i) => (
@@ -561,21 +518,6 @@ export default function LoginPage() {
                   OTP verified. Create your new password.
                 </p>
 
-                {otpError && (
-                  <div
-                    style={{
-                      background: "rgba(239,68,68,0.06)",
-                      border: "1px solid rgba(239,68,68,0.25)",
-                      borderRadius: 10,
-                      padding: "10px 14px",
-                      fontSize: 13,
-                      color: "#b91c1c",
-                    }}
-                  >
-                    {otpError}
-                  </div>
-                )}
-
                 <div className="form-group">
                   <label className="form-label">New password</label>
                   <div className="password-input-wrapper">
@@ -632,6 +574,23 @@ export default function LoginPage() {
                   {loading ? "Saving..." : "Reset password \u2192"}
                 </button>
               </form>
+            )}
+
+            {notifications.length > 0 && (
+              <div className="login-notifications">
+                {notifications.map((n, idx) => (
+                  <div
+                    key={idx}
+                    className={`login-notification login-notification--${n.type}`}
+                  >
+                    <span className="login-notification-icon">
+                      {n.type === "success" && <SuccessIcon />}
+                      {n.type === "error" && <ErrorIcon />}
+                    </span>
+                    <span className="login-notification-text">{n.message}</span>
+                  </div>
+                ))}
+              </div>
             )}
           </section>
         </div>
