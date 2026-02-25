@@ -239,6 +239,12 @@ function start() {
 
 start().catch((err) => {
     console.error('Startup failed:', err.message);
+    console.error(err.stack);
+    // Help debug 502 / "container dead" on Dokploy
+    if (process.env.NODE_ENV === 'production') {
+        console.error('---');
+        console.error('502/container dead? Check: 1) DATABASE_URL or DB_HOST/DB_USER/DB_PASSWORD/DB_NAME (PostgreSQL, port 5432) 2) JWT_SECRET and JWT_REFRESH_SECRET (32+ chars) 3) Backend env in Dokploy points to your Postgres service.');
+    }
     process.exit(1);
 });
 
