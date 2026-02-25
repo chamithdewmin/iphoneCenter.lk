@@ -281,7 +281,7 @@ export default function LoginPage() {
                   iPhone Center
                 </h2>
                 <p className="panel-sub p2">
-                  Access your account and manage your devices.
+                  Access your account and manage your shop.
                 </p>
 
                 {error && (
