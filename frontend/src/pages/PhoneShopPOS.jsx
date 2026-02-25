@@ -142,19 +142,43 @@ export default function PhoneShopPOS() {
       setProductsLoading(true);
       try {
         const res = await authFetch('/api/inventory/products');
-        const list = res?.data?.data;
         if (cancelled) return;
-        if (Array.isArray(list) && list.length > 0) {
-          const mapped = list.map((p) => ({
-            id: p.id,
-            name: p.name || p.sku || 'Product',
-            price: Number(p.base_price) || 0,
-            category: p.category || p.brand || 'Other',
-            color: '#ff8040',
-            img: PLACEHOLDER_IMG,
-          }));
-          setProducts(mapped);
+        // Support multiple response shapes: { data: [...] }, { products: [...] }, or array
+        const raw = res?.data;
+        const list = Array.isArray(raw?.data)
+          ? raw.data
+          : Array.isArray(raw?.products)
+            ? raw.products
+            : Array.isArray(raw)
+              ? raw
+              : [];
+        if (list.length > 0) {
+          const seen = new Set();
+          const mapped = list
+            .filter((p) => {
+              const id = p.id;
+              if (seen.has(id)) return false;
+              seen.add(id);
+              return true;
+            })
+            .map((p) => {
+              const name = p.name ?? p.product_name ?? p.sku ?? 'Product';
+              const price = Number(
+                p.retail_price ?? p.retailPrice ?? p.base_price ?? p.basePrice ?? p.price ?? 0
+              );
+              const category = p.category ?? p.brand ?? 'Other';
+              return {
+                id: p.id,
+                name: String(name),
+                price: price >= 0 ? price : 0,
+                category: String(category),
+                color: '#ff8040',
+                img: p.image_url ?? p.imageUrl ?? p.img ?? PLACEHOLDER_IMG,
+              };
+            });
+          if (!cancelled) setProducts(mapped);
         }
+        // If API returned empty, keep fallback so POS still has something to show
       } catch (_) {
         if (!cancelled) setProducts(FALLBACK_PRODUCTS);
       } finally {
