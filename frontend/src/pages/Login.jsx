@@ -314,7 +314,7 @@ export default function LoginPage() {
                 <div className="form-group p4">
                   <label className="form-label">Password</label>
                   <input
-                    className="form-input"
+                    className="form-input password-input-large"
                     type={showPassword ? "text" : "password"}
                     required
                     value={password}
