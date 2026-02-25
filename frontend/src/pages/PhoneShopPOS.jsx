@@ -472,7 +472,7 @@ export default function PhoneShopPOS() {
             </div>
 
             {/* Summary */}
-            <div style={{ borderTop: "1px solid #1e2433", padding: "14px 18px", display: "flex", flexDirection: "column", gap: 9 }}>
+            <div style={{ borderTop: "1px solid #1e2433", padding: "8px 18px 10px", display: "flex", flexDirection: "column", gap: 5 }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#8b9ab0" }}>
                 <span>Sub Total</span>
                 <span style={{ color: "#d1d9e6", fontWeight: 600 }}>${subtotal.toFixed(2)}</span>
@@ -481,7 +481,7 @@ export default function PhoneShopPOS() {
               <div style={{ position: "relative" }}>
                 <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}><IconTag /></span>
                 <input
-                  style={{ background: "#1e2433", border: "1px solid #2a3347", borderRadius: 8, padding: "8px 12px 8px 30px", color: "#d1d9e6", fontSize: 13, width: "100%", outline: "none", fontFamily: SYS_FONT }}
+                  style={{ background: "#1e2433", border: "1px solid #2a3347", borderRadius: 8, padding: "5px 10px 5px 28px", height: 32, color: "#d1d9e6", fontSize: 13, width: "100%", outline: "none", fontFamily: SYS_FONT, boxSizing: "border-box" }}
                   placeholder="Discount amount ($)"
                   value={discount}
                   onChange={(e) => setDiscount(e.target.value)}
@@ -493,7 +493,7 @@ export default function PhoneShopPOS() {
                 <span>Discount</span>
                 <span style={{ color: "#ef4444", fontWeight: 600 }}>−${discountAmt.toFixed(2)}</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 17, fontWeight: 800, color: "#fff", borderTop: "1px solid #1e2433", paddingTop: 11, marginTop: 2 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 17, fontWeight: 800, color: "#fff", borderTop: "1px solid #1e2433", paddingTop: 6, marginTop: 2 }}>
                 <span>Total Payment</span>
                 <span style={{ color: "#ff8040" }}>${total.toFixed(2)}</span>
               </div>
