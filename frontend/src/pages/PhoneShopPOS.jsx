@@ -347,8 +347,9 @@ export default function PhoneShopPOS() {
               ))}
             </div>
 
-            {/* Product grid — 4 columns; only this area scrolls when many products */}
-            <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, overflowY: "auto", paddingBottom: 8, alignContent: "start" }}>
+            {/* Scrollable product area — only this side scrolls; scrollbar visible when many products */}
+            <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", paddingBottom: 8, WebkitOverflowScrolling: "touch" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, alignContent: "start" }}>
               {productsLoading && (
                 <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: 24, color: "#8b9ab0", fontSize: 13 }}>Loading products...</div>
               )}
@@ -408,6 +409,7 @@ export default function PhoneShopPOS() {
                   </div>
                 );
               })}
+              </div>
             </div>
           </div>
 
