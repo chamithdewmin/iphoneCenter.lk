@@ -337,31 +337,17 @@ const AddProduct = () => {
                     {loadingCategories && <p className="text-sm text-muted-foreground mt-1">Loading categories…</p>}
                   </div>
                   <div>
-                    <Label>Inventory type</Label>
-                    <div className="flex gap-4 mt-2">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="inventory_type"
-                          value="quantity"
-                          checked={formData.inventory_type === 'quantity'}
-                          onChange={() => setFormData((prev) => ({ ...prev, inventory_type: 'quantity' }))}
-                          className="rounded border-input"
-                        />
-                        <span>Quantity (normal stock)</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="inventory_type"
-                          value="unique"
-                          checked={formData.inventory_type === 'unique'}
-                          onChange={() => setFormData((prev) => ({ ...prev, inventory_type: 'unique' }))}
-                          className="rounded border-input"
-                        />
-                        <span>Unique (IMEI / serial tracked)</span>
-                      </label>
-                    </div>
+                    <Label htmlFor="inventory_type">Inventory type</Label>
+                    <select
+                      id="inventory_type"
+                      name="inventory_type"
+                      value={formData.inventory_type || 'quantity'}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, inventory_type: e.target.value }))}
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                    >
+                      <option value="quantity">Quantity (normal stock)</option>
+                      <option value="unique">Unique (IMEI / serial tracked)</option>
+                    </select>
                     <p className="text-xs text-muted-foreground mt-1">
                       Quantity: stock by number. Unique: one device per IMEI; add devices on the Add Devices page.
                     </p>
