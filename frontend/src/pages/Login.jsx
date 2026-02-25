@@ -499,7 +499,7 @@ export default function LoginPage() {
                   Enter OTP
                 </h2>
                 <p className="panel-sub" style={{ marginBottom: 12 }}>
-                  We sent a 6-digit code to your registered phone. Code is valid for 1 minute.
+                  We sent a 6-digit code to your registered phone. Code is valid for 3 minutes.
                 </p>
 
                 <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
