@@ -4,13 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl } from "@/lib/api";
 import loginBg from "@/assets/login-bg.jpg";
+import AppleLogoWhite from "@/assets/Apple_logo_white.svg";
 import "./Login.css";
-
-const AppleLogo = () => (
-  <svg viewBox="0 0 814 1000" fill="currentColor" width="28" height="28">
-    <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 790.7 0 663 0 541.8c0-207.5 135.4-317.5 268.5-317.5 99.8 0 182.6 65.8 245.3 65.8 60.4 0 154.8-69.1 270-69.1zm-174.6-209.1c43.4-50.9 75.4-121.8 75.4-192.7 0-9.9-.9-19.9-2.6-28.4-71.8 2.6-156.4 48.4-207.3 107.4-39.5 44.3-81.5 119-81.5 191.8 0 10.9 1.9 21.8 2.6 25.3 4.5.6 11.9 1.6 19.1 1.6 64.4 0 142.8-43.3 194.3-105.5z" />
-  </svg>
-);
 
 const EyeIcon = ({ open }) =>
   open ? (
@@ -331,9 +326,7 @@ export default function LoginPage() {
 
             <nav className="nav a1">
               <a className="logo" href="#">
-                <div className="logo-icon">
-                  <AppleLogo />
-                </div>
+                <img src={AppleLogoWhite} alt="iPhone Center" className="logo-image" />
                 <span className="logo-text vp-logo-text">
                   iPhone <span>Center</span>
                 </span>

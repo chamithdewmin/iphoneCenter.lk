@@ -95,15 +95,10 @@
   text-decoration: none;
 }
 
-.login-page .logo-icon {
-  width: 36px;
-  height: 36px;
-  background: #f0f0f0;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #0a0a0a;
+.login-page .logo-image {
+  width: 32px;
+  height: auto;
+  display: block;
 }
 
 .login-page .logo-text {
