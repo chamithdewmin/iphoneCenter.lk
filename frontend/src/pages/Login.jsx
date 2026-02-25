@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -290,6 +290,18 @@ export default function LoginPage() {
   if (error) notifications.push({ type: "error", message: error });
   if (otpError) notifications.push({ type: "error", message: otpError });
   if (otpSuccess) notifications.push({ type: "success", message: otpSuccess });
+
+  useEffect(() => {
+    if (!error && !otpError && !otpSuccess) return;
+
+    const t = setTimeout(() => {
+      setError("");
+      setOtpError("");
+      setOtpSuccess("");
+    }, 5000);
+
+    return () => clearTimeout(t);
+  }, [error, otpError, otpSuccess]);
 
   return (
     <>
