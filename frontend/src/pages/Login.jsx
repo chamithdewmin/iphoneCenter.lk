@@ -47,6 +47,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -576,26 +578,46 @@ export default function LoginPage() {
 
                 <div className="form-group">
                   <label className="form-label">New password</label>
-                  <input
-                    className="form-input"
-                    type="password"
-                    required
-                    minLength={6}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                  />
+                  <div className="password-input-wrapper">
+                    <input
+                      className="form-input password-input-large"
+                      type={showNewPassword ? "text" : "password"}
+                      required
+                      minLength={6}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle-btn"
+                      onClick={() => setShowNewPassword((v) => !v)}
+                      aria-label={showNewPassword ? "Hide password" : "Show password"}
+                    >
+                      <EyeIcon open={showNewPassword} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">Confirm password</label>
-                  <input
-                    className="form-input"
-                    type="password"
-                    required
-                    minLength={6}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
+                  <div className="password-input-wrapper">
+                    <input
+                      className="form-input password-input-large"
+                      type={showConfirmPassword ? "text" : "password"}
+                      required
+                      minLength={6}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle-btn"
+                      onClick={() => setShowConfirmPassword((v) => !v)}
+                      aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    >
+                      <EyeIcon open={showConfirmPassword} />
+                    </button>
+                  </div>
                 </div>
 
                 <button

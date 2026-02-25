@@ -268,6 +268,36 @@
   transition: border-color 0.2s, background 0.2s;
 }
 
+.login-page .password-input-wrapper {
+  position: relative;
+}
+
+.login-page .password-input-wrapper .form-input {
+  padding-right: 40px;
+}
+
+.login-page .password-toggle-btn {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #777777;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-page .password-toggle-btn:hover {
+  color: #ffffff;
+}
+
+.login-page .password-input-large {
+  font-size: 1.05rem;
+}
+
 .login-page .form-input::placeholder {
   color: #383838;
 }
