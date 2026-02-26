@@ -123,6 +123,9 @@ const menuGroups = [
         permission: 'reports',
         excludeRoles: ['manager'],
         children: [
+          { to: '/reports/overview', label: 'Overview Reports', icon: FileText },
+          { to: '/reports/profit-loss', label: 'Profit & Loss', icon: FileText },
+          { to: '/reports/cash-flow', label: 'Cash Flow', icon: FileText },
           { to: '/reports/sale', label: 'Sale Report', icon: FileText },
           { to: '/reports/purchase', label: 'Purchase Report', icon: FileText },
           { to: '/reports/payment', label: 'Payment Report', icon: FileText },

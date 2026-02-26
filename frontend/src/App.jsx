@@ -63,6 +63,9 @@ import WarehouseReport from './pages/reports/WarehouseReport';
 import SupplierReport from './pages/reports/SupplierReport';
 import TaxReport from './pages/reports/TaxReport';
 import ShippingChargeReport from './pages/reports/ShippingChargeReport';
+import OverviewReport from './pages/reports/OverviewReport';
+import ProfitLossReport from './pages/reports/ProfitLossReport';
+import CashFlowReport from './pages/reports/CashFlowReport';
 
 // Warehouses
 import AddWarehouse from './pages/warehouses/AddWarehouse';
@@ -176,6 +179,9 @@ function App() {
         <Route path="categories" element={<Categories />} />
 
         {/* Reports */}
+        <Route path="reports/overview" element={<OverviewReport />} />
+        <Route path="reports/profit-loss" element={<ProfitLossReport />} />
+        <Route path="reports/cash-flow" element={<CashFlowReport />} />
         <Route path="reports/sale" element={<SaleReport />} />
         <Route path="reports/purchase" element={<PurchaseReport />} />
         <Route path="reports/payment" element={<PaymentReport />} />
