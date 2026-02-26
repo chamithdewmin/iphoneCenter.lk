@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import ReportLayout from '@/components/ReportLayout';
 import StatCard from '@/components/StatCard';
-import { Warehouse, AlertTriangle, Package, TrendingDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { BranchFilter } from '@/components/BranchFilter';
+import { useBranchFilter } from '@/hooks/useBranchFilter';
+import { Warehouse, AlertTriangle, Package, TrendingDown, Download, RefreshCw } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -14,20 +17,57 @@ import {
   Line,
 } from 'recharts';
 import { authFetch } from '@/lib/api';
+import { getPrintHtml } from '@/utils/pdfPrint';
+
+const downloadCsv = (filename, rows) => {
+  if (!rows || rows.length === 0) return;
+  const header = Object.keys(rows[0]);
+  const csv = [
+    header.join(','),
+    ...rows.map((row) =>
+      header
+        .map((key) => {
+          const val = row[key] ?? '';
+          const str = typeof val === 'number' ? String(val) : String(val);
+          return `"${str.replace(/"/g, '""')}"`;
+        })
+        .join(','),
+    ),
+  ].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
 const StockReport = () => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { selectedBranchId } = useBranchFilter();
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const res = await authFetch('/api/reports/stock');
-      const data = res.ok && Array.isArray(res.data?.data) ? res.data.data : [];
+      const url = selectedBranchId
+        ? `/api/reports/stock?branchId=${selectedBranchId}`
+        : '/api/reports/stock';
+      const res = await authFetch(url);
+      let data = res.ok && Array.isArray(res.data?.data) ? res.data.data : [];
+      if (selectedBranchId && data.length > 0) {
+        data = data.filter(
+          (r) => r.branch_id != null && String(r.branch_id) === String(selectedBranchId),
+        );
+      }
       setRows(data);
       setLoading(false);
     })();
-  }, []);
+  }, [selectedBranchId, refreshKey]);
 
   const {
     totalItems,
@@ -103,11 +143,75 @@ const StockReport = () => {
     [rows],
   );
 
+  const handleRefresh = () => setRefreshKey((k) => k + 1);
+  const csvRows = useMemo(
+    () =>
+      lowStockItems.map((r) => ({
+        name: r.name,
+        sku: r.sku,
+        current: r.current,
+        reorder: r.reorder,
+        warehouse: r.warehouse,
+        urgency: r.urgency,
+      })),
+    [lowStockItems],
+  );
+  const handleExportCsv = () => downloadCsv('stock-report.csv', csvRows);
+  const handleDownloadPdf = () => {
+    const rowsHtml = csvRows
+      .map(
+        (row) => `
+        <tr><td>${row.name}</td><td>${row.sku}</td><td>${row.current}</td><td>${row.reorder}</td><td>${row.warehouse}</td><td>${row.urgency}</td></tr>`,
+      )
+      .join('');
+    const bodyHtml = `
+      <h2>Stock Report</h2>
+      <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #1f2937;">Item</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #1f2937;">SKU</th>
+            <th style="text-align:right;padding:8px;border-bottom:1px solid #1f2937;">Current</th>
+            <th style="text-align:right;padding:8px;border-bottom:1px solid #1f2937;">Reorder</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #1f2937;">Branch</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #1f2937;">Urgency</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>`;
+    const html = getPrintHtml(bodyHtml, { businessName: 'Stock Report' });
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      win.print();
+    }
+  };
+
   return (
     <ReportLayout
       title="Stock Report"
       subtitle="Monitor inventory levels and stock movements"
     >
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <BranchFilter id="stock-branch" />
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportCsv}>
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button size="sm" onClick={handleDownloadPdf}>
+            <Download className="w-4 h-4 mr-2" />
+            Download PDF
+          </Button>
+        </div>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
           label="Total Stock Items"

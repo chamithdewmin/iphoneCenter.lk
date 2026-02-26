@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import ReportLayout from '@/components/ReportLayout';
 import StatCard from '@/components/StatCard';
-import { Package, TrendingUp, Star, BarChart3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { BranchFilter } from '@/components/BranchFilter';
+import { useBranchFilter } from '@/hooks/useBranchFilter';
+import { Package, TrendingUp, Star, BarChart3, Download, RefreshCw } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -17,24 +20,61 @@ import {
   PolarRadiusAxis,
 } from 'recharts';
 import { authFetch } from '@/lib/api';
+import { getPrintHtml } from '@/utils/pdfPrint';
+
+const downloadCsv = (filename, rows) => {
+  if (!rows || rows.length === 0) return;
+  const header = Object.keys(rows[0]);
+  const csv = [
+    header.join(','),
+    ...rows.map((row) =>
+      header
+        .map((key) => {
+          const val = row[key] ?? '';
+          const str = typeof val === 'number' ? String(val) : String(val);
+          return `"${str.replace(/"/g, '""')}"`;
+        })
+        .join(','),
+    ),
+  ].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
 const ProductReport = () => {
   const [products, setProducts] = useState([]);
   const [topProductsRaw, setTopProductsRaw] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { selectedBranchId } = useBranchFilter();
 
   useEffect(() => {
     (async () => {
       setLoading(true);
+      const topUrl = selectedBranchId
+        ? `/api/reports/top-products?limit=10&branchId=${selectedBranchId}`
+        : '/api/reports/top-products?limit=10';
       const [prodRes, topRes] = await Promise.all([
         authFetch('/api/inventory/products'),
-        authFetch('/api/reports/top-products?limit=10'),
+        authFetch(topUrl),
       ]);
 
-      const prods =
+      let prods =
         prodRes.ok && Array.isArray(prodRes.data?.data)
           ? prodRes.data.data
           : [];
+      if (selectedBranchId && prods.some((p) => p.branch_id != null)) {
+        prods = prods.filter(
+          (p) => p.branch_id != null && String(p.branch_id) === String(selectedBranchId),
+        );
+      }
       const top =
         topRes.ok && Array.isArray(topRes.data?.data)
           ? topRes.data.data
@@ -44,7 +84,7 @@ const ProductReport = () => {
       setTopProductsRaw(top);
       setLoading(false);
     })();
-  }, []);
+  }, [selectedBranchId, refreshKey]);
 
   const { totalProducts, totalStockValue, topCategory } = useMemo(() => {
     const totalProducts = products.length;
@@ -103,11 +143,71 @@ const ProductReport = () => {
     [topProductsRaw],
   );
 
+  const handleRefresh = () => setRefreshKey((k) => k + 1);
+  const csvRows = useMemo(
+    () =>
+      tableProducts.map((p) => ({
+        name: p.name,
+        sku: p.sku,
+        sold: p.sold,
+        revenue: p.revenue,
+      })),
+    [tableProducts],
+  );
+  const handleExportCsv = () => downloadCsv('product-report.csv', csvRows);
+  const handleDownloadPdf = () => {
+    const rowsHtml = csvRows
+      .map(
+        (row) => `
+        <tr><td>${row.name}</td><td>${row.sku}</td><td>${row.sold}</td><td>${row.revenue}</td></tr>`,
+      )
+      .join('');
+    const bodyHtml = `
+      <h2>Product Report</h2>
+      <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #1f2937;">Product</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #1f2937;">SKU</th>
+            <th style="text-align:right;padding:8px;border-bottom:1px solid #1f2937;">Sold</th>
+            <th style="text-align:right;padding:8px;border-bottom:1px solid #1f2937;">Revenue</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>`;
+    const html = getPrintHtml(bodyHtml, { businessName: 'Product Report' });
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      win.print();
+    }
+  };
+
   return (
     <ReportLayout
       title="Product Report"
       subtitle="Analyze product performance and sales metrics"
     >
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <BranchFilter id="product-branch" />
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportCsv}>
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button size="sm" onClick={handleDownloadPdf}>
+            <Download className="w-4 h-4 mr-2" />
+            Download PDF
+          </Button>
+        </div>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
           label="Total Products"

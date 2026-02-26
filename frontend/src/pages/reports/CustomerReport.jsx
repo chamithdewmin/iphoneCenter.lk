@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import ReportLayout from '@/components/ReportLayout';
 import StatCard from '@/components/StatCard';
-import { Users, UserPlus, Heart, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { BranchFilter } from '@/components/BranchFilter';
+import { useBranchFilter } from '@/hooks/useBranchFilter';
+import { Users, UserPlus, Heart, TrendingUp, Download, RefreshCw } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -14,32 +17,69 @@ import {
   Bar,
 } from 'recharts';
 import { authFetch } from '@/lib/api';
+import { getPrintHtml } from '@/utils/pdfPrint';
+
+const downloadCsv = (filename, rows) => {
+  if (!rows || rows.length === 0) return;
+  const header = Object.keys(rows[0]);
+  const csv = [
+    header.join(','),
+    ...rows.map((row) =>
+      header
+        .map((key) => {
+          const val = row[key] ?? '';
+          const str = typeof val === 'number' ? String(val) : String(val);
+          return `"${str.replace(/"/g, '""')}"`;
+        })
+        .join(','),
+    ),
+  ].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
 const CustomerReport = () => {
   const [customers, setCustomers] = useState([]);
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { selectedBranchId } = useBranchFilter();
 
   useEffect(() => {
     (async () => {
       setLoading(true);
+      const salesUrl = selectedBranchId
+        ? `/api/billing/sales?branchId=${selectedBranchId}&limit=1000`
+        : '/api/billing/sales?limit=1000';
       const [custRes, salesRes] = await Promise.all([
         authFetch('/api/customers'),
-        authFetch('/api/billing/sales?limit=1000'),
+        authFetch(salesUrl),
       ]);
       const cust =
         custRes.ok && Array.isArray(custRes.data?.data)
           ? custRes.data.data
           : [];
-      const s =
+      let s =
         salesRes.ok && Array.isArray(salesRes.data?.data)
           ? salesRes.data.data
           : [];
+      if (selectedBranchId && s.length > 0) {
+        s = s.filter(
+          (x) => x.branch_id != null && String(x.branch_id) === String(selectedBranchId),
+        );
+      }
       setCustomers(cust);
       setSales(s);
       setLoading(false);
     })();
-  }, []);
+  }, [selectedBranchId, refreshKey]);
 
   const {
     totalCustomers,
@@ -167,11 +207,73 @@ const CustomerReport = () => {
       }));
   }, [sales]);
 
+  const handleRefresh = () => setRefreshKey((k) => k + 1);
+  const csvRows = useMemo(
+    () =>
+      topCustomers.map((c) => ({
+        name: c.name,
+        totalOrders: c.totalOrders,
+        revenue: c.revenueFormatted,
+        lastOrder: c.lastOrderFormatted,
+        status: c.status,
+      })),
+    [topCustomers],
+  );
+  const handleExportCsv = () => downloadCsv('customer-report.csv', csvRows);
+  const handleDownloadPdf = () => {
+    const rowsHtml = csvRows
+      .map(
+        (row) => `
+        <tr><td>${row.name}</td><td>${row.totalOrders}</td><td>${row.revenue}</td><td>${row.lastOrder}</td><td>${row.status}</td></tr>`,
+      )
+      .join('');
+    const bodyHtml = `
+      <h2>Customer Report</h2>
+      <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #1f2937;">Customer</th>
+            <th style="text-align:right;padding:8px;border-bottom:1px solid #1f2937;">Orders</th>
+            <th style="text-align:right;padding:8px;border-bottom:1px solid #1f2937;">Revenue</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #1f2937;">Last Order</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #1f2937;">Status</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>`;
+    const html = getPrintHtml(bodyHtml, { businessName: 'Customer Report' });
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      win.print();
+    }
+  };
+
   return (
     <ReportLayout
       title="Customer Report"
       subtitle="Understand customer behavior and retention"
     >
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <BranchFilter id="customer-branch" />
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportCsv}>
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button size="sm" onClick={handleDownloadPdf}>
+            <Download className="w-4 h-4 mr-2" />
+            Download PDF
+          </Button>
+        </div>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
           label="Total Customers"

@@ -1,11 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Download, User, Shield, CheckCircle, Clock, LogIn, LogOut, Calendar } from 'lucide-react';
+import { Download, User, Shield, CheckCircle, Clock, LogIn, LogOut, Calendar, RefreshCw } from 'lucide-react';
 import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
+import { BranchFilter } from '@/components/BranchFilter';
+import { useBranchFilter } from '@/hooks/useBranchFilter';
 import { useToast } from '@/components/ui/use-toast';
-import { Input } from '@/components/ui/input';
+import { getPrintHtml } from '@/utils/pdfPrint';
+
+const downloadCsv = (filename, rows) => {
+  if (!rows || rows.length === 0) return;
+  const header = Object.keys(rows[0]);
+  const csv = [
+    header.join(','),
+    ...rows.map((row) =>
+      header
+        .map((key) => {
+          const val = row[key] ?? '';
+          const str = typeof val === 'number' ? String(val) : String(val);
+          return `"${str.replace(/"/g, '""')}"`;
+        })
+        .join(','),
+    ),
+  ].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
 const UserReport = () => {
   const [users, setUsers] = useState([]);
@@ -15,6 +43,8 @@ const UserReport = () => {
   const [logsLoading, setLogsLoading] = useState(true);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [showAllLogs, setShowAllLogs] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { selectedBranchId } = useBranchFilter();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -24,7 +54,12 @@ const UserReport = () => {
       const { ok, data } = await authFetch('/api/users');
       if (cancelled) return;
       setLoading(false);
-      const list = ok && Array.isArray(data?.data) ? data.data : [];
+      let list = ok && Array.isArray(data?.data) ? data.data : [];
+      if (selectedBranchId) {
+        list = list.filter(
+          (u) => u.branch_id != null && String(u.branch_id) === String(selectedBranchId),
+        );
+      }
       setUsers(list);
       const breakdown = {};
       list.forEach(user => {
@@ -34,7 +69,7 @@ const UserReport = () => {
       setRoleBreakdown(breakdown);
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [selectedBranchId, refreshKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -82,11 +117,54 @@ const UserReport = () => {
     }
   };
 
-  const handleExport = () => {
-    toast({
-      title: "Export Successful",
-      description: "User report exported successfully",
-    });
+  const csvRows = useMemo(
+    () =>
+      users.map((u) => ({
+        username: u.username || '',
+        full_name: u.full_name || '',
+        email: u.email || '',
+        role: u.role || '',
+        branch: u.branch_name || u.branch_code || (u.branch_id != null ? `Branch ${u.branch_id}` : ''),
+        active: u.is_active !== false ? 'Yes' : 'No',
+      })),
+    [users],
+  );
+  const handleRefresh = () => setRefreshKey((k) => k + 1);
+  const handleExportCsv = () => {
+    downloadCsv('user-report.csv', csvRows);
+    toast({ title: 'Export Successful', description: 'User report exported as CSV.' });
+  };
+  const handleDownloadPdf = () => {
+    const rowsHtml = csvRows
+      .map(
+        (row) => `
+        <tr><td>${row.username}</td><td>${row.full_name}</td><td>${row.email}</td><td>${row.role}</td><td>${row.branch}</td><td>${row.active}</td></tr>`,
+      )
+      .join('');
+    const bodyHtml = `
+      <h2>User Report</h2>
+      <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #1f2937;">Username</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #1f2937;">Name</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #1f2937;">Email</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #1f2937;">Role</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #1f2937;">Branch</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #1f2937;">Active</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>`;
+    const html = getPrintHtml(bodyHtml, { businessName: 'User Report' });
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      win.print();
+    }
   };
 
   const activeSessions = loginLogs.filter(log => !log.logout_time).length;
@@ -107,10 +185,21 @@ const UserReport = () => {
             </h1>
             <p className="text-muted-foreground mt-1">View user analytics and login/logout tracking</p>
           </div>
-          <Button onClick={handleExport} variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Export Report
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <BranchFilter id="user-branch" />
+            <Button variant="outline" size="sm" onClick={handleRefresh}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportCsv}>
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </Button>
+            <Button size="sm" onClick={handleDownloadPdf}>
+              <Download className="w-4 h-4 mr-2" />
+              Download PDF
+            </Button>
+          </div>
         </div>
 
         {loading && (

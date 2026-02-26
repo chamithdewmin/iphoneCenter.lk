@@ -14,10 +14,40 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
-import { ShoppingBag, TrendingUp, Target, Users } from 'lucide-react';
+import { ShoppingBag, TrendingUp, Target, Users, Download, RefreshCw } from 'lucide-react';
 import ReportLayout from '@/components/ReportLayout';
 import StatCard from '@/components/StatCard';
+import { Button } from '@/components/ui/button';
+import { BranchFilter } from '@/components/BranchFilter';
+import { useBranchFilter } from '@/hooks/useBranchFilter';
 import { authFetch } from '@/lib/api';
+import { getPrintHtml } from '@/utils/pdfPrint';
+
+const downloadCsv = (filename, rows) => {
+  if (!rows || rows.length === 0) return;
+  const header = Object.keys(rows[0]);
+  const csv = [
+    header.join(','),
+    ...rows.map((row) =>
+      header
+        .map((key) => {
+          const val = row[key] ?? '';
+          const str = typeof val === 'number' ? String(val) : String(val);
+          return `"${str.replace(/"/g, '""')}"`;
+        })
+        .join(','),
+    ),
+  ].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
 const COLORS = [
   'hsl(187,80%,48%)',
@@ -30,18 +60,31 @@ const SaleReport = () => {
   const [sales, setSales] = useState([]);
   const [topProductsRaw, setTopProductsRaw] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { selectedBranchId } = useBranchFilter();
 
   useEffect(() => {
     (async () => {
       setLoading(true);
+      const salesUrl = selectedBranchId
+        ? `/api/billing/sales?branchId=${selectedBranchId}&limit=500`
+        : '/api/billing/sales?limit=500';
+      const topUrl = selectedBranchId
+        ? `/api/reports/top-products?limit=5&branchId=${selectedBranchId}`
+        : '/api/reports/top-products?limit=5';
       const [salesRes, topRes] = await Promise.all([
-        authFetch('/api/billing/sales?limit=500'),
-        authFetch('/api/reports/top-products?limit=5'),
+        authFetch(salesUrl),
+        authFetch(topUrl),
       ]);
 
-      const salesData = salesRes.ok && Array.isArray(salesRes.data?.data)
+      let salesData = salesRes.ok && Array.isArray(salesRes.data?.data)
         ? salesRes.data.data
         : [];
+      if (selectedBranchId && salesData.length > 0) {
+        salesData = salesData.filter(
+          (s) => s.branch_id != null && String(s.branch_id) === String(selectedBranchId),
+        );
+      }
       const topData = topRes.ok && Array.isArray(topRes.data?.data)
         ? topRes.data.data
         : [];
@@ -50,7 +93,7 @@ const SaleReport = () => {
       setTopProductsRaw(topData);
       setLoading(false);
     })();
-  }, []);
+  }, [selectedBranchId, refreshKey]);
 
   const {
     totalRevenue,
@@ -138,6 +181,51 @@ const SaleReport = () => {
     [topProductsRaw],
   );
 
+  const handleRefresh = () => setRefreshKey((k) => k + 1);
+  const csvRows = useMemo(
+    () =>
+      monthlySales.map((r) => ({
+        month: r.month,
+        revenue: r.revenue,
+        orders: r.orders,
+      })),
+    [monthlySales],
+  );
+  const handleExportCsv = () => downloadCsv('sales-report.csv', csvRows);
+  const handleDownloadPdf = () => {
+    const rowsHtml = csvRows
+      .map(
+        (row) => `
+        <tr>
+          <td>${row.month}</td>
+          <td>${row.revenue}</td>
+          <td>${row.orders}</td>
+        </tr>`,
+      )
+      .join('');
+    const bodyHtml = `
+      <h2>Sales Report</h2>
+      <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #1f2937;">Month</th>
+            <th style="text-align:right;padding:8px;border-bottom:1px solid #1f2937;">Revenue</th>
+            <th style="text-align:right;padding:8px;border-bottom:1px solid #1f2937;">Orders</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>`;
+    const html = getPrintHtml(bodyHtml, { businessName: 'Sales Report' });
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      win.print();
+    }
+  };
+
   return (
     <>
       <Helmet>
@@ -149,6 +237,23 @@ const SaleReport = () => {
         title="Sales Report"
         subtitle="Monitor sales performance, revenue trends and channel insights"
       >
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <BranchFilter id="sale-branch" />
+          <div className="flex flex-wrap gap-2 justify-end">
+            <Button variant="outline" size="sm" onClick={handleRefresh}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportCsv}>
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </Button>
+            <Button size="sm" onClick={handleDownloadPdf}>
+              <Download className="w-4 h-4 mr-2" />
+              Download PDF
+            </Button>
+          </div>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard
             label="Total Revenue"

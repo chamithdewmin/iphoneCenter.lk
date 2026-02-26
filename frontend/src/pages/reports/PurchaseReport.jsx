@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import ReportLayout from '@/components/ReportLayout';
 import StatCard from '@/components/StatCard';
-import { ShoppingCart, TrendingUp, FileText, DollarSign } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { BranchFilter } from '@/components/BranchFilter';
+import { useBranchFilter } from '@/hooks/useBranchFilter';
+import { ShoppingCart, TrendingUp, FileText, DollarSign, Download, RefreshCw } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -15,6 +18,33 @@ import {
   Cell,
 } from 'recharts';
 import { getStorageData } from '@/utils/storage';
+import { getPrintHtml } from '@/utils/pdfPrint';
+
+const downloadCsv = (filename, rows) => {
+  if (!rows || rows.length === 0) return;
+  const header = Object.keys(rows[0]);
+  const csv = [
+    header.join(','),
+    ...rows.map((row) =>
+      header
+        .map((key) => {
+          const val = row[key] ?? '';
+          const str = typeof val === 'number' ? String(val) : String(val);
+          return `"${str.replace(/"/g, '""')}"`;
+        })
+        .join(','),
+    ),
+  ].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
 const COLORS = [
   'hsl(187,80%,48%)',
@@ -25,11 +55,19 @@ const COLORS = [
 
 const PurchaseReport = () => {
   const [purchases, setPurchases] = useState([]);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { selectedBranchId } = useBranchFilter();
 
   useEffect(() => {
     const loaded = getStorageData('purchases', []);
-    setPurchases(Array.isArray(loaded) ? loaded : []);
-  }, []);
+    let list = Array.isArray(loaded) ? loaded : [];
+    if (selectedBranchId) {
+      list = list.filter(
+        (p) => p.branchId != null && String(p.branchId) === String(selectedBranchId),
+      );
+    }
+    setPurchases(list);
+  }, [selectedBranchId, refreshKey]);
 
   const { totalSpent, totalOrders, avgOrder } = useMemo(() => {
     const totalSpent = purchases.reduce(
@@ -105,11 +143,64 @@ const PurchaseReport = () => {
     [purchases],
   );
 
+  const handleRefresh = () => setRefreshKey((k) => k + 1);
+  const csvRows = useMemo(
+    () =>
+      monthlyData.map((r) => ({ month: r.month, amount: r.amount })),
+    [monthlyData],
+  );
+  const handleExportCsv = () => downloadCsv('purchase-report.csv', csvRows);
+  const handleDownloadPdf = () => {
+    const rowsHtml = csvRows
+      .map(
+        (row) => `
+        <tr><td>${row.month}</td><td>${row.amount}</td></tr>`,
+      )
+      .join('');
+    const bodyHtml = `
+      <h2>Purchase Report</h2>
+      <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #1f2937;">Month</th>
+            <th style="text-align:right;padding:8px;border-bottom:1px solid #1f2937;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>`;
+    const html = getPrintHtml(bodyHtml, { businessName: 'Purchase Report' });
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      win.print();
+    }
+  };
+
   return (
     <ReportLayout
       title="Purchase Report"
       subtitle="Track and analyze all purchasing activities"
     >
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <BranchFilter id="purchase-branch" />
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportCsv}>
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button size="sm" onClick={handleDownloadPdf}>
+            <Download className="w-4 h-4 mr-2" />
+            Download PDF
+          </Button>
+        </div>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
           label="Total Purchases"
