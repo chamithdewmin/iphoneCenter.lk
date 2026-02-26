@@ -295,7 +295,7 @@ const addIMEI = async (req, res, next) => {
         await connection.beginTransaction();
 
         const branchId = req.branchId || req.user.branch_id;
-        const { productId, imei: singleImei, imeis: bulkImeis, purchasePrice } = req.body;
+        const { productId, imei: singleImei, imeis: bulkImeis, purchasePrice, color } = req.body;
 
         const imeiList = Array.isArray(bulkImeis) && bulkImeis.length > 0
             ? bulkImeis.map((i) => (typeof i === 'string' ? i.trim() : String(i).trim())).filter(Boolean)
@@ -352,9 +352,9 @@ const addIMEI = async (req, res, next) => {
                 continue;
             }
             const [result] = await connection.execute(
-                `INSERT INTO product_imeis (product_id, branch_id, imei, purchase_price, status) 
-                 VALUES (?, ?, ?, ?, ?) RETURNING id`,
-                [productId, branchId, imei, purchasePrice || null, statusVal]
+                `INSERT INTO product_imeis (product_id, branch_id, imei, color, purchase_price, status) 
+                 VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
+                [productId, branchId, imei, color || null, purchasePrice || null, statusVal]
             );
             const id = result.insertId ?? (result.rows && result.rows[0] && result.rows[0].id);
             added.push({ id, imei });

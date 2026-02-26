@@ -59,6 +59,7 @@ CREATE TABLE product_imeis (
     product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     branch_id INT NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
     imei VARCHAR(20) UNIQUE NOT NULL,
+    color VARCHAR(50),
     status imei_status DEFAULT 'available',
     sale_id INT NULL,
     purchase_price DECIMAL(10, 2),

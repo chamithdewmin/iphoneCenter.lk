@@ -206,6 +206,7 @@ CREATE TABLE IF NOT EXISTS product_imeis (
     product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     branch_id INT NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
     imei VARCHAR(20) UNIQUE NOT NULL,
+    color VARCHAR(50),
     status imei_status DEFAULT 'available',
     sale_id INT NULL,
     purchase_price DECIMAL(10, 2),
@@ -217,6 +218,10 @@ CREATE INDEX IF NOT EXISTS idx_product_imeis_product_id ON product_imeis(product
 CREATE INDEX IF NOT EXISTS idx_product_imeis_branch_id ON product_imeis(branch_id);
 CREATE INDEX IF NOT EXISTS idx_product_imeis_status ON product_imeis(status);
 CREATE INDEX IF NOT EXISTS idx_product_imeis_sale_id ON product_imeis(sale_id);
+-- Add color column for existing databases if missing
+DO $$ BEGIN
+    ALTER TABLE product_imeis ADD COLUMN color VARCHAR(50);
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 -- Hybrid POS: treat 'available' as in_stock (migrate to in_stock so one canonical value)
 UPDATE product_imeis SET status = 'in_stock' WHERE status = 'available';
 

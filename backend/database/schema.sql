@@ -136,6 +136,7 @@ CREATE TABLE product_imeis (
     product_id INT NOT NULL,
     branch_id INT NOT NULL,
     imei VARCHAR(20) UNIQUE NOT NULL,
+    color VARCHAR(50),
     status ENUM('available', 'sold', 'reserved', 'transferred', 'returned') DEFAULT 'available',
     sale_id INT NULL,
     purchase_price DECIMAL(10, 2),

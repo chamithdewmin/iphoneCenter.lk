@@ -29,7 +29,7 @@ const AddDevices = () => {
     branchId: '',
     imeiSingle: '',
     imeiBulk: '',
-    purchasePrice: '',
+    color: '',
   });
 
   const fetchUniqueProducts = useCallback(async () => {
@@ -113,7 +113,7 @@ const AddDevices = () => {
       const body = {
         productId: parseInt(productId, 10),
         imeis: imeiList,
-        purchasePrice: formData.purchasePrice ? parseFloat(formData.purchasePrice) : null,
+        color: formData.color?.trim() || null,
       };
       if (isAdmin && branchId) body.branchId = parseInt(branchId, 10);
 
@@ -232,16 +232,13 @@ const AddDevices = () => {
           </div>
 
           <div className="mb-6">
-            <Label htmlFor="purchasePrice">Cost price (optional, LKR)</Label>
+            <Label htmlFor="color">Color</Label>
             <Input
-              id="purchasePrice"
-              name="purchasePrice"
-              type="number"
-              value={formData.purchasePrice}
+              id="color"
+              name="color"
+              value={formData.color}
               onChange={handleChange}
-              placeholder="Optional"
-              min="0"
-              step="0.01"
+              placeholder="e.g. Black, Blue"
               className="mt-1 text-foreground bg-background"
             />
           </div>
