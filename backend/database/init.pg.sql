@@ -165,15 +165,12 @@ CREATE INDEX IF NOT EXISTS idx_products_brand ON products(brand);
 CREATE INDEX IF NOT EXISTS idx_products_is_active ON products(is_active);
 
 -- Hybrid POS: inventory_type (unique | quantity), product.stock for quantity products, category_id FK
-DO $$ BEGIN
-    ALTER TABLE products ADD COLUMN inventory_type VARCHAR(20) DEFAULT 'quantity';
-EXCEPTION WHEN duplicate_column THEN NULL; END $$;
-DO $$ BEGIN
-    ALTER TABLE products ADD COLUMN stock INT DEFAULT 0;
-EXCEPTION WHEN duplicate_column THEN NULL; END $$;
-DO $$ BEGIN
-    ALTER TABLE products ADD COLUMN category_id INT NULL REFERENCES categories(id) ON DELETE SET NULL;
-EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+ALTER TABLE products
+    ADD COLUMN IF NOT EXISTS inventory_type VARCHAR(20) DEFAULT 'quantity';
+ALTER TABLE products
+    ADD COLUMN IF NOT EXISTS stock INT DEFAULT 0;
+ALTER TABLE products
+    ADD COLUMN IF NOT EXISTS category_id INT NULL REFERENCES categories(id) ON DELETE SET NULL;
 -- Backfill: existing products are quantity; stock from branch_stock sum; category_id from category name
 UPDATE products SET inventory_type = COALESCE(NULLIF(TRIM(inventory_type), ''), 'quantity') WHERE inventory_type IS NULL OR TRIM(inventory_type) = '';
 UPDATE products p SET stock = COALESCE((SELECT SUM(bs.quantity) FROM branch_stock bs WHERE bs.product_id = p.id), 0) WHERE p.stock IS NULL OR p.inventory_type = 'quantity';
