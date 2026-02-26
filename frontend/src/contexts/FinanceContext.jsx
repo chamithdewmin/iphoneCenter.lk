@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+} from 'react';
 import { getStorageData, setStorageData } from '@/utils/storage';
 
 const FinanceContext = createContext(null);
@@ -8,6 +15,8 @@ export const FinanceProvider = ({ children }) => {
   const [expenses, setExpenses] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [clients, setClients] = useState([]);
+  const [assets, setAssets] = useState([]);
+  const [loans, setLoans] = useState([]);
   const [settings, setSettings] = useState({
     currency: 'Rs',
     expenseCategories: ['Rent', 'Utilities', 'Salaries', 'Marketing', 'Supplies', 'Other'],
@@ -20,12 +29,16 @@ export const FinanceProvider = ({ children }) => {
     const savedInvoices = getStorageData('finance_invoices', []);
     const savedClients = getStorageData('finance_clients', []);
     const savedSettings = getStorageData('finance_settings', settings);
+    const savedAssets = getStorageData('finance_assets', []);
+    const savedLoans = getStorageData('finance_loans', []);
 
     setIncomes(savedIncomes);
     setExpenses(savedExpenses);
     setInvoices(savedInvoices);
     setClients(savedClients);
     setSettings(savedSettings);
+    setAssets(savedAssets);
+    setLoans(savedLoans);
   }, []);
 
   // Save to localStorage whenever data changes
@@ -48,6 +61,14 @@ export const FinanceProvider = ({ children }) => {
   useEffect(() => {
     setStorageData('finance_settings', settings);
   }, [settings]);
+
+  useEffect(() => {
+    setStorageData('finance_assets', assets);
+  }, [assets]);
+
+  useEffect(() => {
+    setStorageData('finance_loans', loans);
+  }, [loans]);
 
   // Income methods
   const addIncome = useCallback((incomeData) => {
@@ -141,13 +162,28 @@ export const FinanceProvider = ({ children }) => {
     const savedInvoices = getStorageData('finance_invoices', []);
     const savedClients = getStorageData('finance_clients', []);
     const savedSettings = getStorageData('finance_settings', settings);
+    const savedAssets = getStorageData('finance_assets', []);
+    const savedLoans = getStorageData('finance_loans', []);
 
     setIncomes(savedIncomes);
     setExpenses(savedExpenses);
     setInvoices(savedInvoices);
     setClients(savedClients);
     setSettings(savedSettings);
+    setAssets(savedAssets);
+    setLoans(savedLoans);
   }, [settings]);
+
+  const totals = useMemo(() => {
+    const cashInHand =
+      incomes.reduce((sum, i) => sum + (i.amount || 0), 0) -
+      expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const bankBalance = 0;
+    return {
+      cashInHand,
+      bankBalance,
+    };
+  }, [incomes, expenses]);
 
   return (
     <FinanceContext.Provider
@@ -156,6 +192,8 @@ export const FinanceProvider = ({ children }) => {
         expenses,
         invoices,
         clients,
+        assets,
+        loans,
         settings,
         addIncome,
         updateIncome,
@@ -168,6 +206,9 @@ export const FinanceProvider = ({ children }) => {
         addClient,
         updateSettings,
         loadData,
+        totals,
+        setAssets,
+        setLoans,
       }}
     >
       {children}
