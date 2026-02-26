@@ -1,94 +1,142 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
-import { Download, Calendar, DollarSign, TrendingUp } from 'lucide-react';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+} from 'recharts';
+import { ShoppingBag, TrendingUp, Target, Users } from 'lucide-react';
+import ReportLayout from '@/components/ReportLayout';
+import StatCard from '@/components/StatCard';
 import { authFetch } from '@/lib/api';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/components/ui/use-toast';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { useAuth } from '@/contexts/AuthContext';
+
+const COLORS = [
+  'hsl(187,80%,48%)',
+  'hsl(260,60%,55%)',
+  'hsl(150,60%,45%)',
+  'hsl(35,90%,55%)',
+];
 
 const SaleReport = () => {
-  const { user } = useAuth();
-  const isAdmin = (user?.role || '').toLowerCase() === 'admin';
-  const [branches, setBranches] = useState([]);
-  const [salesSummary, setSalesSummary] = useState([]);
-  const [profitByDay, setProfitByDay] = useState([]);
+  const [sales, setSales] = useState([]);
+  const [topProductsRaw, setTopProductsRaw] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [filters, setFilters] = useState({
-    startDate: new Date().toISOString().slice(0, 7) + '-01',
-    endDate: new Date().toISOString().slice(0, 10),
-    branchId: '',
-  });
-  const { toast } = useToast();
 
   useEffect(() => {
-    if (!isAdmin) return;
-    authFetch('/api/branches')
-      .then((res) => {
-        if (res.ok && res.data?.data) setBranches(Array.isArray(res.data.data) ? res.data.data : []);
-      })
-      .catch(() => setBranches([]));
-  }, [isAdmin]);
+    (async () => {
+      setLoading(true);
+      const [salesRes, topRes] = await Promise.all([
+        authFetch('/api/billing/sales?limit=500'),
+        authFetch('/api/reports/top-products?limit=5'),
+      ]);
 
-  const loadReport = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    const params = new URLSearchParams();
-    if (filters.startDate) params.set('startDate', filters.startDate);
-    if (filters.endDate) params.set('endDate', filters.endDate);
-    if (filters.branchId) params.set('branchId', filters.branchId);
+      const salesData = salesRes.ok && Array.isArray(salesRes.data?.data)
+        ? salesRes.data.data
+        : [];
+      const topData = topRes.ok && Array.isArray(topRes.data?.data)
+        ? topRes.data.data
+        : [];
 
-    const [salesRes, profitRes] = await Promise.all([
-      authFetch(`/api/reports/sales?${params.toString()}`),
-      authFetch(`/api/reports/profit?${params.toString()}`),
-    ]);
+      setSales(salesData);
+      setTopProductsRaw(topData);
+      setLoading(false);
+    })();
+  }, []);
 
-    if (!salesRes.ok) {
-      setError(salesRes.data?.message || 'Failed to load sales report');
-      setSalesSummary([]);
-      setProfitByDay([]);
-    } else {
-      const salesData = Array.isArray(salesRes.data?.data) ? salesRes.data.data : [];
-      setSalesSummary(salesData);
-      const profitData = Array.isArray(profitRes.data?.data) ? profitRes.data.data : [];
-      const byDate = {};
-      profitData.forEach((row) => {
-        const d = row.sale_date || row.sale_date;
-        if (!d) return;
-        const key = typeof d === 'string' ? d.slice(0, 10) : new Date(d).toISOString().slice(0, 10);
-        if (!byDate[key]) byDate[key] = { date: key, revenue: 0, sales: 0 };
-        byDate[key].revenue += parseFloat(row.total_revenue) || 0;
-        byDate[key].sales += parseInt(row.total_sales, 10) || 0;
-      });
-      setProfitByDay(Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date)));
+  const {
+    totalRevenue,
+    totalOrders,
+    avgOrderValue,
+    activeCustomers,
+  } = useMemo(() => {
+    let revenue = 0;
+    const customerIds = new Set();
+    for (const s of sales) {
+      revenue += Number(s.total_amount) || 0;
+      if (s.customer_id) customerIds.add(s.customer_id);
     }
-    setLoading(false);
-  }, [filters.startDate, filters.endDate, filters.branchId]);
+    const orders = sales.length;
+    return {
+      totalRevenue: revenue,
+      totalOrders: orders,
+      avgOrderValue: orders > 0 ? revenue / orders : 0,
+      activeCustomers: customerIds.size,
+    };
+  }, [sales]);
 
-  useEffect(() => {
-    loadReport();
-  }, [loadReport]);
+  const monthlySales = useMemo(() => {
+    const map = new Map();
+    sales.forEach((s) => {
+      const raw = s.created_at;
+      const d = raw ? new Date(raw) : null;
+      if (!d || Number.isNaN(d.getTime())) return;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = d.toLocaleDateString('en-US', { month: 'short' });
+      if (!map.has(key)) {
+        map.set(key, { month: label, revenue: 0, orders: 0 });
+      }
+      const row = map.get(key);
+      row.revenue += Number(s.total_amount) || 0;
+      row.orders += 1;
+    });
+    const arr = Array.from(map.entries())
+      .sort(([a], [b]) => (a < b ? -1 : 1))
+      .map(([, v]) => v);
+    return arr.slice(-8);
+  }, [sales]);
 
-  const totalRevenue = salesSummary.reduce((s, r) => s + (parseFloat(r.total_revenue) || 0), 0);
-  const totalOrders = salesSummary.reduce((s, r) => s + (parseInt(r.total_sales, 10) || 0), 0);
-  const avgOrder = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+  const channelData = useMemo(() => {
+    const buckets = { paid: 0, partial: 0, due: 0 };
+    let total = 0;
+    sales.forEach((s) => {
+      const status = (s.payment_status || '').toLowerCase();
+      const amt = Number(s.total_amount) || 0;
+      if (status === 'paid' || status === 'partial' || status === 'due') {
+        buckets[status] += amt;
+        total += amt;
+      }
+    });
+    if (!total) return [];
+    return [
+      { name: 'Paid', value: Math.round((buckets.paid / total) * 100) },
+      { name: 'Partial', value: Math.round((buckets.partial / total) * 100) },
+      { name: 'Due', value: Math.round((buckets.due / total) * 100) },
+    ].filter((x) => x.value > 0);
+  }, [sales]);
 
-  const handleExport = () => {
-    const rows = [
-      ['Date', 'Revenue', 'Orders'],
-      ...profitByDay.map((d) => [d.date, d.revenue.toFixed(0), d.sales]),
-    ];
-    const csv = rows.map((r) => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const a = document.createElement('a');
-    a.href = window.URL.createObjectURL(blob);
-    a.download = `sale-report-${filters.startDate}-${filters.endDate}.csv`;
-    a.click();
-    toast({ title: 'Export successful', description: 'Sale report downloaded.' });
-  };
+  const regionData = useMemo(() => {
+    const map = new Map();
+    sales.forEach((s) => {
+      const region = s.branch_name || `Branch ${s.branch_id}`;
+      const amt = Number(s.total_amount) || 0;
+      map.set(region, (map.get(region) || 0) + amt);
+    });
+    return Array.from(map.entries()).map(([region, value]) => ({
+      region,
+      sales: value,
+    }));
+  }, [sales]);
+
+  const topProducts = useMemo(
+    () =>
+      topProductsRaw.map((p) => ({
+        name: p.product_name || 'Unknown',
+        units: Number(p.total_quantity_sold) || 0,
+        revenue: `LKR ${(Number(p.total_revenue) || 0).toLocaleString()}`,
+        growth: '—',
+        trend: 'neutral',
+      })),
+    [topProductsRaw],
+  );
 
   return (
     <>
@@ -97,201 +145,243 @@ const SaleReport = () => {
         <meta name="description" content="View sales report" />
       </Helmet>
 
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              Sale Report
-            </h1>
-            <p className="text-muted-foreground mt-1">Sales analytics from backend (date range & branch)</p>
-          </div>
-          <Button onClick={handleExport} variant="outline" disabled={loading}>
-            <Download className="w-4 h-4 mr-2" />
-            Export CSV
-          </Button>
+      <ReportLayout
+        title="Sales Report"
+        subtitle="Monitor sales performance, revenue trends and channel insights"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <StatCard
+            label="Total Revenue"
+            value={loading ? '…' : `LKR ${totalRevenue.toLocaleString()}`}
+            change=""
+            changeType="up"
+            icon={ShoppingBag}
+          />
+          <StatCard
+            label="Total Orders"
+            value={loading ? '…' : totalOrders.toLocaleString()}
+            change=""
+            changeType="up"
+            icon={Target}
+          />
+          <StatCard
+            label="Avg. Order Value"
+            value={
+              loading
+                ? '…'
+                : `LKR ${avgOrderValue.toLocaleString(undefined, {
+                    maximumFractionDigits: 0,
+                  })}`
+            }
+            change=""
+            changeType="up"
+            icon={TrendingUp}
+          />
+          <StatCard
+            label="Active Customers"
+            value={loading ? '…' : activeCustomers.toString()}
+            change=""
+            changeType="up"
+            icon={Users}
+          />
         </div>
 
-        {/* Date range & branch */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-wrap items-end gap-3"
-        >
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1">From</label>
-            <Input
-              type="date"
-              value={filters.startDate}
-              onChange={(e) => setFilters((p) => ({ ...p, startDate: e.target.value }))}
-              className="w-40"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1">To</label>
-            <Input
-              type="date"
-              value={filters.endDate}
-              onChange={(e) => setFilters((p) => ({ ...p, endDate: e.target.value }))}
-              className="w-40"
-            />
-          </div>
-          {isAdmin && (
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Branch</label>
-              <select
-                value={filters.branchId}
-                onChange={(e) => setFilters((p) => ({ ...p, branchId: e.target.value }))}
-                className="h-9 px-3 rounded-md border border-input bg-background text-sm w-48"
-              >
-                <option value="">All branches</option>
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>{b.name || b.code || `Branch ${b.id}`}</option>
-                ))}
-              </select>
-            </div>
-          )}
-        </motion.div>
-
-        {error && (
-          <div className="rounded-lg border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-            {error}
-          </div>
-        )}
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-xl p-6 border border-secondary shadow-sm"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Total Revenue</p>
-                <p className="text-2xl font-bold text-primary">
-                  {loading ? '…' : `LKR ${totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-                </p>
-              </div>
-              <DollarSign className="w-8 h-8 text-primary opacity-50" />
-            </div>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-card rounded-xl p-6 border border-secondary shadow-sm"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Total Orders</p>
-                <p className="text-2xl font-bold">{loading ? '…' : totalOrders}</p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-primary opacity-50" />
-            </div>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-card rounded-xl p-6 border border-secondary shadow-sm"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Average Order</p>
-                <p className="text-2xl font-bold">
-                  {loading ? '…' : `LKR ${avgOrder.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-                </p>
-              </div>
-              <Calendar className="w-8 h-8 text-green-500 opacity-50" />
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Chart: daily revenue (line) */}
-        {!loading && profitByDay.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-card rounded-xl p-6 border border-secondary shadow-sm"
-          >
-            <h2 className="text-xl font-bold mb-4">Revenue by day</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={profitByDay}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-20" />
-                <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '0.5rem' }}
-                  formatter={(value) => [`LKR ${Number(value).toLocaleString()}`, 'Revenue']}
-                  labelFormatter={(label) => label}
-                />
-                <Line type="monotone" dataKey="revenue" stroke="var(--primary)" strokeWidth={2} dot={{ r: 3 }} name="Revenue" />
-              </LineChart>
-            </ResponsiveContainer>
-          </motion.div>
-        )}
-
-        {/* Bar chart: revenue by day (alternative view) */}
-        {!loading && profitByDay.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-            className="bg-card rounded-xl p-6 border border-secondary shadow-sm"
-          >
-            <h2 className="text-xl font-bold mb-4">Daily sales (bars)</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          <div className="report-card lg:col-span-2">
+            <h3 className="text-foreground font-semibold mb-4">
+              Revenue &amp; Orders Trend
+            </h3>
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={profitByDay}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-20" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '0.5rem' }}
-                  formatter={(value) => [`LKR ${Number(value).toLocaleString()}`, 'Revenue']}
+              <AreaChart data={monthlySales}>
+                <defs>
+                  <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor="hsl(187,80%,48%)"
+                      stopOpacity={0.3}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="hsl(187,80%,48%)"
+                      stopOpacity={0}
+                    />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(225,15%,15%)"
                 />
-                <Bar dataKey="revenue" fill="var(--primary)" radius={[4, 4, 0, 0]} name="Revenue" />
+                <XAxis
+                  dataKey="month"
+                  stroke="hsl(215,15%,55%)"
+                  fontSize={12}
+                />
+                <YAxis
+                  stroke="hsl(215,15%,55%)"
+                  fontSize={12}
+                  tickFormatter={(v) =>
+                    v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v
+                  }
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: 'hsl(225,21%,7.5%)',
+                    border: '1px solid hsl(225,15%,15%)',
+                    borderRadius: '8px',
+                    color: 'hsl(210,20%,90%)',
+                  }}
+                  formatter={(value) => [
+                    `LKR ${Number(value).toLocaleString()}`,
+                    'Revenue',
+                  ]}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="hsl(187,80%,48%)"
+                  fill="url(#revGrad)"
+                  strokeWidth={2}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="report-card">
+            <h3 className="text-foreground font-semibold mb-4">
+              Sales by Payment Status
+            </h3>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie
+                  data={channelData}
+                  innerRadius={50}
+                  outerRadius={80}
+                  dataKey="value"
+                  paddingAngle={4}
+                >
+                  {channelData.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    background: 'hsl(225,21%,7.5%)',
+                    border: '1px solid hsl(225,15%,15%)',
+                    borderRadius: '8px',
+                    color: 'hsl(210,20%,90%)',
+                  }}
+                  formatter={(value, name) => [`${value}%`, name]}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="flex flex-wrap gap-3 mt-2">
+              {channelData.map((item, i) => (
+                <div key={item.name} className="flex items-center gap-1.5">
+                  <div
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ background: COLORS[i] }}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {item.name} ({item.value}%)
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <div className="report-card">
+            <h3 className="text-foreground font-semibold mb-4">
+              Sales by Branch
+            </h3>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={regionData}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(225,15%,15%)"
+                />
+                <XAxis
+                  dataKey="region"
+                  stroke="hsl(215,15%,55%)"
+                  fontSize={12}
+                />
+                <YAxis
+                  stroke="hsl(215,15%,55%)"
+                  fontSize={12}
+                  tickFormatter={(v) =>
+                    v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v
+                  }
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: 'hsl(225,21%,7.5%)',
+                    border: '1px solid hsl(225,15%,15%)',
+                    borderRadius: '8px',
+                    color: 'hsl(210,20%,90%)',
+                  }}
+                  formatter={(value) => [
+                    `LKR ${Number(value).toLocaleString()}`,
+                    'Revenue',
+                  ]}
+                />
+                <Bar
+                  dataKey="sales"
+                  fill="hsl(260,60%,55%)"
+                  radius={[4, 4, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
-          </motion.div>
-        )}
+          </div>
 
-        {!loading && salesSummary.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-xl p-6 border border-secondary shadow-sm overflow-x-auto"
-          >
-            <h2 className="text-lg font-bold mb-3">By branch</h2>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left p-2">Branch</th>
-                  <th className="text-right p-2">Sales</th>
-                  <th className="text-right p-2">Revenue</th>
-                  <th className="text-right p-2">Paid</th>
-                  <th className="text-right p-2">Due</th>
-                </tr>
-              </thead>
-              <tbody>
-                {salesSummary.map((row) => (
-                  <tr key={row.branch_id || row.branch_name} className="border-b border-border/50">
-                    <td className="p-2">{row.branch_name || row.branch_code || `#${row.branch_id}`}</td>
-                    <td className="p-2 text-right">{row.total_sales}</td>
-                    <td className="p-2 text-right">LKR {(parseFloat(row.total_revenue) || 0).toLocaleString()}</td>
-                    <td className="p-2 text-right">LKR {(parseFloat(row.total_paid) || 0).toLocaleString()}</td>
-                    <td className="p-2 text-right">LKR {(parseFloat(row.total_due) || 0).toLocaleString()}</td>
+          <div className="report-card">
+            <h3 className="text-foreground font-semibold mb-4">
+              Top Selling Products
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-3 px-2 text-muted-foreground font-medium">
+                      Product
+                    </th>
+                    <th className="text-left py-3 px-2 text-muted-foreground font-medium">
+                      Units
+                    </th>
+                    <th className="text-left py-3 px-2 text-muted-foreground font-medium">
+                      Revenue
+                    </th>
+                    <th className="text-left py-3 px-2 text-muted-foreground font-medium">
+                      Growth
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </motion.div>
-        )}
-
-        {!loading && !error && salesSummary.length === 0 && profitByDay.length === 0 && (
-          <p className="text-muted-foreground text-center py-8">No sales data for the selected period.</p>
-        )}
-      </div>
+                </thead>
+                <tbody>
+                  {topProducts.map((p) => (
+                    <tr
+                      key={p.name}
+                      className="border-b border-border/50 hover:bg-secondary/30 transition-colors"
+                    >
+                      <td className="py-3 px-2 text-foreground font-medium">
+                        {p.name}
+                      </td>
+                      <td className="py-3 px-2 text-muted-foreground">
+                        {p.units.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-2 text-foreground font-medium">
+                        {p.revenue}
+                      </td>
+                      <td className="py-3 px-2">
+                        <span className="text-muted-foreground">{p.growth}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </ReportLayout>
     </>
   );
 };
