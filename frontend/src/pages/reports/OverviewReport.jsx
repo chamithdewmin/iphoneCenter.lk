@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ReportLayout from "@/components/ReportLayout";
 import StatCard from "@/components/StatCard";
+import { Button } from "@/components/ui/button";
+import { BranchFilter } from "@/components/BranchFilter";
+import { useBranchFilter } from "@/hooks/useBranchFilter";
 import {
   BarChart3,
   TrendingUp,
@@ -8,6 +11,8 @@ import {
   ShoppingBag,
   Users,
   Package,
+  Download,
+  RefreshCw,
 } from "lucide-react";
 import {
   AreaChart,
@@ -28,6 +33,7 @@ import {
 } from "recharts";
 import { authFetch } from "@/lib/api";
 import { getStorageData } from "@/utils/storage";
+import { getPrintHtml } from "@/utils/pdfPrint";
 
 const COLORS = [
   "hsl(187,80%,48%)",
@@ -36,6 +42,36 @@ const COLORS = [
   "hsl(35,90%,55%)",
   "hsl(340,65%,55%)",
 ];
+
+const downloadCsv = (filename, rows) => {
+  if (!rows || rows.length === 0) return;
+  const header = Object.keys(rows[0]);
+  const csv = [
+    header.join(","),
+    ...rows.map((row) =>
+      header
+        .map((key) => {
+          const val = row[key] ?? "";
+          const str = typeof val === "number" ? String(val) : String(val);
+          // escape quotes
+          return `"${str.replace(/"/g, '""')}"`;
+        })
+        .join(","),
+    ),
+  ].join("\n");
+
+  const blob = new Blob([csv], {
+    type: "text/csv;charset=utf-8;",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
 function getMonthKeyLabel(raw) {
   const d = raw ? new Date(raw) : null;
@@ -53,8 +89,9 @@ const OverviewReport = () => {
   const [expenses, setExpenses] = useState([]);
   const [purchases, setPurchases] = useState([]);
   const [productsCount, setProductsCount] = useState(0);
-  const [customersCount, setCustomersCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { selectedBranchId } = useBranchFilter();
 
   useEffect(() => {
     let cancelled = false;
@@ -62,8 +99,11 @@ const OverviewReport = () => {
     (async () => {
       setLoading(true);
       try {
+        const salesUrl = selectedBranchId
+          ? `/api/billing/sales?branchId=${selectedBranchId}&limit=1000`
+          : "/api/billing/sales?limit=1000";
         const [salesRes, custRes, prodRes] = await Promise.all([
-          authFetch("/api/billing/sales?limit=1000"),
+          authFetch(salesUrl),
           authFetch("/api/customers"),
           authFetch("/api/inventory/products"),
         ]);
@@ -80,7 +120,6 @@ const OverviewReport = () => {
           custRes.ok && Array.isArray(custRes.data?.data)
             ? custRes.data.data
             : [];
-        setCustomersCount(customers.length);
 
         const products =
           prodRes.ok && Array.isArray(prodRes.data?.data)
@@ -100,12 +139,19 @@ const OverviewReport = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [selectedBranchId, refreshKey]);
 
   const monthlyOverview = useMemo(() => {
     const map = new Map();
 
     sales.forEach((s) => {
+      if (
+        selectedBranchId &&
+        s.branch_id != null &&
+        String(s.branch_id) !== String(selectedBranchId)
+      ) {
+        return;
+      }
       const info = getMonthKeyLabel(s.created_at || s.date);
       if (!info) return;
       const existing =
@@ -120,6 +166,13 @@ const OverviewReport = () => {
     });
 
     expenses.forEach((e) => {
+      if (
+        selectedBranchId &&
+        e.branchId != null &&
+        String(e.branchId) !== String(selectedBranchId)
+      ) {
+        return;
+      }
       const info = getMonthKeyLabel(e.date || e.createdAt);
       if (!info) return;
       const existing =
@@ -154,12 +207,19 @@ const OverviewReport = () => {
         profit: v.revenue - v.expenses,
       }))
       .slice(-8);
-  }, [sales, expenses, purchases]);
+  }, [sales, expenses, purchases, selectedBranchId]);
 
   const kpiTrends = useMemo(() => {
     const map = new Map();
 
     sales.forEach((s) => {
+      if (
+        selectedBranchId &&
+        s.branch_id != null &&
+        String(s.branch_id) !== String(selectedBranchId)
+      ) {
+        return;
+      }
       const info = getMonthKeyLabel(s.created_at || s.date);
       if (!info) return;
       const existing =
@@ -184,7 +244,7 @@ const OverviewReport = () => {
         products: productsCount,
       }))
       .slice(-8);
-  }, [sales, productsCount]);
+  }, [sales, productsCount, selectedBranchId]);
 
   const totals = useMemo(() => {
     const totalRevenue = sales.reduce(
@@ -219,6 +279,13 @@ const OverviewReport = () => {
   const departmentData = useMemo(() => {
     const map = new Map();
     sales.forEach((s) => {
+      if (
+        selectedBranchId &&
+        s.branch_id != null &&
+        String(s.branch_id) !== String(selectedBranchId)
+      ) {
+        return;
+      }
       const branch = s.branch_name || s.branch_code || "Main";
       map.set(branch, (map.get(branch) || 0) + (Number(s.total_amount) || 0));
     });
@@ -229,7 +296,7 @@ const OverviewReport = () => {
       name,
       value: Math.round((value / total) * 100),
     }));
-  }, [sales]);
+  }, [sales, selectedBranchId]);
 
   const recentActivities = useMemo(() => {
     const items = [];
@@ -274,11 +341,88 @@ const OverviewReport = () => {
     return items.slice(0, 6);
   }, [sales, expenses]);
 
+  const handleRefresh = () => {
+    setRefreshKey((prev) => prev + 1);
+  };
+
+  const handleExportCsv = () => {
+    downloadCsv("overview-report.csv", monthlyOverview);
+  };
+
+  const handleDownloadPdf = () => {
+    const rowsHtml = monthlyOverview
+      .map(
+        (row) => `
+        <tr>
+          <td>${row.month}</td>
+          <td>${row.revenue}</td>
+          <td>${row.expenses}</td>
+          <td>${row.profit}</td>
+        </tr>`,
+      )
+      .join("");
+
+    const bodyHtml = `
+      <h2>Overview Report</h2>
+      <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #1f2937;">Month</th>
+            <th style="text-align:right;padding:8px;border-bottom:1px solid #1f2937;">Revenue</th>
+            <th style="text-align:right;padding:8px;border-bottom:1px solid #1f2937;">Expenses</th>
+            <th style="text-align:right;padding:8px;border-bottom:1px solid #1f2937;">Profit</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+    `;
+
+    const html = getPrintHtml(bodyHtml, { businessName: "Overview Report" });
+    const win = window.open("", "_blank");
+    if (win) {
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      win.print();
+    }
+  };
+
   return (
     <ReportLayout
       title="Overview Report"
       subtitle="Complete business performance at a glance"
     >
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <BranchFilter id="overview-branch" />
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCsv}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleDownloadPdf}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download PDF
+          </Button>
+        </div>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
           label="Total Revenue"

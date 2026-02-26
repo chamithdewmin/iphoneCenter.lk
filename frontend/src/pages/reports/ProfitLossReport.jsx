@@ -1,7 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ReportLayout from "@/components/ReportLayout";
 import StatCard from "@/components/StatCard";
-import { DollarSign, TrendingUp, TrendingDown, Percent } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { BranchFilter } from "@/components/BranchFilter";
+import { useBranchFilter } from "@/hooks/useBranchFilter";
+import {
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  Percent,
+  Download,
+  RefreshCw,
+} from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -19,6 +29,7 @@ import {
 } from "recharts";
 import { authFetch } from "@/lib/api";
 import { getStorageData } from "@/utils/storage";
+import { getPrintHtml } from "@/utils/pdfPrint";
 
 function getMonthKeyLabel(raw) {
   const d = raw ? new Date(raw) : null;
@@ -39,18 +50,52 @@ const COLORS = [
   "hsl(340,65%,55%)",
 ];
 
+function downloadCsv(filename, rows) {
+  if (!rows || rows.length === 0) return;
+  const header = Object.keys(rows[0]);
+  const csv = [
+    header.join(","),
+    ...rows.map((row) =>
+      header
+        .map((key) => {
+          const val = row[key] ?? "";
+          const str = typeof val === "number" ? String(val) : String(val);
+          return `"${str.replace(/"/g, '""')}"`;
+        })
+        .join(","),
+    ),
+  ].join("\n");
+
+  const blob = new Blob([csv], {
+    type: "text/csv;charset=utf-8;",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 const ProfitLossReport = () => {
   const [sales, setSales] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { selectedBranchId } = useBranchFilter();
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
       try {
-        const salesRes = await authFetch("/api/billing/sales?limit=1000");
+        const salesUrl = selectedBranchId
+          ? `/api/billing/sales?branchId=${selectedBranchId}&limit=1000`
+          : "/api/billing/sales?limit=1000";
+        const salesRes = await authFetch(salesUrl);
         if (!cancelled) {
           const salesData =
             salesRes.ok && Array.isArray(salesRes.data?.data)
@@ -71,12 +116,19 @@ const ProfitLossReport = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [selectedBranchId, refreshKey]);
 
   const monthlyPL = useMemo(() => {
     const map = new Map();
 
     sales.forEach((s) => {
+      if (
+        selectedBranchId &&
+        s.branch_id != null &&
+        String(s.branch_id) !== String(selectedBranchId)
+      ) {
+        return;
+      }
       const info = getMonthKeyLabel(s.created_at || s.date);
       if (!info) return;
       const row =
@@ -107,6 +159,13 @@ const ProfitLossReport = () => {
     });
 
     expenses.forEach((e) => {
+      if (
+        selectedBranchId &&
+        e.branchId != null &&
+        String(e.branchId) !== String(selectedBranchId)
+      ) {
+        return;
+      }
       const info = getMonthKeyLabel(e.date || e.createdAt);
       if (!info) return;
       const row =
@@ -128,7 +187,7 @@ const ProfitLossReport = () => {
         profit: v.revenue - v.cogs - v.opex,
       }))
       .slice(-8);
-  }, [sales, expenses, purchases]);
+  }, [sales, expenses, purchases, selectedBranchId]);
 
   const marginTrend = useMemo(() => {
     return monthlyPL.map((m) => {
@@ -241,11 +300,92 @@ const ProfitLossReport = () => {
 
   const netMarginValue = summary ? Number(summary.netMargin) : 0;
 
+  const handleRefresh = () => {
+    setRefreshKey((prev) => prev + 1);
+  };
+
+  const handleExportCsv = () => {
+    downloadCsv("profit-loss-report.csv", monthlyPL);
+  };
+
+  const handleDownloadPdf = () => {
+    const rowsHtml = monthlyPL
+      .map(
+        (row) => `
+        <tr>
+          <td>${row.month}</td>
+          <td>${row.revenue}</td>
+          <td>${row.cogs}</td>
+          <td>${row.opex}</td>
+          <td>${row.profit}</td>
+        </tr>`,
+      )
+      .join("");
+
+    const bodyHtml = `
+      <h2>Profit &amp; Loss Report</h2>
+      <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #1f2937;">Month</th>
+            <th style="text-align:right;padding:8px;border-bottom:1px solid #1f2937;">Revenue</th>
+            <th style="text-align:right;padding:8px;border-bottom:1px solid #1f2937;">COGS</th>
+            <th style="text-align:right;padding:8px;border-bottom:1px solid #1f2937;">Opex</th>
+            <th style="text-align:right;padding:8px;border-bottom:1px solid #1f2937;">Profit</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+    `;
+
+    const html = getPrintHtml(bodyHtml, {
+      businessName: "Profit & Loss Report",
+    });
+    const win = window.open("", "_blank");
+    if (win) {
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      win.print();
+    }
+  };
+
   return (
     <ReportLayout
       title="Profit & Loss Report"
       subtitle="Comprehensive income statement analysis and margin tracking"
     >
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <BranchFilter id="pl-branch" />
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCsv}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleDownloadPdf}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download PDF
+          </Button>
+        </div>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
           label="Net Revenue"
