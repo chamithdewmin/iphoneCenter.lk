@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Download, DollarSign, TrendingDown, Calendar } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { getStorageData } from '@/utils/storage';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -29,6 +30,16 @@ const ExpenseReport = () => {
     });
     setCategoryBreakdown(breakdown);
   }, []);
+
+  const categoryData = useMemo(
+    () =>
+      Object.entries(categoryBreakdown)
+        .map(([category, amount]) => ({ category, amount }))
+        .sort((a, b) => b.amount - a.amount),
+    [categoryBreakdown]
+  );
+
+  const COLORS = ['#3b82f6', '#22c55e', '#eab308', '#ef4444', '#8b5cf6', '#06b6d4'];
 
   const handleExport = () => {
     toast({
@@ -104,23 +115,68 @@ const ExpenseReport = () => {
           </motion.div>
         </div>
 
-        {Object.keys(categoryBreakdown).length > 0 && (
+        {categoryData.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-card rounded-xl p-6 border border-secondary shadow-sm"
+            className="bg-card rounded-xl p-6 border border-secondary shadow-sm grid grid-cols-1 lg:grid-cols-2 gap-8"
           >
-            <h2 className="text-xl font-bold mb-4">Expenses by Category</h2>
-            <div className="space-y-3">
-              {Object.entries(categoryBreakdown)
-                .sort((a, b) => b[1] - a[1])
-                .map(([category, amount]) => (
-                  <div key={category} className="flex items-center justify-between p-3 border border-secondary rounded-lg">
-                    <span className="font-medium">{category}</span>
-                    <span className="font-semibold text-primary">LKR {amount.toLocaleString()}</span>
-                  </div>
-                ))}
+            <div>
+              <h2 className="text-xl font-bold mb-4">Expenses by Category</h2>
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    dataKey="amount"
+                    nameKey="category"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={90}
+                    strokeWidth={0}
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={entry.category} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'var(--card)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '0.5rem',
+                    }}
+                    formatter={(value, name, props) => [
+                      `LKR ${Number(value).toLocaleString()}`,
+                      props.payload.category,
+                    ]}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-bold mb-4">Top 6 Categories (LKR)</h2>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={categoryData.slice(0, 6)} barCategoryGap={24}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-20" />
+                  <XAxis dataKey="category" tick={{ fontSize: 12 }} />
+                  <YAxis
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'var(--card)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '0.5rem',
+                    }}
+                    formatter={(value) => [`LKR ${Number(value).toLocaleString()}`, 'Total']}
+                  />
+                  <Bar dataKey="amount" name="Total" fill="var(--primary)" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </motion.div>
         )}

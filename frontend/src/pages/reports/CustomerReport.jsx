@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Download, Users, ShoppingBag, DollarSign } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -22,10 +23,17 @@ const CustomerReport = () => {
   }, []);
 
   const totalPurchases = customers.reduce((sum, c) => sum + (c.purchaseHistory?.length || 0), 0);
-  const topCustomers = [...customers]
-    .map(c => ({ name: c.name, purchases: c.purchaseHistory?.length || 0 }))
-    .sort((a, b) => b.purchases - a.purchases)
-    .slice(0, 5);
+  const topCustomers = useMemo(
+    () =>
+      [...customers]
+        .map((c) => ({
+          name: c.name,
+          purchases: c.purchaseHistory?.length || 0,
+        }))
+        .sort((a, b) => b.purchases - a.purchases)
+        .slice(0, 8),
+    [customers]
+  );
 
   const handleExport = () => {
     toast({
@@ -106,21 +114,42 @@ const CustomerReport = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-card rounded-xl p-6 border border-secondary shadow-sm"
+            className="bg-card rounded-xl p-6 border border-secondary shadow-sm grid grid-cols-1 lg:grid-cols-2 gap-8"
           >
-            <h2 className="text-xl font-bold mb-4">Top Customers</h2>
-            <div className="space-y-3">
-              {topCustomers.map((customer, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border border-secondary rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                      <span className="font-bold text-primary">{index + 1}</span>
+            <div>
+              <h2 className="text-xl font-bold mb-4">Top Customers</h2>
+              <div className="space-y-3">
+                {topCustomers.slice(0, 5).map((customer, index) => (
+                  <div key={customer.name || index} className="flex items-center justify-between p-3 border border-secondary rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        <span className="font-bold text-primary">{index + 1}</span>
+                      </div>
+                      <span className="font-medium">{customer.name}</span>
                     </div>
-                    <span className="font-medium">{customer.name}</span>
+                    <span className="font-semibold">{customer.purchases} purchases</span>
                   </div>
-                  <span className="font-semibold">{customer.purchases} purchases</span>
-                </div>
-              ))}
+                ))}
+              </div>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold mb-4">Purchases per Customer</h2>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={topCustomers} barCategoryGap={24}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-20" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'var(--card)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '0.5rem',
+                    }}
+                    formatter={(value) => [`${value} purchases`, 'Purchases']}
+                  />
+                  <Bar dataKey="purchases" name="Purchases" radius={[6, 6, 0, 0]} fill="var(--primary)" />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </motion.div>
         )}

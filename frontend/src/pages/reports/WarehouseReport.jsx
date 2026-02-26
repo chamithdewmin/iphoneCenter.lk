@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Download, Warehouse, Package, DollarSign } from 'lucide-react';
+import { Download, Warehouse, Package } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { getStorageData } from '@/utils/storage';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -14,6 +15,17 @@ const WarehouseReport = () => {
     const loadedWarehouses = getStorageData('warehouses', []);
     setWarehouses(loadedWarehouses);
   }, []);
+
+  const statusData = useMemo(() => {
+    const active = warehouses.filter((w) => w.status === 'active' || !w.status).length;
+    const inactive = warehouses.length - active;
+    return [
+      { name: 'Active', value: active },
+      { name: 'Inactive', value: inactive },
+    ];
+  }, [warehouses]);
+
+  const COLORS = ['#22c55e', '#ef4444'];
 
   const handleExport = () => {
     toast({
@@ -74,6 +86,62 @@ const WarehouseReport = () => {
             </div>
           </motion.div>
         </div>
+
+        {warehouses.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="bg-card rounded-xl p-6 border border-secondary shadow-sm"
+          >
+            <h2 className="text-xl font-bold mb-4">Warehouse Status</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+              <div>
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie
+                      data={statusData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={90}
+                      strokeWidth={0}
+                    >
+                      {statusData.map((entry, index) => (
+                        <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'var(--card)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '0.5rem',
+                      }}
+                      formatter={(value, name, props) => [
+                        `${value} warehouses`,
+                        props.payload.name,
+                      ]}
+                    />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="space-y-3">
+                {statusData.map((row) => (
+                  <div
+                    key={row.name}
+                    className="flex items-center justify-between p-3 border border-secondary rounded-lg"
+                  >
+                    <span className="font-medium">{row.name}</span>
+                    <span className="font-semibold">{row.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {warehouses.length > 0 && (
           <motion.div

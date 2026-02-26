@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Download, Package, AlertTriangle, TrendingDown } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getStorageData } from '@/utils/storage';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -30,6 +31,16 @@ const StockReport = () => {
     };
     setStockStats(stats);
   }, []);
+
+  const topByStock = useMemo(() => {
+    return products
+      .map((p) => ({
+        name: p.model || p.name || p.brand || 'Unknown',
+        stock: p.stock || 0,
+      }))
+      .sort((a, b) => b.stock - a.stock)
+      .slice(0, 12);
+  }, [products]);
 
   const handleExport = () => {
     toast({
@@ -116,6 +127,38 @@ const StockReport = () => {
             </div>
           </motion.div>
         </div>
+
+        {topByStock.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-card rounded-xl p-6 border border-secondary shadow-sm"
+          >
+            <h2 className="text-xl font-bold mb-4">Top Products by Stock</h2>
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={topByStock} layout="vertical" margin={{ left: 80 }}>
+                <CartesianGrid strokeDasharray="3 3" className="opacity-20" horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 12 }} />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  tick={{ fontSize: 11 }}
+                  width={140}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'var(--card)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '0.5rem',
+                  }}
+                  formatter={(value) => [`${value} units`, 'Stock']}
+                />
+                <Bar dataKey="stock" name="Stock" fill="var(--primary)" radius={[0, 6, 6, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </motion.div>
+        )}
       </div>
     </>
   );

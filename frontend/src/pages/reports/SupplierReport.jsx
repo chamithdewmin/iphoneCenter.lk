@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Download, Building2, Phone, Mail } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { getStorageData } from '@/utils/storage';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -14,6 +15,17 @@ const SupplierReport = () => {
     const loadedSuppliers = getStorageData('suppliers', []);
     setSuppliers(loadedSuppliers);
   }, []);
+
+  const emailStats = useMemo(() => {
+    const withEmail = suppliers.filter((s) => s.email).length;
+    const withoutEmail = suppliers.length - withEmail;
+    return [
+      { name: 'With Email', value: withEmail },
+      { name: 'Without Email', value: withoutEmail },
+    ];
+  }, [suppliers]);
+
+  const COLORS = ['#3b82f6', '#22c55e'];
 
   const handleExport = () => {
     toast({
@@ -43,14 +55,46 @@ const SupplierReport = () => {
           </Button>
         </div>
 
-        <div className="bg-card rounded-xl p-6 border border-secondary shadow-sm">
-          <div className="flex items-center justify-between mb-6">
+        <div className="bg-card rounded-xl p-6 border border-secondary shadow-sm grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground mb-1">Total Suppliers</p>
               <p className="text-2xl font-bold">{suppliers.length}</p>
             </div>
             <Building2 className="w-12 h-12 text-primary opacity-50" />
           </div>
+          {suppliers.length > 0 && (
+            <div className="border-l border-secondary pl-6">
+              <p className="text-xs text-muted-foreground mb-1">Contactability</p>
+              <ResponsiveContainer width="100%" height={120}>
+                <PieChart>
+                  <Pie
+                    data={emailStats}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={30}
+                    outerRadius={50}
+                    strokeWidth={0}
+                  >
+                    {emailStats.map((entry, index) => (
+                      <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'var(--card)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '0.5rem',
+                    }}
+                    formatter={(value, name, props) => [`${value} suppliers`, props.payload.name]}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
 
         {suppliers.length > 0 && (
