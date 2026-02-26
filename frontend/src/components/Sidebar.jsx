@@ -98,7 +98,6 @@ const menuGroups = [
           { to: '/inventory/stock-view', label: 'Product Stock View', icon: Package },
           { to: '/inventory/low-stock-alert', label: 'Low Stock Alert', icon: AlertTriangle },
           { to: '/inventory/stock-adjustment', label: 'Stock Adjustment', icon: Settings },
-          { to: '/inventory/warehouse-stock', label: 'Warehouse-wise Stock', icon: Warehouse },
           { to: '/inventory/transfer-stock', label: 'Transfer Stock (Warehouse → Shop)', icon: ArrowLeftRight },
         ],
       },
