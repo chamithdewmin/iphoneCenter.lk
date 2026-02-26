@@ -12,7 +12,6 @@ import Inventory from './pages/Inventory';
 import CustomersPage from './pages/Customers';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
-import CashFlow from './pages/CashFlow';
 import Layout from './components/Layout';
 
 // Products
@@ -119,7 +118,6 @@ function App() {
         <Route path="inventory" element={<Inventory />} />
         <Route path="orders" element={<Orders />} />
         <Route path="customers" element={<CustomersPage />} />
-        <Route path="cash-flow" element={<CashFlow />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
 
