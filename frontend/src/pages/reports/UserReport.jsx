@@ -44,7 +44,7 @@ const UserReport = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [showAllLogs, setShowAllLogs] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
-  const { selectedBranchId } = useBranchFilter();
+  const { selectedBranchId, setSelectedBranchId } = useBranchFilter();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -186,7 +186,7 @@ const UserReport = () => {
             <p className="text-muted-foreground mt-1">View user analytics and login/logout tracking</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <BranchFilter id="user-branch" />
+            <BranchFilter id="user-branch" value={selectedBranchId} onChange={setSelectedBranchId} />
             <Button variant="outline" size="sm" onClick={handleRefresh}>
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh

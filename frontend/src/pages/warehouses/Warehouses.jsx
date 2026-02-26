@@ -32,7 +32,7 @@ import {
 
 const Warehouses = () => {
   const { toast } = useToast();
-  const { isAdmin, selectedBranchId } = useBranchFilter();
+  const { isAdmin, selectedBranchId, setSelectedBranchId } = useBranchFilter();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -400,7 +400,7 @@ const Warehouses = () => {
 
         {/* Branch Filter */}
         <div className="px-4">
-          <BranchFilter id="warehouse-branch" />
+          <BranchFilter id="warehouse-branch" value={selectedBranchId} onChange={setSelectedBranchId} />
         </div>
 
         {/* Warehouse Table */}

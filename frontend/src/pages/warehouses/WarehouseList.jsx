@@ -13,7 +13,7 @@ import Loading from '@/components/Loading';
 
 const WarehouseList = () => {
   const { toast } = useToast();
-  const { isAdmin, selectedBranchId } = useBranchFilter();
+  const { isAdmin, selectedBranchId, setSelectedBranchId } = useBranchFilter();
   const [warehouses, setWarehouses] = useState([]);
   const [filteredWarehouses, setFilteredWarehouses] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,7 +77,7 @@ const WarehouseList = () => {
             <p className="text-muted-foreground mt-1">View and manage all warehouses</p>
           </div>
           <div className="flex items-center gap-3">
-            <BranchFilter id="warehouse-list-branch" />
+            <BranchFilter id="warehouse-list-branch" value={selectedBranchId} onChange={setSelectedBranchId} />
             <Link to="/warehouses/add">
             <Button className="w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />

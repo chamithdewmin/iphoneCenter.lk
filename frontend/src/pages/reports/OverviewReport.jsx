@@ -91,7 +91,7 @@ const OverviewReport = () => {
   const [productsCount, setProductsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
-  const { selectedBranchId } = useBranchFilter();
+  const { selectedBranchId, setSelectedBranchId } = useBranchFilter();
 
   useEffect(() => {
     let cancelled = false;
@@ -396,7 +396,7 @@ const OverviewReport = () => {
       subtitle="Complete business performance at a glance"
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-        <BranchFilter id="overview-branch" />
+        <BranchFilter id="overview-branch" value={selectedBranchId} onChange={setSelectedBranchId} />
         <div className="flex flex-wrap gap-2 justify-end">
           <Button
             variant="outline"

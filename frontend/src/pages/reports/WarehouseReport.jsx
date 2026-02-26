@@ -56,7 +56,7 @@ const COLORS = [
 const WarehouseReport = () => {
   const [warehouses, setWarehouses] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0);
-  const { selectedBranchId } = useBranchFilter();
+  const { selectedBranchId, setSelectedBranchId } = useBranchFilter();
 
   useEffect(() => {
     const loaded = getStorageData('warehouses', []);
@@ -169,7 +169,7 @@ const WarehouseReport = () => {
       subtitle="Overview of warehouse operations and utilization"
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-        <BranchFilter id="warehouse-branch" />
+        <BranchFilter id="warehouse-branch" value={selectedBranchId} onChange={setSelectedBranchId} />
         <div className="flex flex-wrap gap-2 justify-end">
           <Button variant="outline" size="sm" onClick={handleRefresh}>
             <RefreshCw className="w-4 h-4 mr-2" />

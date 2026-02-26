@@ -9,7 +9,7 @@ import { useBranchFilter } from '@/hooks/useBranchFilter';
 import { BranchFilter } from '@/components/BranchFilter';
 
 const Dashboard = () => {
-  const { selectedBranchId } = useBranchFilter();
+  const { selectedBranchId, setSelectedBranchId } = useBranchFilter();
   const [stats, setStats] = useState({
     totalCustomers: 0,
     totalRevenue: 0,
@@ -90,7 +90,7 @@ const Dashboard = () => {
             </h1>
             <p className="text-muted-foreground mt-1">Welcome back! Here's your business overview.</p>
           </div>
-          <BranchFilter id="dashboard-branch" />
+          <BranchFilter id="dashboard-branch" value={selectedBranchId} onChange={setSelectedBranchId} />
         </div>
 
         {/* KPI Cards */}

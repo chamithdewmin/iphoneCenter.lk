@@ -56,7 +56,7 @@ const COLORS = [
 const PurchaseReport = () => {
   const [purchases, setPurchases] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0);
-  const { selectedBranchId } = useBranchFilter();
+  const { selectedBranchId, setSelectedBranchId } = useBranchFilter();
 
   useEffect(() => {
     const loaded = getStorageData('purchases', []);
@@ -185,7 +185,7 @@ const PurchaseReport = () => {
       subtitle="Track and analyze all purchasing activities"
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-        <BranchFilter id="purchase-branch" />
+        <BranchFilter id="purchase-branch" value={selectedBranchId} onChange={setSelectedBranchId} />
         <div className="flex flex-wrap gap-2 justify-end">
           <Button variant="outline" size="sm" onClick={handleRefresh}>
             <RefreshCw className="w-4 h-4 mr-2" />

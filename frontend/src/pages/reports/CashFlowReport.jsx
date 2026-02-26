@@ -76,7 +76,7 @@ const CashFlowReport = () => {
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
-  const { selectedBranchId } = useBranchFilter();
+  const { selectedBranchId, setSelectedBranchId } = useBranchFilter();
 
   useEffect(() => {
     let cancelled = false;
@@ -302,7 +302,7 @@ const CashFlowReport = () => {
       subtitle="Track cash inflows, outflows, and liquidity position"
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-        <BranchFilter id="cashflow-branch" />
+        <BranchFilter id="cashflow-branch" value={selectedBranchId} onChange={setSelectedBranchId} />
         <div className="flex flex-wrap gap-2 justify-end">
           <Button
             variant="outline"

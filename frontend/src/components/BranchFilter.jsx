@@ -9,12 +9,19 @@ import { MapPin } from 'lucide-react';
  * - Admin: shows dropdown "All branches" / "Branch A" / "Branch B" so they can filter data by branch.
  * - Manager/Staff: shows "Your branch: {name}" (no dropdown; backend already scopes data to their branch).
  *
- * Use on Dashboard, Warehouse List, Sales, Reports, etc.
- * When branch changes (admin only), parent should refetch data (e.g. pass selectedBranchId to API).
+ * When used in reports, pass value and onChange from the parent's useBranchFilter() so the dropdown
+ * and the report share the same state (data updates when branch changes).
  */
-export function BranchFilter({ className = '', id = 'branch-filter' }) {
+export function BranchFilter({ className = '', id = 'branch-filter', value, onChange }) {
   const { user } = useAuth();
-  const { isAdmin, branches, selectedBranchId, setSelectedBranchId } = useBranchFilter();
+  const { isAdmin, branches, selectedBranchId: internalId, setSelectedBranchId: internalSet } = useBranchFilter();
+
+  const selectedValue = value !== undefined ? value : internalId;
+  const handleChange = (e) => {
+    const next = e.target.value;
+    if (onChange) onChange(next);
+    else internalSet(next);
+  };
 
   if (isAdmin && branches.length > 0) {
     return (
@@ -24,8 +31,8 @@ export function BranchFilter({ className = '', id = 'branch-filter' }) {
         </Label>
         <select
           id={id}
-          value={selectedBranchId}
-          onChange={(e) => setSelectedBranchId(e.target.value)}
+          value={selectedValue}
+          onChange={handleChange}
           className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-w-[180px]"
         >
           <option value="">All branches</option>

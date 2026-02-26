@@ -57,7 +57,7 @@ const PaymentReport = () => {
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
-  const { selectedBranchId } = useBranchFilter();
+  const { selectedBranchId, setSelectedBranchId } = useBranchFilter();
 
   useEffect(() => {
     (async () => {
@@ -226,7 +226,7 @@ const PaymentReport = () => {
       subtitle="Monitor payment flows and transaction history"
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-        <BranchFilter id="payment-branch" />
+        <BranchFilter id="payment-branch" value={selectedBranchId} onChange={setSelectedBranchId} />
         <div className="flex flex-wrap gap-2 justify-end">
           <Button variant="outline" size="sm" onClick={handleRefresh}>
             <RefreshCw className="w-4 h-4 mr-2" />
