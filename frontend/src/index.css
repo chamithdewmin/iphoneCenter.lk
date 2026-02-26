@@ -263,7 +263,7 @@
   }
 
   .nav-button:hover {
-    @apply border-primary/60;
+    @apply border-primary;
     box-shadow: 0 0 20px rgba(255, 128, 64, 0.16);
     transform: translateY(-2px);
   }
