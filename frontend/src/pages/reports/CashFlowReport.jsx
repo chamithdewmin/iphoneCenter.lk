@@ -1,881 +1,284 @@
-import { useState, useMemo } from "react";
+import React from "react";
+import ReportLayout from "@/components/ReportLayout";
+import StatCard from "@/components/StatCard";
+import { Banknote, ArrowUpRight, ArrowDownRight, Wallet } from "lucide-react";
 import {
-  AreaChart,
-  Area,
   BarChart,
   Bar,
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  AreaChart,
+  Area,
   Legend,
+  ComposedChart,
+  Line,
 } from "recharts";
-import { useFinance } from "@/contexts/FinanceContext";
-import { getPrintHtml } from "@/utils/pdfPrint";
-import ReportPreviewModal from "@/components/ReportPreviewModal";
 
-const C = {
-  bg: "#0c0e14",
-  bg2: "#0f1117",
-  card: "#13161e",
-  border: "#1e2433",
-  border2: "#2a3347",
-  text: "#fff",
-  text2: "#d1d9e6",
-  muted: "#8b9ab0",
-  faint: "#4a5568",
-  green: "#22c55e",
-  red: "#ef4444",
-  blue: "#3b82f6",
-  cyan: "#22d3ee",
-  yellow: "#eab308",
-};
+const monthlyCashFlow = [
+  { month: "Jul", inflow: 258000, outflow: 195000, net: 63000 },
+  { month: "Aug", inflow: 295000, outflow: 208000, net: 87000 },
+  { month: "Sep", inflow: 270000, outflow: 202000, net: 68000 },
+  { month: "Oct", inflow: 325000, outflow: 228000, net: 97000 },
+  { month: "Nov", inflow: 360000, outflow: 242000, net: 118000 },
+  { month: "Dec", inflow: 412000, outflow: 268000, net: 144000 },
+  { month: "Jan", inflow: 380000, outflow: 255000, net: 125000 },
+  { month: "Feb", inflow: 355000, outflow: 240000, net: 115000 },
+];
 
-const Svg = ({ d, s = 18, c = "#fff", sw = 2 }) => (
-  <svg
-    width={s}
-    height={s}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke={c}
-    strokeWidth={sw}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    style={{ display: "block", flexShrink: 0 }}
+const cashBalance = [
+  { month: "Jul", balance: 420000 },
+  { month: "Aug", balance: 507000 },
+  { month: "Sep", balance: 575000 },
+  { month: "Oct", balance: 672000 },
+  { month: "Nov", balance: 790000 },
+  { month: "Dec", balance: 934000 },
+  { month: "Jan", balance: 1059000 },
+  { month: "Feb", balance: 1174000 },
+];
+
+const cashCategories = [
+  { category: "Sales Receipts", inflow: 285000, outflow: 0 },
+  { category: "Supplier Payments", inflow: 0, outflow: 142000 },
+  { category: "Payroll", inflow: 0, outflow: 48000 },
+  { category: "Operating Costs", inflow: 0, outflow: 28000 },
+  { category: "Loan Repayment", inflow: 0, outflow: 12000 },
+  { category: "Other Income", inflow: 70000, outflow: 0 },
+  { category: "Tax Payments", inflow: 0, outflow: 10000 },
+];
+
+const cashFlowDetails = [
+  { item: "Operating Cash Flow", value: "$115,000", status: "positive" },
+  { item: "Investing Cash Flow", value: "-$22,000", status: "negative" },
+  { item: "Financing Cash Flow", value: "-$8,000", status: "negative" },
+  { item: "Net Cash Flow", value: "$85,000", status: "positive" },
+  { item: "Opening Balance", value: "$1,089,000", status: "neutral" },
+  { item: "Closing Balance", value: "$1,174,000", status: "positive" },
+];
+
+const CashFlowReport = () => (
+  <ReportLayout
+    title="Cash Flow Report"
+    subtitle="Track cash inflows, outflows, and liquidity position"
   >
-    <path d={d} />
-  </svg>
-);
-const I = {
-  ArrowUp: () => <Svg d="M12 19V5M5 12l7-7 7 7" />,
-  ArrowDown: () => <Svg d="M12 5v14M19 12l-7 7-7-7" />,
-  Activity: () => <Svg d="M22 12h-4l-3 9L9 3l-3 9H2" />,
-  Wallet: () => (
-    <Svg d="M21 12V7H5a2 2 0 010-4h14v4M21 12a2 2 0 010 4H5a2 2 0 000 4h16v-4" />
-  ),
-  BarChart: () => <Svg d="M18 20V10M12 20V4M6 20v-6" />,
-  Download: () => (
-    <Svg d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-  ),
-  Refresh: () => (
-    <Svg d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16M3 12h6m12 0h-6" />
-  ),
-};
-
-const sMap = {
-  Received: { bg: "rgba(34,197,94,0.15)", c: "#22c55e" },
-  Paid: { bg: "rgba(59,130,246,0.15)", c: "#3b82f6" },
-  Overdue: { bg: "rgba(239,68,68,0.15)", c: "#ef4444" },
-  Pending: { bg: "rgba(234,179,8,0.15)", c: "#eab308" },
-};
-
-const Tip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div
-      style={{
-        background: "#1a1d27",
-        border: `1px solid ${C.border2}`,
-        borderRadius: 12,
-        padding: "12px 16px",
-      }}
-    >
-      <p
-        style={{
-          color: C.muted,
-          fontSize: 11,
-          margin: "0 0 8px",
-          fontWeight: 600,
-        }}
-      >
-        {label}
-      </p>
-      {payload.map((p, i) => (
-        <div
-          key={i}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            marginBottom: 3,
-          }}
-        >
-          <div
-            style={{
-              width: 7,
-              height: 7,
-              borderRadius: "50%",
-              background: p.color,
-            }}
-          />
-          <span style={{ color: C.text2, fontSize: 12 }}>{p.name}:</span>
-          <span
-            style={{
-              color: C.text,
-              fontWeight: 700,
-              fontSize: 12,
-            }}
-          >
-            LKR {Number(p.value).toLocaleString()}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const Stat = ({ label, value, color, Icon, sub }) => (
-  <div
-    style={{
-      background: C.card,
-      borderRadius: 14,
-      border: `1px solid ${C.border}`,
-      padding: "20px 22px",
-      position: "relative",
-      overflow: "hidden",
-    }}
-  >
-    <div
-      style={{
-        position: "absolute",
-        right: 14,
-        top: 14,
-        width: 36,
-        height: 36,
-        borderRadius: 10,
-        background: `${color || C.blue}18`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        opacity: 0.8,
-      }}
-    >
-      <Icon />
-    </div>
-    <p
-      style={{
-        color: C.muted,
-        fontSize: 10,
-        fontWeight: 700,
-        letterSpacing: "0.1em",
-        textTransform: "uppercase",
-        margin: 0,
-      }}
-    >
-      {label}
-    </p>
-    <p
-      style={{
-        color: color || C.text,
-        fontSize: 22,
-        fontWeight: 900,
-        margin: "8px 0 0",
-        letterSpacing: "-0.02em",
-        fontFamily: "monospace",
-      }}
-    >
-      {value}
-    </p>
-    {sub && (
-      <p
-        style={{
-          color: C.muted,
-          fontSize: 12,
-          margin: "5px 0 0",
-          fontWeight: 600,
-        }}
-      >
-        {sub}
-      </p>
-    )}
-    <div
-      style={{
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 3,
-        background: `linear-gradient(90deg,${color || C.blue}55,transparent)`,
-      }}
-    />
-  </div>
-);
-
-const Card = ({ title, subtitle, children, right }) => (
-  <div
-    style={{
-      background: C.card,
-      borderRadius: 16,
-      border: `1px solid ${C.border}`,
-      padding: "22px 24px",
-    }}
-  >
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        marginBottom: 18,
-      }}
-    >
-      <div>
-        <h3
-          style={{ color: C.text, fontSize: 15, fontWeight: 800, margin: 0 }}
-        >
-          {title}
-        </h3>
-        {subtitle && (
-          <p style={{ color: C.muted, fontSize: 12, margin: "4px 0 0" }}>
-            {subtitle}
-          </p>
-        )}
-      </div>
-      {right}
-    </div>
-    {children}
-  </div>
-);
-
-export default function CashFlowReport() {
-  const { incomes, expenses, invoices, totals, loadData, settings } =
-    useFinance();
-  const [search, setSearch] = useState("");
-  const [fType, setFType] = useState("all");
-  const [fStatus, setFStatus] = useState("all");
-  const [reportPreview, setReportPreview] = useState({
-    open: false,
-    html: "",
-    filename: "",
-  });
-
-  // Calculate cash flow data (last 14 days)
-  const cfData = useMemo(() => {
-    const now = new Date();
-    const data = [];
-    let runningBalance = totals.cashInHand || 0;
-    for (let i = 13; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(now.getDate() - i);
-      date.setHours(0, 0, 0, 0);
-      const dateEnd = new Date(date);
-      dateEnd.setHours(23, 59, 59, 999);
-      let inflow = 0;
-      let outflow = 0;
-      incomes.forEach((income) => {
-        const incomeDate = new Date(income.date);
-        if (incomeDate >= date && incomeDate <= dateEnd)
-          inflow += income.amount || 0;
-      });
-      expenses.forEach((expense) => {
-        const expenseDate = new Date(expense.date);
-        if (expenseDate >= date && expenseDate <= dateEnd)
-          outflow += expense.amount || 0;
-      });
-      runningBalance = runningBalance - outflow + inflow;
-      data.push({
-        date: date.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        }),
-        inflow,
-        outflow,
-        balance: runningBalance,
-      });
-    }
-    return data;
-  }, [incomes, expenses, totals.cashInHand]);
-
-  // Build transactions list from database
-  const tx = useMemo(() => {
-    const allTx = [];
-    incomes.forEach((income) => {
-      const date = new Date(income.date);
-      allTx.push({
-        id: income.id,
-        date: date.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        }),
-        source: income.clientName || "Unknown",
-        category: income.serviceType || "Income",
-        amount: income.amount || 0,
-        type: "in",
-        status: "Received",
-        sortDate: date,
-      });
-    });
-    expenses.forEach((expense) => {
-      const date = new Date(expense.date);
-      allTx.push({
-        id: expense.id,
-        date: date.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        }),
-        source: expense.category || "Expense",
-        category: expense.category || "Expense",
-        amount: -(expense.amount || 0),
-        type: "out",
-        status: "Paid",
-        sortDate: date,
-      });
-    });
-    invoices
-      .filter((inv) => inv.status !== "paid")
-      .forEach((invoice) => {
-        const date = new Date(invoice.dueDate || invoice.createdAt);
-        allTx.push({
-          id: invoice.id || invoice.invoiceNumber,
-          date: date.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          }),
-          source: invoice.clientName || "Unknown",
-          category: "Invoice",
-          amount: -(invoice.total || 0),
-          type: "out",
-          status: "Overdue",
-          sortDate: date,
-        });
-      });
-    return allTx.sort((a, b) => b.sortDate - a.sortDate);
-  }, [incomes, expenses, invoices]);
-
-  const totalIn = useMemo(
-    () => tx.filter((t) => t.type === "in").reduce((s, t) => s + t.amount, 0),
-    [tx],
-  );
-  const totalOut = useMemo(
-    () =>
-      Math.abs(
-        tx.filter((t) => t.type === "out").reduce((s, t) => s + t.amount, 0),
-      ),
-    [tx],
-  );
-  const net = useMemo(() => totalIn - totalOut, [totalIn, totalOut]);
-
-  const filtered = useMemo(() => {
-    let l = [...tx];
-    if (search)
-      l = l.filter((t) =>
-        [t.source, t.category]
-          .join(" ")
-          .toLowerCase()
-          .includes(search.toLowerCase()),
-      );
-    if (fType !== "all") l = l.filter((t) => t.type === fType);
-    if (fStatus !== "all") l = l.filter((t) => t.status === fStatus);
-    return l;
-  }, [tx, search, fType, fStatus]);
-
-  const handleDel = (id) => {
-    // Placeholder – would call delete API then reload
-    setTimeout(() => {
-      loadData();
-    }, 350);
-  };
-
-  const selSty = {
-    background: C.card,
-    border: `1px solid ${C.border2}`,
-    borderRadius: 9,
-    padding: "8px 12px",
-    color: C.text2,
-    fontSize: 13,
-    outline: "none",
-    cursor: "pointer",
-  };
-
-  const openReportPreview = () => {
-    const cur = settings?.currency || "LKR";
-    let body =
-      '<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #111; padding-bottom:8px;">Cash Flow Report</h2>';
-    body += `<p style="color:#666; font-size:12px; margin:0 0 20px;">${new Date().toLocaleDateString(
-      "en-US",
-      { dateStyle: "long" },
-    )}</p>`;
-    body +=
-      '<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #ddd;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #ddd;">Value</th></tr>';
-    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Money In</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalIn.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Money Out</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalOut.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Net Cash Flow</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${net.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Current Balance</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${(totals.cashInHand || 0).toLocaleString()}</td></tr></table>`;
-    body +=
-      '<h3 style="margin:0 0 12px; font-size:14px;">Recent Transactions</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Date</th><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Source</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Amount</th><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Status</th></tr>';
-    filtered.slice(0, 20).forEach((t) => {
-      body += `<tr><td style="padding:8px 12px; border:1px solid #ddd;">${t.date}</td><td style="padding:8px 12px; border:1px solid #ddd;">${t.source}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${Math.abs(
-        t.amount,
-      ).toLocaleString()}</td><td style="padding:8px 12px; border:1px solid #ddd;">${t.status}</td></tr>`;
-    });
-    body += "</table>";
-    const fullHtml = getPrintHtml(body, {
-      logo: settings?.logo,
-      businessName: settings?.businessName,
-    });
-    const filename = `cash-flow-report-${new Date()
-      .toISOString()
-      .slice(0, 10)}.pdf`;
-    setReportPreview({ open: true, html: fullHtml, filename });
-  };
-
-  return (
-    <div
-      className="-mx-3 sm:-mx-4 lg:-mx-5"
-      style={{
-        minHeight: "100vh",
-        fontFamily:
-          "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-        color: C.text,
-      }}
-    >
-      <style>
-        {`*{box-sizing:border-box;}body{margin:0;}::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:${C.border2};border-radius:99px;}@keyframes fi{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}@keyframes so{from{opacity:1;transform:translateX(0);}to{opacity:0;transform:translateX(40px);}}.row:hover{background:#1a1d27!important;}`}
-      </style>
-
-      <div
-        style={{
-          padding: "24px 18px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 18,
-          animation: "fi .3s ease",
-        }}
-      >
-        {/* TOOLBAR */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <div>
-            <p
-              style={{
-                color: C.muted,
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                margin: "0 0 4px",
-              }}
-            >
-              Cash Flow · Last 14 days
-            </p>
-            <h2
-              style={{
-                color: C.text,
-                fontSize: 22,
-                fontWeight: 900,
-                margin: 0,
-              }}
-            >
-              Cash Flow Overview
-            </h2>
-          </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <button
-              onClick={() => window.location.reload()}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#1c1e24",
-                border: "1px solid #303338",
-                borderRadius: 8,
-                padding: "9px 16px",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
-              }}
-            >
-              <I.Refresh />
-              <span>Refresh</span>
-            </button>
-            <button
-              onClick={() => {}}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#1c1e24",
-                border: "1px solid #303338",
-                borderRadius: 8,
-                padding: "9px 16px",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
-              }}
-            >
-              <I.Download />
-              <span>Export CSV</span>
-            </button>
-            <button
-              onClick={openReportPreview}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#1c1e24",
-                border: "1px solid #303338",
-                borderRadius: 8,
-                padding: "9px 16px",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
-              }}
-            >
-              <I.Download />
-              <span>Download PDF</span>
-            </button>
-          </div>
-        </div>
-
-        {/* STATS */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4,1fr)",
-            gap: 14,
-          }}
-        >
-          <Stat
-            label="Total Money In"
-            value={`LKR ${totalIn.toLocaleString()}`}
-            color={C.green}
-            Icon={I.ArrowUp}
-            sub={`${tx.filter((t) => t.type === "in").length} transactions`}
-          />
-          <Stat
-            label="Total Money Out"
-            value={`LKR ${totalOut.toLocaleString()}`}
-            color={C.red}
-            Icon={I.ArrowDown}
-            sub={`${tx.filter((t) => t.type === "out").length} transactions`}
-          />
-          <Stat
-            label="Net Cash Flow"
-            value={`LKR ${net.toLocaleString()}`}
-            color={net >= 0 ? C.green : C.red}
-            Icon={I.BarChart}
-          />
-          <Stat
-            label="Current Balance"
-            value={`LKR ${(totals.cashInHand || 0).toLocaleString()}`}
-            color={C.blue}
-            Icon={I.Wallet}
-            sub={`As of ${new Date().toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            })}`}
-          />
-        </div>
-
-        {/* AREA + LINE */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "3fr 2fr",
-            gap: 16,
-          }}
-        >
-          <Card title="Inflow vs Outflow" subtitle="Daily cash movement — LKR">
-            <ResponsiveContainer width="100%" height={230}>
-              <AreaChart data={cfData}>
-                <defs>
-                  <linearGradient id="gI" x1="0" y1="0" x2="0" y2="1">
-                    <stop
-                      offset="5%"
-                      stopColor={C.green}
-                      stopOpacity={0.3}
-                    />
-                    <stop
-                      offset="95%"
-                      stopColor={C.green}
-                      stopOpacity={0}
-                    />
-                  </linearGradient>
-                  <linearGradient id="gO" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={C.red} stopOpacity={0.3} />
-                    <stop offset="95%" stopColor={C.red} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke={C.border}
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="date"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: C.muted, fontSize: 12 }}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: C.muted, fontSize: 11 }}
-                  tickFormatter={(v) => `${v / 1000}K`}
-                />
-                <Tooltip content={<Tip />} />
-                <Legend wrapperStyle={{ color: C.muted, fontSize: 12 }} />
-                <Area
-                  type="monotone"
-                  dataKey="inflow"
-                  name="Inflow"
-                  stroke={C.green}
-                  strokeWidth={2}
-                  fill="url(#gI)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="outflow"
-                  name="Outflow"
-                  stroke={C.red}
-                  strokeWidth={2}
-                  fill="url(#gO)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </Card>
-          <Card title="Running Balance" subtitle="Cumulative cash position">
-            <ResponsiveContainer width="100%" height={230}>
-              <LineChart data={cfData}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke={C.border}
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="date"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: C.muted, fontSize: 11 }}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: C.muted, fontSize: 11 }}
-                  tickFormatter={(v) => `${v / 1000}K`}
-                />
-                <Tooltip content={<Tip />} />
-                <Line
-                  type="monotone"
-                  dataKey="balance"
-                  name="Balance"
-                  stroke={C.cyan}
-                  strokeWidth={2.5}
-                  dot={{ fill: C.cyan, r: 4, strokeWidth: 0 }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </Card>
-        </div>
-
-        {/* FILTERS + TABLE */}
-        <Card
-          title="Cash Movements"
-          subtitle="Combined inflows, outflows and unpaid invoices"
-          right={
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <input
-                placeholder="Search source or category..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                style={{
-                  background: C.card,
-                  border: `1px solid ${C.border2}`,
-                  borderRadius: 9,
-                  padding: "8px 10px",
-                  fontSize: 13,
-                  color: C.text2,
-                  outline: "none",
-                  width: 180,
-                }}
-              />
-              <select
-                value={fType}
-                onChange={(e) => setFType(e.target.value)}
-                style={selSty}
-              >
-                <option value="all">All types</option>
-                <option value="in">Inflow</option>
-                <option value="out">Outflow</option>
-              </select>
-              <select
-                value={fStatus}
-                onChange={(e) => setFStatus(e.target.value)}
-                style={selSty}
-              >
-                <option value="all">All statuses</option>
-                <option value="Received">Received</option>
-                <option value="Paid">Paid</option>
-                <option value="Pending">Pending</option>
-                <option value="Overdue">Overdue</option>
-              </select>
-            </div>
-          }
-        >
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${C.border2}` }}>
-                {["Date", "Source", "Category", "Type", "Status", "Amount", ""].map(
-                  (h) => (
-                    <th
-                      key={h}
-                      style={{
-                        color: C.muted,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        letterSpacing: "0.07em",
-                        textTransform: "uppercase",
-                        padding: "10px 14px",
-                        textAlign: h === "Amount" ? "right" : "left",
-                      }}
-                    >
-                      {h}
-                    </th>
-                  ),
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((t) => {
-                const sc = sMap[t.status] || sMap.Paid;
-                return (
-                  <tr
-                    key={t.id}
-                    className="row"
-                    style={{
-                      borderBottom: `1px solid ${C.border}`,
-                      background: "transparent",
-                      transition: "background .15s",
-                    }}
-                  >
-                    <td
-                      style={{
-                        color: C.text2,
-                        fontSize: 13,
-                        padding: "11px 14px",
-                      }}
-                    >
-                      {t.date}
-                    </td>
-                    <td
-                      style={{
-                        color: C.text2,
-                        fontSize: 13,
-                        padding: "11px 14px",
-                      }}
-                    >
-                      {t.source}
-                    </td>
-                    <td
-                      style={{
-                        color: C.muted,
-                        fontSize: 13,
-                        padding: "11px 14px",
-                      }}
-                    >
-                      {t.category}
-                    </td>
-                    <td
-                      style={{
-                        color: t.type === "in" ? C.green : C.red,
-                        fontSize: 13,
-                        padding: "11px 14px",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {t.type === "in" ? "Inflow" : "Outflow"}
-                    </td>
-                    <td style={{ padding: "11px 14px" }}>
-                      <span
-                        style={{
-                          background: sc.bg,
-                          color: sc.c,
-                          borderRadius: 999,
-                          padding: "3px 10px",
-                          fontSize: 11,
-                          fontWeight: 700,
-                        }}
-                      >
-                        {t.status}
-                      </span>
-                    </td>
-                    <td
-                      style={{
-                        color: t.amount >= 0 ? C.green : C.red,
-                        fontSize: 13,
-                        padding: "11px 14px",
-                        fontWeight: 700,
-                        textAlign: "right",
-                      }}
-                    >
-                      {t.amount >= 0 ? "+" : "-"}LKR{" "}
-                      {Math.abs(t.amount).toLocaleString()}
-                    </td>
-                    <td
-                      style={{
-                        padding: "11px 14px",
-                        textAlign: "right",
-                      }}
-                    >
-                      <button
-                        onClick={() => handleDel(t.id)}
-                        style={{
-                          border: "none",
-                          background: "transparent",
-                          color: "rgba(248,113,113,0.85)",
-                          fontSize: 12,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Remove
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={7}
-                    style={{
-                      padding: "14px",
-                      textAlign: "center",
-                      color: C.muted,
-                      fontSize: 13,
-                    }}
-                  >
-                    No transactions match the current filters.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </Card>
-      </div>
-      <ReportPreviewModal
-        open={reportPreview.open}
-        onOpenChange={(open) =>
-          setReportPreview((p) => ({ ...p, open }))
-        }
-        html={reportPreview.html}
-        filename={reportPreview.filename}
-        reportTitle="Cash Flow Report"
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <StatCard
+        label="Cash Balance"
+        value="$1.17M"
+        change="+10.9% from last month"
+        changeType="up"
+        icon={Wallet}
+      />
+      <StatCard
+        label="Total Inflow"
+        value="$355K"
+        change="-6.6% from last month"
+        changeType="down"
+        icon={ArrowUpRight}
+      />
+      <StatCard
+        label="Total Outflow"
+        value="$240K"
+        change="-5.9% from last month"
+        changeType="up"
+        icon={ArrowDownRight}
+      />
+      <StatCard
+        label="Net Cash Flow"
+        value="$115K"
+        change="-8.0% from last month"
+        changeType="down"
+        icon={Banknote}
       />
     </div>
-  );
-}
+
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+      <div className="report-card lg:col-span-2">
+        <h3 className="text-foreground font-semibold mb-4">
+          Cash Inflow vs Outflow
+        </h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <ComposedChart data={monthlyCashFlow}>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="hsl(225,15%,15%)"
+            />
+            <XAxis
+              dataKey="month"
+              stroke="hsl(215,15%,55%)"
+              fontSize={12}
+            />
+            <YAxis
+              stroke="hsl(215,15%,55%)"
+              fontSize={12}
+            />
+            <Tooltip
+              contentStyle={{
+                background: "hsl(225,21%,7.5%)",
+                border: "1px solid hsl(225,15%,15%)",
+                borderRadius: "8px",
+                color: "hsl(210,20%,90%)",
+              }}
+            />
+            <Legend />
+            <Bar
+              dataKey="inflow"
+              fill="hsl(150,60%,45%)"
+              radius={[4, 4, 0, 0]}
+              name="Inflow"
+            />
+            <Bar
+              dataKey="outflow"
+              fill="hsl(0,70%,50%)"
+              radius={[4, 4, 0, 0]}
+              name="Outflow"
+            />
+            <Line
+              type="monotone"
+              dataKey="net"
+              stroke="hsl(187,80%,48%)"
+              strokeWidth={2}
+              name="Net Cash"
+              dot={{ fill: "hsl(187,80%,48%)" }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="report-card">
+        <h3 className="text-foreground font-semibold mb-4">
+          Cash Balance Trend
+        </h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart data={cashBalance}>
+            <defs>
+              <linearGradient id="balGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="5%"
+                  stopColor="hsl(187,80%,48%)"
+                  stopOpacity={0.4}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="hsl(187,80%,48%)"
+                  stopOpacity={0}
+                />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="hsl(225,15%,15%)"
+            />
+            <XAxis
+              dataKey="month"
+              stroke="hsl(215,15%,55%)"
+              fontSize={12}
+            />
+            <YAxis
+              stroke="hsl(215,15%,55%)"
+              fontSize={12}
+            />
+            <Tooltip
+              contentStyle={{
+                background: "hsl(225,21%,7.5%)",
+                border: "1px solid hsl(225,15%,15%)",
+                borderRadius: "8px",
+                color: "hsl(210,20%,90%)",
+              }}
+            />
+            <Area
+              type="monotone"
+              dataKey="balance"
+              stroke="hsl(187,80%,48%)"
+              fill="url(#balGrad)"
+              strokeWidth={2}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+      <div className="report-card">
+        <h3 className="text-foreground font-semibold mb-4">
+          Cash Flow by Category
+        </h3>
+        <ResponsiveContainer width="100%" height={280}>
+          <BarChart data={cashCategories} layout="vertical">
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="hsl(225,15%,15%)"
+            />
+            <XAxis
+              type="number"
+              stroke="hsl(215,15%,55%)"
+              fontSize={12}
+            />
+            <YAxis
+              type="category"
+              dataKey="category"
+              stroke="hsl(215,15%,55%)"
+              fontSize={11}
+              width={120}
+            />
+            <Tooltip
+              contentStyle={{
+                background: "hsl(225,21%,7.5%)",
+                border: "1px solid hsl(225,15%,15%)",
+                borderRadius: "8px",
+                color: "hsl(210,20%,90%)",
+              }}
+            />
+            <Legend />
+            <Bar
+              dataKey="inflow"
+              fill="hsl(150,60%,45%)"
+              radius={[0, 4, 4, 0]}
+              name="Inflow"
+            />
+            <Bar
+              dataKey="outflow"
+              fill="hsl(0,70%,50%)"
+              radius={[0, 4, 4, 0]}
+              name="Outflow"
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="report-card">
+        <h3 className="text-foreground font-semibold mb-4">
+          Cash Flow Statement Summary
+        </h3>
+        <div className="space-y-1">
+          {cashFlowDetails.map((row) => (
+            <div
+              key={row.item}
+              className="flex items-center justify-between py-3 border-b border-border/50 last:border-0"
+            >
+              <span className="text-foreground text-sm font-medium">
+                {row.item}
+              </span>
+              <span
+                className={`font-mono font-semibold text-sm ${
+                  row.status === "positive"
+                    ? "text-success"
+                    : row.status === "negative"
+                    ? "text-destructive"
+                    : "text-foreground"
+                }`}
+              >
+                {row.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </ReportLayout>
+);
+
+export default CashFlowReport;
 
