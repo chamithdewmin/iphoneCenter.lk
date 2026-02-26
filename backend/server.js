@@ -181,8 +181,9 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 const HOST = '0.0.0.0';
 
-// In production (Docker/Dokploy), wait for PostgreSQL and run init.pg.sql before listening
-// so tables exist on first request. Set RUN_INIT_AFTER_LISTEN=1 to keep old behavior (init in background).
+// In production (Docker/Dokploy), optionally wait for PostgreSQL BEFORE listening.
+// IMPORTANT: Schema/migrations are NO LONGER auto-run on startup. Run database/init.pg.sql
+// (or your migration tool) manually or from a separate CI/CD step.
 const WAIT_FOR_DB = process.env.WAIT_FOR_DB === '1' ||
     process.env.RUN_INIT_BEFORE_LISTEN === '1' ||
     (process.env.NODE_ENV === 'production' && process.env.RUN_INIT_AFTER_LISTEN !== '1');
@@ -203,16 +204,6 @@ function start() {
             } catch (e) {
                 console.log('Test login: check JWT env vars');
             }
-            if (!WAIT_FOR_DB) {
-                const { applySchema } = require('./config/initDatabase');
-                console.log('Database: installing on first run in background (creating tables if needed)...');
-                applySchema()
-                    .then(() => {})
-                    .catch((err) => {
-                        console.error('Database init failed (will retry on next request or restart):', err.message);
-                        logger.error('Database init failed', { message: err.message });
-                    });
-            }
             resolve(server);
         });
         server.on('error', (err) => {
@@ -225,10 +216,9 @@ function start() {
     });
 
     if (WAIT_FOR_DB) {
-        const { verifyConnection, applySchema } = require('./config/initDatabase');
-        console.log('Database: verifying PostgreSQL and running init.pg.sql before starting server...');
+        const { verifyConnection } = require('./config/initDatabase');
+        console.log('Database: verifying PostgreSQL before starting server (no schema migration on startup)...');
         return verifyConnection()
-            .then(() => applySchema())
             .then(() => {
                 console.log('Database ready. Starting HTTP server.');
                 return listen();
