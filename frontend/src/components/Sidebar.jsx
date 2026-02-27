@@ -79,7 +79,6 @@ const menuGroups = [
         type: 'menu',
         icon: Package,
         label: 'Products',
-        permission: 'products',
         children: [
           { to: '/products/add', label: 'Add Product', icon: Plus },
           { to: '/products/list', label: 'Product List', icon: List },
@@ -87,7 +86,7 @@ const menuGroups = [
           { to: '/products/barcode', label: 'Generate Barcode', icon: Barcode },
         ],
       },
-      { type: 'link', to: '/categories', icon: FolderTree, label: 'Categories', permission: 'products' },
+      { type: 'link', to: '/categories', icon: FolderTree, label: 'Categories' },
       {
         type: 'menu',
         icon: PackageSearch,
