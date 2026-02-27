@@ -79,6 +79,7 @@ const menuGroups = [
         type: 'menu',
         icon: Package,
         label: 'Products',
+        includeRoles: ['admin'],
         children: [
           { to: '/products/add', label: 'Add Product', icon: Plus },
           { to: '/products/list', label: 'Product List', icon: List },

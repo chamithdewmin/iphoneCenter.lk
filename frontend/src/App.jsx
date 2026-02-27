@@ -101,6 +101,19 @@ import AddPerOrder from './pages/per-order/AddPerOrder';
 import ListPerOrder from './pages/per-order/ListPerOrder';
 import Orders from './pages/per-order/Orders';
 
+// Simple admin-only route guard
+const RequireAdmin = ({ children }) => {
+  const { user } = useAuth();
+  const role = user?.role ? String(user.role).toLowerCase() : '';
+
+  if (role === 'admin') {
+    return children;
+  }
+
+  // Non-admins are redirected away from admin-only pages
+  return <Navigate to="/dashboard" replace />;
+};
+
 function App() {
   const { isAuthenticated, loading } = useAuth();
 
@@ -132,12 +145,47 @@ function App() {
         <Route path="pos-billing/select-customer" element={<SelectCustomer />} />
         <Route path="pos-billing/payment-methods" element={<PaymentMethods />} />
 
-        {/* Products */}
-        <Route path="products/add" element={<AddProduct />} />
-        <Route path="products/edit/:id" element={<AddProduct />} />
-        <Route path="products/list" element={<ProductList />} />
-        <Route path="products/brands" element={<Brands />} />
-        <Route path="products/barcode" element={<GenerateBarcode />} />
+        {/* Products - admin only */}
+        <Route
+          path="products/add"
+          element={
+            <RequireAdmin>
+              <AddProduct />
+            </RequireAdmin>
+          }
+        />
+        <Route
+          path="products/edit/:id"
+          element={
+            <RequireAdmin>
+              <AddProduct />
+            </RequireAdmin>
+          }
+        />
+        <Route
+          path="products/list"
+          element={
+            <RequireAdmin>
+              <ProductList />
+            </RequireAdmin>
+          }
+        />
+        <Route
+          path="products/brands"
+          element={
+            <RequireAdmin>
+              <Brands />
+            </RequireAdmin>
+          }
+        />
+        <Route
+          path="products/barcode"
+          element={
+            <RequireAdmin>
+              <GenerateBarcode />
+            </RequireAdmin>
+          }
+        />
 
         {/* Trading */}
         <Route path="trading/sales" element={<Sales />} />
