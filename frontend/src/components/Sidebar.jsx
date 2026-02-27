@@ -87,7 +87,7 @@ const menuGroups = [
           { to: '/products/barcode', label: 'Generate Barcode', icon: Barcode },
         ],
       },
-      { type: 'link', to: '/categories', icon: FolderTree, label: 'Categories' },
+      { type: 'link', to: '/categories', icon: FolderTree, label: 'Categories', includeRoles: ['admin'] },
       {
         type: 'menu',
         icon: PackageSearch,

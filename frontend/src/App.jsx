@@ -221,10 +221,31 @@ function App() {
         <Route path="users/list" element={<UserList />} />
         <Route path="users" element={<Users />} />
 
-        {/* Categories */}
-        <Route path="categories/add" element={<AddCategory />} />
-        <Route path="categories/list" element={<CategoryList />} />
-        <Route path="categories" element={<Categories />} />
+        {/* Categories - admin only */}
+        <Route
+          path="categories/add"
+          element={
+            <RequireAdmin>
+              <AddCategory />
+            </RequireAdmin>
+          }
+        />
+        <Route
+          path="categories/list"
+          element={
+            <RequireAdmin>
+              <CategoryList />
+            </RequireAdmin>
+          }
+        />
+        <Route
+          path="categories"
+          element={
+            <RequireAdmin>
+              <Categories />
+            </RequireAdmin>
+          }
+        />
 
         {/* Reports */}
         <Route path="reports/overview" element={<OverviewReport />} />
