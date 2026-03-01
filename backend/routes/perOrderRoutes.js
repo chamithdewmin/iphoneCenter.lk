@@ -17,6 +17,8 @@ router.get('/', authenticate, branchGuard, perOrderController.listPerOrders);
 router.get('/:id', authenticate, branchGuard, perOrderController.getPerOrder);
 router.post('/', authenticate, branchGuard, createValidation, perOrderController.createPerOrder);
 router.patch('/:id', authenticate, branchGuard, perOrderController.updatePerOrder);
+router.post('/:id/cancel', authenticate, branchGuard, perOrderController.cancelPerOrder);
+router.post('/:id/convert-to-sale', authenticate, branchGuard, perOrderController.convertToSale);
 router.delete('/:id', authenticate, branchGuard, perOrderController.deletePerOrder);
 
 module.exports = router;

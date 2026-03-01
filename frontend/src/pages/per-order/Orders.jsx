@@ -64,11 +64,18 @@ const Orders = () => {
   const [advancePayment, setAdvancePayment] = useState(0);
   const [notes, setNotes] = useState('');
   const [branchId, setBranchId] = useState('');
+  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState('');
   const [customName, setCustomName] = useState('');
   const [customPrice, setCustomPrice] = useState('');
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState([]);
   const [viewedOrderFull, setViewedOrderFull] = useState(null);
+  const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+  const [convertOrder, setConvertOrder] = useState(null);
+  const [convertImeiSelections, setConvertImeiSelections] = useState({});
+  const [convertRemainingPayment, setConvertRemainingPayment] = useState(0);
+  const [availableImeisByItem, setAvailableImeisByItem] = useState({});
+  const [convertSubmitting, setConvertSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -213,6 +220,7 @@ const Orders = () => {
       customer_address: customerDetails.address?.trim() || undefined,
       customer_id: selectedCustomer?.id ?? undefined,
       advance_payment: parseFloat(advancePayment) || 0,
+      expected_delivery_date: expectedDeliveryDate || undefined,
       notes: notes.trim() || undefined,
       items: orderItems.map((item) => ({
         productId: item.productId ?? undefined,
@@ -251,6 +259,7 @@ const Orders = () => {
     setCustomerDetails({ name: '', phone: '', email: '', address: '' });
     setOrderItems([]);
     setAdvancePayment(0);
+    setExpectedDeliveryDate('');
     setNotes('');
     setIsAddModalOpen(false);
     fetchOrders();
@@ -264,6 +273,72 @@ const Orders = () => {
       return;
     }
     toast({ title: 'Order Deleted', description: 'The order has been deleted successfully' });
+    fetchOrders();
+  };
+
+  const handleOpenConvertModal = async () => {
+    if (!viewedOrderFull) return;
+    setConvertOrder(viewedOrderFull);
+    setConvertRemainingPayment(parseFloat(viewedOrderFull.due_amount ?? viewedOrderFull.dueAmount) || 0);
+    setConvertImeiSelections({});
+    const items = viewedOrderFull.items || [];
+    const branchId = viewedOrderFull.branch_id ?? selectedBranchId;
+    const imeiByItem = {};
+    for (const item of items) {
+      if (item.product_id && (item.inventory_type || '').toLowerCase() === 'unique') {
+        const url = `/api/inventory/imei?productId=${item.product_id}&status=in_stock${branchId ? `&branchId=${branchId}` : ''}`;
+        const { ok, data } = await authFetch(url);
+        imeiByItem[item.id] = (ok && Array.isArray(data?.data)) ? data.data : [];
+      }
+    }
+    setAvailableImeisByItem(imeiByItem);
+    setIsConvertModalOpen(true);
+  };
+
+  const handleConvertSubmit = async () => {
+    if (!convertOrder) return;
+    const items = (convertOrder.items || []).map((it) => {
+      const sel = convertImeiSelections[it.id];
+      return { perOrderItemId: it.id, imei: sel || undefined };
+    });
+    setConvertSubmitting(true);
+    const { ok, data } = await authFetch(`/api/per-orders/${convertOrder.id}/convert-to-sale`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        remainingPayment: parseFloat(convertRemainingPayment) || 0,
+        paymentMethod: 'cash',
+        items,
+      }),
+    });
+    setConvertSubmitting(false);
+    if (!ok) {
+      toast({ title: 'Convert failed', description: data?.message || 'Could not convert to sale', variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Converted to Sale', description: `Sale #${data?.data?.sale?.invoice_number || data?.data?.sale_id} created.` });
+    setIsConvertModalOpen(false);
+    setConvertOrder(null);
+    setIsViewModalOpen(false);
+    setViewedOrderFull(null);
+    fetchOrders();
+  };
+
+  const handleCancelOrder = async () => {
+    if (!viewedOrderFull) return;
+    const refund = window.confirm('Cancel this per order? Click OK to mark as refund, Cancel to cancel without refund.');
+    const { ok, data } = await authFetch(`/api/per-orders/${viewedOrderFull.id}/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refund, reason: '' }),
+    });
+    if (!ok) {
+      toast({ title: 'Cancel failed', description: data?.message || 'Could not cancel order', variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Order Cancelled', description: data?.message || 'Per order has been cancelled.' });
+    setIsViewModalOpen(false);
+    setViewedOrderFull(null);
     fetchOrders();
   };
 
@@ -282,10 +357,11 @@ const Orders = () => {
     const styles = {
       pending: 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',
       completed: 'bg-green-500/20 text-green-600 dark:text-green-400',
+      cancelled: 'bg-red-500/20 text-red-600 dark:text-red-400',
     };
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || ''}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || 'bg-secondary text-secondary-foreground'}`}>
+        {status ? status.charAt(0).toUpperCase() + status.slice(1) : '—'}
       </span>
     );
   };
@@ -357,6 +433,7 @@ const Orders = () => {
       address: o.customer_address || '',
     });
     setAdvancePayment(parseFloat(o.advance_payment) || 0);
+    setExpectedDeliveryDate(o.expected_delivery_date ? String(o.expected_delivery_date).slice(0, 10) : '');
     setNotes(o.notes || '');
     setOrderItems(
       (o.items || []).map((i, idx) => ({
@@ -379,6 +456,7 @@ const Orders = () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         notes: notes.trim() || undefined,
+        expected_delivery_date: expectedDeliveryDate || undefined,
         advance_payment: parseFloat(advancePayment) || 0,
       }),
     });
@@ -393,6 +471,7 @@ const Orders = () => {
     setCustomerDetails({ name: '', phone: '', email: '', address: '' });
     setOrderItems([]);
     setAdvancePayment(0);
+    setExpectedDeliveryDate('');
     setNotes('');
     fetchOrders();
   };
@@ -510,6 +589,7 @@ const Orders = () => {
                     <option value="all">All Status</option>
                     <option value="pending">Pending</option>
                     <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
                   </select>
                 </div>
         </div>
@@ -657,6 +737,16 @@ const Orders = () => {
                             className="mt-1"
                           />
                         </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="expectedDeliveryDate">Expected delivery date</Label>
+                        <Input
+                          id="expectedDeliveryDate"
+                          type="date"
+                          value={expectedDeliveryDate}
+                          onChange={(e) => setExpectedDeliveryDate(e.target.value)}
+                          className="mt-1"
+                        />
                       </div>
                     </div>
                   </div>
@@ -882,6 +972,14 @@ const Orders = () => {
                   </div>
                 </div>
 
+                {viewedOrderFull?.expected_delivery_date && (
+                  <div className="border-t border-secondary pt-6">
+                    <p className="text-sm text-muted-foreground">
+                      Expected delivery: {new Date(viewedOrderFull.expected_delivery_date).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
+
                 {selectedOrder.notes && (
                   <div className="border-t border-secondary pt-6">
                     <h3 className="text-lg font-semibold mb-2">Notes</h3>
@@ -894,20 +992,32 @@ const Orders = () => {
                     Close
                   </Button>
                   {viewedOrderFull && (
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        downloadAdvancePaymentInvoicePdf(viewedOrderFull);
-                        toast({ title: 'Invoice', description: 'Advance payment invoice downloaded.' });
-                      }}
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download invoice
-                    </Button>
+                    <>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          downloadAdvancePaymentInvoicePdf(viewedOrderFull);
+                          toast({ title: 'Invoice', description: 'Advance payment invoice downloaded.' });
+                        }}
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Download invoice
+                      </Button>
+                      {viewedOrderFull.status === 'pending' && (
+                        <>
+                          <Button variant="outline" onClick={handleOpenConvertModal} className="text-green-600 border-green-600 hover:bg-green-500/10">
+                            Convert to Sale
+                          </Button>
+                          <Button variant="outline" onClick={handleCancelOrder} className="text-red-600 border-red-600 hover:bg-red-500/10">
+                            Cancel order
+                          </Button>
+                        </>
+                      )}
+                    </>
                   )}
                   <Button onClick={() => {
                     setIsViewModalOpen(false);
-                    handleEdit(selectedOrder);
+                    handleEdit(viewedOrderFull || selectedOrder);
                   }}>
                     <Pencil className="w-4 h-4 mr-2" />
                     Edit Order
@@ -916,6 +1026,65 @@ const Orders = () => {
               </div>
             ) : (
               <p className="text-destructive">Order not found</p>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Convert to Sale Modal */}
+        <Dialog open={isConvertModalOpen} onOpenChange={(open) => { if (!open) setConvertOrder(null); setIsConvertModalOpen(open); }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Convert to Sale</DialogTitle>
+              <DialogDescription>
+                Assign IMEI for unique products and confirm remaining payment. Stock will be deducted and a sale invoice will be created.
+              </DialogDescription>
+            </DialogHeader>
+            {convertOrder && (
+              <div className="space-y-4">
+                <div className="text-sm text-muted-foreground">
+                  Order #{convertOrder.order_number} — Total: LKR {(parseFloat(convertOrder.subtotal) || 0).toLocaleString()}, Advance: LKR {(parseFloat(convertOrder.advance_payment) || 0).toLocaleString()}
+                </div>
+                <div className="space-y-3 max-h-48 overflow-y-auto">
+                  {(convertOrder.items || []).map((item) => (
+                    <div key={item.id} className="flex flex-col gap-1 p-2 border border-secondary rounded-md">
+                      <span className="font-medium">{item.display_name || item.custom_product_name || item.product_name}</span>
+                      <span className="text-xs text-muted-foreground">Qty {item.quantity} × LKR {parseFloat(item.unit_price).toLocaleString()}</span>
+                      {item.product_id && (item.inventory_type || '').toLowerCase() === 'unique' && (
+                        <div className="mt-1">
+                          <Label className="text-xs">Select IMEI</Label>
+                          <select
+                            value={convertImeiSelections[item.id] || ''}
+                            onChange={(e) => setConvertImeiSelections((prev) => ({ ...prev, [item.id]: e.target.value }))}
+                            className="w-full mt-0.5 h-9 rounded-md border border-input bg-background px-3 text-sm"
+                          >
+                            <option value="">— Select IMEI —</option>
+                            {(availableImeisByItem[item.id] || []).map((opt) => (
+                              <option key={opt.id || opt.imei} value={opt.imei}>{opt.imei}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <Label>Remaining payment (LKR)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={convertRemainingPayment}
+                    onChange={(e) => setConvertRemainingPayment(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" onClick={() => setIsConvertModalOpen(false)}>Cancel</Button>
+                  <Button onClick={handleConvertSubmit} disabled={convertSubmitting}>
+                    {convertSubmitting ? 'Converting…' : 'Convert to Sale'}
+                  </Button>
+                </div>
+              </div>
             )}
           </DialogContent>
         </Dialog>
@@ -987,6 +1156,16 @@ const Orders = () => {
                               className="mt-1"
                             />
                           </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-expectedDeliveryDate">Expected delivery date</Label>
+                          <Input
+                            id="edit-expectedDeliveryDate"
+                            type="date"
+                            value={expectedDeliveryDate}
+                            onChange={(e) => setExpectedDeliveryDate(e.target.value)}
+                            className="mt-1"
+                          />
                         </div>
                       </div>
                     </div>

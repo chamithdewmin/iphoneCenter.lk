@@ -135,10 +135,13 @@ export function generateAdvancePaymentInvoicePdf(perOrder) {
   doc.setFontSize(18);
   doc.setFont(undefined, 'bold');
   doc.text('Advance Payment Invoice', 14, y);
-  y += 10;
+  y += 6;
+  doc.setFontSize(9);
+  doc.setFont(undefined, 'normal');
+  doc.text('This is an Advance Receipt, not a tax invoice.', 14, y);
+  y += 6;
 
   doc.setFontSize(10);
-  doc.setFont(undefined, 'normal');
   const orderNum = perOrder.order_number || perOrder.orderNumber || '—';
   const dateStr = perOrder.created_at ? new Date(perOrder.created_at).toLocaleString() : '—';
   doc.text(`Order #: ${orderNum}`, 14, y);
@@ -200,7 +203,11 @@ export function generateAdvancePaymentInvoicePdf(perOrder) {
   doc.text(`Advance Payment: ${CURRENCY}${advance.toFixed(2)}`, 14, y);
   y += 6;
   doc.text(`Due Amount: ${CURRENCY}${due.toFixed(2)}`, 14, y);
+  y += 6;
+  doc.setFontSize(9);
+  doc.text('Status: Pending Delivery', 14, y);
   doc.setFont(undefined, 'normal');
+  doc.setFontSize(10);
 
   if (perOrder.notes && String(perOrder.notes).trim()) {
     y += 10;
