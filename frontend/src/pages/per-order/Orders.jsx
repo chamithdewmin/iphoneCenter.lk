@@ -38,12 +38,29 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 
+/** Parse products array from inventory API (handles data.data, data.products, or data as array) */
+function parseProductsFromResponse(res) {
+  if (!res?.data) return [];
+  const raw = res.data;
+  const list = Array.isArray(raw?.data)
+    ? raw.data
+    : Array.isArray(raw?.products)
+      ? raw.products
+      : Array.isArray(raw)
+        ? raw
+        : [];
+  return list;
+}
+
 function normalizeProduct(p) {
+  const price = Number(
+    p.retail_price ?? p.retailPrice ?? p.base_price ?? p.basePrice ?? p.price ?? 0
+  );
   return {
     ...p,
     id: p.id,
-    name: p.name || p.sku || '—',
-    price: p.base_price != null ? Number(p.base_price) : (p.price != null ? Number(p.price) : 0),
+    name: p.name ?? p.product_name ?? p.sku ?? '—',
+    price: Number.isFinite(price) && price >= 0 ? price : 0,
   };
 }
 
@@ -78,6 +95,7 @@ const Orders = () => {
   const [customPrice, setCustomPrice] = useState('');
   const [productSearchQuery, setProductSearchQuery] = useState('');
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState([]);
   const [viewedOrderFull, setViewedOrderFull] = useState(null);
@@ -98,21 +116,49 @@ const Orders = () => {
     fetchOrders();
   }, [fetchOrders]);
 
-  useEffect(() => {
-    (async () => {
-      const [custRes, prodRes] = await Promise.all([
-        authFetch('/api/customers'),
-        authFetch('/api/inventory/products'),
-      ]);
-      const custList = Array.isArray(custRes.data?.data) ? custRes.data.data : [];
-      const prodList = Array.isArray(prodRes.data?.data) ? prodRes.data.data : [];
-      setCustomers(custList);
-      const normalized = prodList.map(normalizeProduct);
-      setProducts(normalized);
-      setFilteredProducts(normalized);
-      if (isAdmin && branches.length > 0 && branches[0]?.id) setBranchId(String(branches[0].id));
-    })();
+  const loadCustomersAndProducts = React.useCallback(async () => {
+    setProductsLoading(true);
+    const [custRes, prodRes] = await Promise.all([
+      authFetch('/api/customers'),
+      authFetch('/api/inventory/products'),
+    ]);
+    const custList = Array.isArray(custRes.data?.data) ? custRes.data.data : [];
+    const prodList = parseProductsFromResponse(prodRes);
+    setCustomers(custList);
+    const normalized = prodList.map(normalizeProduct).filter((p) => p.id != null);
+    setProducts(normalized);
+    setFilteredProducts(normalized);
+    setProductsLoading(false);
+    if (isAdmin && branches.length > 0 && branches[0]?.id) setBranchId(String(branches[0].id));
   }, [isAdmin, branches.length]);
+
+  useEffect(() => {
+    loadCustomersAndProducts();
+  }, [loadCustomersAndProducts]);
+
+  // When Add Per Order modal opens, refetch system products so the list is always correct
+  useEffect(() => {
+    if (isAddModalOpen) {
+      (async () => {
+        setProductsLoading(true);
+        const prodRes = await authFetch('/api/inventory/products');
+        const prodList = parseProductsFromResponse(prodRes);
+        const normalized = prodList.map(normalizeProduct).filter((p) => p.id != null);
+        setProducts(normalized);
+        setFilteredProducts(
+          productSearchQuery
+            ? normalized.filter(
+                (p) =>
+                  (p.name || '').toLowerCase().includes(productSearchQuery.toLowerCase()) ||
+                  (p.sku || '').toLowerCase().includes(productSearchQuery.toLowerCase()) ||
+                  (p.brand || '').toLowerCase().includes(productSearchQuery.toLowerCase())
+              )
+            : normalized
+        );
+        setProductsLoading(false);
+      })();
+    }
+  }, [isAddModalOpen]);
 
   useEffect(() => {
     let filtered = [...orders];
@@ -721,13 +767,14 @@ const Orders = () => {
                     </div>
                   </div>
 
-                  {/* Product Search & Selection */}
+                  {/* Product Search & Selection – system products from inventory */}
                   <div className="bg-card rounded-lg p-6 border border-secondary">
                     <h2 className="text-xl font-semibold mb-4">Add Products</h2>
+                    <p className="text-sm text-muted-foreground mb-2">Select from system products (your product catalog) or add a custom item below.</p>
                     <div className="relative mb-4">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <Input
-                        placeholder="Search products..."
+                        placeholder="Search system products..."
                         value={productSearchQuery}
                         onChange={(e) => setProductSearchQuery(e.target.value)}
                         className="pl-10"
@@ -748,8 +795,10 @@ const Orders = () => {
                       </Button>
                     </div>
                     <div className="max-h-64 overflow-y-auto space-y-2">
-                      {filteredProducts.length === 0 ? (
-                        <p className="text-muted-foreground text-center py-4">No products found</p>
+                      {productsLoading ? (
+                        <p className="text-muted-foreground text-center py-4">Loading system products…</p>
+                      ) : filteredProducts.length === 0 ? (
+                        <p className="text-muted-foreground text-center py-4">No system products found. Add products in Products → Add Product, or use the custom item fields below.</p>
                       ) : (
                         filteredProducts.map((product) => (
                           <motion.div
