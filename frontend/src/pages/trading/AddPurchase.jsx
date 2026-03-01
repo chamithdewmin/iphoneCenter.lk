@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
 import { Save, ShoppingCart, X, Plus, Minus, Trash2, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getStorageData, setStorageData } from '@/utils/storage';
+import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,7 @@ const AddPurchase = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     supplierId: '',
@@ -25,17 +26,27 @@ const AddPurchase = () => {
 
   useEffect(() => {
     const loadedSuppliers = getStorageData('suppliers', []);
-    const loadedProducts = getStorageData('products', []);
     setSuppliers(loadedSuppliers);
-    setProducts(loadedProducts);
-    setFilteredProducts(loadedProducts);
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      setProductsLoading(true);
+      const { ok, data } = await authFetch('/api/inventory/products');
+      setProductsLoading(false);
+      const list = (ok && Array.isArray(data?.data)) ? data.data : [];
+      setProducts(list);
+      setFilteredProducts(list);
+    })();
   }, []);
 
   useEffect(() => {
     if (searchQuery) {
       const searchLower = searchQuery.toLowerCase();
       const filtered = products.filter(product =>
+        (product.name || '').toLowerCase().includes(searchLower) ||
         (product.brand || product.make || '').toLowerCase().includes(searchLower) ||
+        (product.sku || '').toLowerCase().includes(searchLower) ||
         (product.model || '').toLowerCase().includes(searchLower)
       );
       setFilteredProducts(filtered);
@@ -44,7 +55,15 @@ const AddPurchase = () => {
     }
   }, [searchQuery, products]);
 
+  const getWholesalePrice = (product) =>
+    product.wholesale_price != null ? Number(product.wholesale_price)
+      : product.wholesalePrice != null ? Number(product.wholesalePrice)
+      : product.base_price != null ? Number(product.base_price)
+      : product.basePrice != null ? Number(product.basePrice)
+      : product.price != null ? Number(product.price) : 0;
+
   const handleAddProduct = (product) => {
+    const wholesale = getWholesalePrice(product);
     const existingItem = purchaseItems.find(item => item.id === product.id);
     if (existingItem) {
       setPurchaseItems(purchaseItems.map(item =>
@@ -53,19 +72,30 @@ const AddPurchase = () => {
           : item
       ));
     } else {
-      setPurchaseItems([...purchaseItems, { ...product, quantity: 1 }]);
+      setPurchaseItems([...purchaseItems, {
+        ...product,
+        quantity: 1,
+        unitPrice: wholesale,
+      }]);
     }
     toast({
       title: "Product Added",
-      description: `${product.model || product.brand} added to purchase`,
+      description: `${product.name || product.model || product.brand} added to purchase`,
     });
   };
 
   const updateQuantity = (productId, newQuantity) => {
+    const qty = Math.max(1, parseInt(newQuantity, 10) || 1);
     setPurchaseItems(purchaseItems.map(item =>
-      item.id === productId
-        ? { ...item, quantity: Math.max(1, newQuantity) }
-        : item
+      item.id === productId ? { ...item, quantity: qty } : item
+    ));
+  };
+
+  const updateUnitPrice = (productId, value) => {
+    const num = parseFloat(value);
+    const price = Number.isNaN(num) || num < 0 ? 0 : num;
+    setPurchaseItems(purchaseItems.map(item =>
+      item.id === productId ? { ...item, unitPrice: price } : item
     ));
   };
 
@@ -74,7 +104,10 @@ const AddPurchase = () => {
   };
 
   const calculateTotal = () => {
-    return purchaseItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
+    return purchaseItems.reduce((sum, item) => {
+      const up = item.unitPrice != null ? item.unitPrice : (item.price || 0);
+      return sum + up * (item.quantity || 0);
+    }, 0);
   };
 
   const handleSubmit = (e) => {
@@ -104,7 +137,13 @@ const AddPurchase = () => {
       supplierId: formData.supplierId,
       supplierName: supplier?.name || 'Unknown',
       supplier: supplier,
-      items: purchaseItems,
+      items: purchaseItems.map((item) => ({
+        id: item.id,
+        name: item.name || item.model || item.brand,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice != null ? item.unitPrice : (item.price || 0),
+        subtotal: (item.unitPrice != null ? item.unitPrice : (item.price || 0)) * item.quantity,
+      })),
       total: calculateTotal(),
       date: formData.date,
       notes: formData.notes || '',
@@ -114,7 +153,7 @@ const AddPurchase = () => {
     const purchases = getStorageData('purchases', []);
     setStorageData('purchases', [...purchases, newPurchase]);
 
-    // Update product stock
+    // Update local product stock if still using storage elsewhere (optional)
     const updatedProducts = products.map(product => {
       const purchaseItem = purchaseItems.find(item => item.id === product.id);
       if (purchaseItem) {
@@ -199,23 +238,34 @@ const AddPurchase = () => {
                   />
                 </div>
                 <div className="max-h-60 overflow-y-auto space-y-2">
-                  {filteredProducts.map(product => (
-                    <div
-                      key={product.id}
-                      onClick={() => handleAddProduct(product)}
-                      className="p-3 border border-secondary rounded-lg hover:bg-secondary/50 cursor-pointer transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{product.model || product.brand}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {product.brand || product.make} | LKR {product.price?.toLocaleString() || '0'}
-                          </p>
+                  {productsLoading ? (
+                    <p className="text-sm text-muted-foreground py-4">Loading products...</p>
+                  ) : filteredProducts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-4">No products found</p>
+                  ) : (
+                    filteredProducts.map(product => {
+                      const wholesale = getWholesalePrice(product);
+                      const retail = product.retail_price ?? product.base_price ?? product.basePrice ?? product.price ?? 0;
+                      return (
+                        <div
+                          key={product.id}
+                          onClick={() => handleAddProduct(product)}
+                          className="p-3 border border-secondary rounded-lg hover:bg-secondary/50 cursor-pointer transition-colors"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium">{product.name || product.model || product.brand}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {(product.brand || product.make) && `${product.brand || product.make} · `}
+                                Retail: LKR {Number(retail).toLocaleString()} · Wholesale: LKR {wholesale.toLocaleString()}
+                              </p>
+                            </div>
+                            <Plus className="w-4 h-4 text-primary flex-shrink-0" />
+                          </div>
                         </div>
-                        <Plus className="w-4 h-4 text-primary" />
-                      </div>
-                    </div>
-                  ))}
+                      );
+                    })
+                  )}
                 </div>
               </div>
             </div>
@@ -229,45 +279,51 @@ const AddPurchase = () => {
                     <p className="text-sm text-muted-foreground">No items added yet</p>
                   ) : (
                     <div className="space-y-3 max-h-96 overflow-y-auto">
-                      {purchaseItems.map(item => (
-                        <div key={item.id} className="p-3 border border-secondary rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="font-medium text-sm">{item.model || item.brand}</p>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => removeItem(item.id)}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
+                      {purchaseItems.map(item => {
+                        const unitPrice = item.unitPrice != null ? item.unitPrice : (item.price || 0);
+                        const lineTotal = unitPrice * (item.quantity || 0);
+                        return (
+                          <div key={item.id} className="p-3 border border-secondary rounded-lg space-y-2">
+                            <div className="flex items-center justify-between">
+                              <p className="font-medium text-sm">{item.name || item.model || item.brand}</p>
                               <Button
                                 type="button"
                                 size="sm"
-                                variant="outline"
-                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                variant="destructive"
+                                onClick={() => removeItem(item.id)}
                               >
-                                <Minus className="w-3 h-3" />
-                              </Button>
-                              <span className="font-medium w-8 text-center">{item.quantity}</span>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                              >
-                                <Plus className="w-3 h-3" />
+                                <Trash2 className="w-3 h-3" />
                               </Button>
                             </div>
-                            <span className="font-semibold text-primary">
-                              LKR {((item.price || 0) * item.quantity).toLocaleString()}
-                            </span>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <Label className="text-xs text-muted-foreground">Qty</Label>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  value={item.quantity}
+                                  onChange={(e) => updateQuantity(item.id, e.target.value)}
+                                  className="h-8 mt-0.5"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs text-muted-foreground">Wholesale / unit (LKR)</Label>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  step="0.01"
+                                  value={unitPrice}
+                                  onChange={(e) => updateUnitPrice(item.id, e.target.value)}
+                                  className="h-8 mt-0.5"
+                                />
+                              </div>
+                            </div>
+                            <p className="text-sm font-semibold text-primary">
+                              Line total: LKR {lineTotal.toLocaleString()}
+                            </p>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                   
