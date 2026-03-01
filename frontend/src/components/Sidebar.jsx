@@ -3,8 +3,10 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import logoWhite from '@/assets/side bar white logo.png';
-import logoBlack from '@/assets/side bar black logo.png';
+import sidebarLogoWhite from '@/assets/side bar white logo.png';
+import sidebarLogoBlack from '@/assets/side bar black logo.png';
+import appleLogoWhite from '@/assets/Apple_logo_white.svg';
+import appleLogoBlack from '@/assets/Apple_logo_black.svg';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -361,7 +363,9 @@ const Sidebar = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const permissionsVersion = useRolePermissionsVersion();
   const [collapsed, setCollapsed] = useState(false);
-  const logo = theme === 'dark' ? logoWhite : logoBlack;
+  const isDark = theme === 'dark';
+  const sidebarLogo = isDark ? sidebarLogoWhite : sidebarLogoBlack;
+  const appleLogo = isDark ? appleLogoWhite : appleLogoBlack;
 
   const handleLogout = () => {
     logout();
@@ -409,8 +413,8 @@ const Sidebar = ({ isOpen, onClose }) => {
           <div className="flex items-center justify-between px-3 py-4 border-b border-secondary min-h-[56px] relative">
             {collapsed ? (
               <>
-                <div className="w-7 h-7 flex items-center justify-center mx-auto">
-                  <img src={logo} alt="iPhone Center" className="w-7 h-7 object-contain" />
+                <div className="w-7 h-7 flex items-center justify-center mx-auto flex-shrink-0">
+                  <img src={appleLogo} alt="iPhone Center" className="w-6 h-6 object-contain" />
                 </div>
                 <button
                   onClick={() => setCollapsed(false)}
@@ -422,11 +426,8 @@ const Sidebar = ({ isOpen, onClose }) => {
               </>
             ) : (
               <>
-                <div className="flex items-center gap-2.5 overflow-hidden flex-1">
-                  <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
-                    <img src={logo} alt="iPhone Center" className="w-7 h-7 object-contain" />
-                  </div>
-                  <span className="text-sm font-semibold text-foreground whitespace-nowrap">iphone center.lk</span>
+                <div className="flex items-center gap-2.5 overflow-hidden flex-1 min-w-0">
+                  <img src={sidebarLogo} alt="iPhone Center" className="h-7 w-auto max-w-full object-contain object-left flex-shrink-0" />
                 </div>
                 <button
                   onClick={() => setCollapsed(true)}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Users, DollarSign, Package, ShoppingBag, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Users, DollarSign, Package, ShoppingBag, FolderTree, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { authFetch } from '@/lib/api';
 import KpiCard from '@/components/KpiCard';
@@ -15,6 +15,7 @@ const Dashboard = () => {
     totalRevenue: 0,
     totalProducts: 0,
     totalOrders: 0,
+    totalCategories: 0,
   });
   const [salesData, setSalesData] = useState([]);
   const [revenueData, setRevenueData] = useState([]);
@@ -27,17 +28,19 @@ const Dashboard = () => {
       setLoadError(null);
       const salesUrl = selectedBranchId ? `/api/billing/sales?branchId=${selectedBranchId}` : '/api/billing/sales';
       const dailyUrl = selectedBranchId ? `/api/reports/daily-summary?branchId=${selectedBranchId}` : '/api/reports/daily-summary';
-      const [customersRes, productsRes, salesRes, dailyRes] = await Promise.all([
+      const [customersRes, productsRes, salesRes, dailyRes, categoriesRes] = await Promise.all([
         authFetch('/api/customers'),
         authFetch('/api/inventory/products'),
         authFetch(salesUrl),
         authFetch(dailyUrl),
+        authFetch('/api/categories'),
       ]);
       const resList = [
         { name: 'Customers', res: customersRes },
         { name: 'Products', res: productsRes },
         { name: 'Sales', res: salesRes },
         { name: 'Daily summary', res: dailyRes },
+        { name: 'Categories', res: categoriesRes },
       ];
       const failed = resList.find((r) => !r.res.ok);
       if (failed) {
@@ -47,6 +50,7 @@ const Dashboard = () => {
       const customers = Array.isArray(customersRes.data?.data) ? customersRes.data.data : [];
       const products = Array.isArray(productsRes.data?.data) ? productsRes.data.data : [];
       const sales = Array.isArray(salesRes.data?.data) ? salesRes.data.data : [];
+      const categories = Array.isArray(categoriesRes.data?.data) ? categoriesRes.data.data : [];
       const totalRevenue = sales.reduce((sum, s) => sum + (parseFloat(s.total_amount) || 0), 0);
       const daily = dailyRes.data?.data != null && !Array.isArray(dailyRes.data?.data) ? [dailyRes.data.data] : (Array.isArray(dailyRes.data?.data) ? dailyRes.data.data : []);
       setStats({
@@ -54,6 +58,7 @@ const Dashboard = () => {
         totalRevenue,
         totalProducts: products.length,
         totalOrders: sales.length,
+        totalCategories: categories.length,
       });
       if (Array.isArray(daily) && daily.length > 0) {
         const d0 = daily[0];
@@ -114,11 +119,10 @@ const Dashboard = () => {
             transition={{ delay: 0.2 }}
           >
             <KpiCard
-              title="Total Revenue"
-              value={`LKR ${stats.totalRevenue.toLocaleString()}`}
-              icon={DollarSign}
-              trend={8.2}
-              trendUp={true}
+              title="Total Categories"
+              value={stats.totalCategories}
+              icon={FolderTree}
+              trend={null}
             />
           </motion.div>
           <motion.div
