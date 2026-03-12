@@ -32,12 +32,12 @@
     --accent-foreground: #ffffff;        /* Muted text */
     --destructive-foreground: #ffffff;   /* White text on destructive */
     
-    /* Primary/Accent Colors - Mix Orange (Bright → Deep → Burnt) */
-    --primary: #ff8040;                  /* Bright Orange */
-    --primary-mid: #e05010;              /* Deep Orange */
-    --primary-dark: #c03800;             /* Burnt Orange */
-    --primary-darkest: #a03000;          /* Darker accent */
-    --primary-gradient: linear-gradient(135deg, #ff8040 0%, #e05010 54%, #c03800 100%);
+    /* Primary/Accent Colors - Blue gradient */
+    --primary: #3b82f6;                  /* Bright Blue */
+    --primary-mid: #2563eb;              /* Deep Blue */
+    --primary-dark: #1d4ed8;             /* Dark Blue */
+    --primary-darkest: #1e40af;          /* Darker accent */
+    --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 54%, #1d4ed8 100%);
     --sidebar-active-bg: #2a3a4f;        /* Sidebar active background */
     --sidebar-active-accent: #ff8040;    /* Sidebar active accent */
     
@@ -47,10 +47,10 @@
     --warning: #eab308;                  /* Warning yellow */
     --cyan: #22d3ee;                     /* Cyan */
     --purple: #a78bfa;                   /* Purple */
-    --orange: #ff8040;                   /* Orange (Bright) */
+    --orange: #3b82f6;                   /* Primary blue */
     
     /* Focus Ring */
-    --ring: #ff8040;                     /* Focus ring color */
+    --ring: #3b82f6;                     /* Focus ring color */
 
     /* Table Colors */
     --table-header-bg: #0f1117;          /* Table header background */
@@ -95,20 +95,20 @@
     --muted-foreground: #6b7280;
     --accent-foreground: #4b5563;
     --destructive-foreground: #ffffff;
-    --primary: #ff8040;
-    --primary-mid: #e05010;
-    --primary-dark: #c03800;
-    --primary-darkest: #a03000;
-    --primary-gradient: linear-gradient(135deg, #ff8040 0%, #e05010 54%, #c03800 100%);
+    --primary: #3b82f6;
+    --primary-mid: #2563eb;
+    --primary-dark: #1d4ed8;
+    --primary-darkest: #1e40af;
+    --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 54%, #1d4ed8 100%);
     --sidebar-active-bg: #fef3eb;
-    --sidebar-active-accent: #ff8040;
+    --sidebar-active-accent: #3b82f6;
     --success: #16a34a;
     --destructive: #dc2626;
     --warning: #ca8a04;
     --cyan: #0891b2;
     --purple: #7c3aed;
-    --orange: #ff8040;
-    --ring: #ff8040;
+    --orange: #3b82f6;
+    --ring: #3b82f6;
     --table-header-bg: #f9fafb;
     --table-row-odd: #ffffff;
     --table-row-even: #f9fafb;
@@ -254,7 +254,7 @@
 
   .glow-border {
     box-shadow:
-      0 0 15px rgba(255, 128, 64, 0.18),
+      0 0 15px rgba(59, 130, 246, 0.25),
       inset 0 1px 0 rgba(255, 255, 255, 0.02);
   }
 
@@ -313,7 +313,7 @@
   background: var(--primary-gradient);
 }
 .bg-primary-gradient:hover {
-  background: linear-gradient(135deg, #e07030 0%, #c84808 54%, #a03000 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 54%, #1e40af 100%);
   filter: brightness(1.05);
 }
 .text-primary-gradient {
@@ -327,7 +327,7 @@
 .icon-circle-gradient {
   background: var(--primary-gradient);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(255, 128, 64, 0.25);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 @media print {

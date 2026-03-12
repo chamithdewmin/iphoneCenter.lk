@@ -43,9 +43,9 @@ export default function Loading({ text = 'Loading...', fullScreen = false }) {
                 style={{ 
                   left: cx, 
                   top: cy, 
-                  width: dotSize, 
-                  height: dotSize, 
-                  backgroundColor: "#f97316" // Orange color
+                  width: dotSize,
+                  height: dotSize,
+                  backgroundColor: "#3b82f6" // Primary blue color
                 }}
               />
             );

@@ -540,7 +540,7 @@ export default function LoginPage() {
                   {countdown > 0 ? (
                     <span>
                       Resend OTP in{" "}
-                      <span style={{ color: "#f97316", fontWeight: 600 }}>{countdown}s</span>
+                      <span style={{ color: "#3b82f6", fontWeight: 600 }}>{countdown}s</span>
                     </span>
                   ) : (
                     <button
