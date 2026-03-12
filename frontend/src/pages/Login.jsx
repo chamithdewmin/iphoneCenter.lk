@@ -381,14 +381,24 @@ export default function LoginPage() {
 
                 <div className="form-group p4">
                   <label className="form-label">Password</label>
-                  <input
-                    className="form-input password-input-large"
-                    type={showPassword ? "text" : "password"}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                  />
+                  <div className="password-input-wrapper">
+                    <input
+                      className="form-input password-input-large"
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle-btn"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      <EyeIcon open={showPassword} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="forgot-link-row p4">
