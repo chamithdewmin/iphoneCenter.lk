@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -22,10 +22,11 @@ import {
   BarChart3,
   MessageSquare,
 } from "lucide-react";
-
 import type { NavItemDividerType, NavItemType } from "@/components/application/app-navigation/config";
 import { NavList } from "@/components/application/app-navigation/base-components/nav-list";
 import { BadgeWithDot } from "@/components/base/badges/badges";
+import { UntitledLogo } from "@/components/foundations/logo/untitledui-logo";
+import { NavAccountCard } from "@/components/application/app-navigation/base-components/nav-account-card";
 
 const navItemsWithDividers: (NavItemType | NavItemDividerType)[] = [
   {
@@ -154,21 +155,44 @@ const navItemsWithDividers: (NavItemType | NavItemDividerType)[] = [
       </BadgeWithDot>
     ),
   },
+  {
+    label: "Open in browser",
+    href: "https://www.logozodev.com",
+    icon: MessageSquare,
+  },
 ];
 
-export const SidebarSectionDividersDemo = () => {
+export const UntitledSidebar = () => {
   const location = useLocation();
 
   return (
-    <aside className="flex h-screen w-[240px] flex-col border-r border-border bg-background">
-      <div className="flex h-14 items-center border-b border-border px-4">
-        <span className="text-sm font-semibold tracking-wide">iPhone Center</span>
+    <aside className="flex h-screen w-72 flex-col border-r border-secondary bg-primary px-3 py-3">
+      {/* Logo */}
+      <div className="flex items-center px-1 pb-3">
+        <UntitledLogo />
       </div>
 
-      <NavList activeUrl={location.pathname} items={navItemsWithDividers} className="flex-1 overflow-y-auto" />
+      {/* Search placeholder (to match Untitled UI layout) */}
+      <div className="mb-2">
+        <Link
+          to="/search"
+          className="flex h-9 w-full items-center gap-2 rounded-lg bg-primary px-3 text-xs text-fg-quaternary ring-1 ring-secondary_hover/40 hover:bg-primary_hover"
+        >
+          <span className="flex-1 text-left text-xs text-tertiary">Search</span>
+          <span className="rounded-md border border-secondary px-1.5 py-0.5 text-[10px] text-tertiary">⌘K</span>
+        </Link>
+      </div>
+
+      {/* Nav list */}
+      <div className="flex-1 overflow-y-auto">
+        <NavList activeUrl={location.pathname} items={navItemsWithDividers} />
+      </div>
+
+      {/* Account card */}
+      <div className="mt-3">
+        <NavAccountCard />
+      </div>
     </aside>
   );
 };
-
-export default SidebarSectionDividersDemo;
 
