@@ -47,14 +47,6 @@ const Layout = () => {
     }
   }, [analyticsAccessUntil]);
 
-  // When entering any Analytics route, require OTP if there is no active access window
-  useEffect(() => {
-    if (!pathname.startsWith('/reports')) return;
-    if (!analyticsAccessUntil || Date.now() > analyticsAccessUntil) {
-      setAnalyticsModalOpen(true);
-    }
-  }, [pathname, analyticsAccessUntil]);
-
   // Auto‑reopen OTP modal when the 15‑minute window expires while user is on Analytics
   useEffect(() => {
     if (!pathname.startsWith('/reports')) return;
@@ -80,7 +72,11 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onRequireAnalyticsOtp={() => setAnalyticsModalOpen(true)}
+      />
       <div className={isPOSFullScreen ? 'h-screen overflow-hidden lg:pl-[var(--sidebar-width,240px)]' : 'lg:pl-[var(--sidebar-width,240px)] transition-all duration-200'}>
         {!isPOSFullScreen && <Topbar onMenuClick={() => setSidebarOpen(true)} />}
         <main className={isPOSFullScreen ? 'h-full overflow-hidden p-0' : 'p-4 lg:p-6'}>
