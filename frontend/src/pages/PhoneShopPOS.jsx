@@ -177,6 +177,8 @@ export default function PhoneShopPOS() {
                 category: String(category),
                 color: BRAND_BLUE,
                 img: p.image_url ?? p.imageUrl ?? p.img ?? PLACEHOLDER_IMG,
+                inventory_type: (p.inventory_type || 'quantity').toLowerCase(),
+                warranty_months: p.warranty_months ?? null,
               };
             });
           if (!cancelled) setProducts(mapped);
@@ -199,21 +201,90 @@ export default function PhoneShopPOS() {
       p.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const addToCart = (product) => {
+  const addToCart = async (product) => {
+    // Unique (IMEI) products: each item must be one device with a specific IMEI.
+    if ((product.inventory_type || 'quantity') === 'unique') {
+      try {
+        const res = await authFetch(`/api/inventory/imei?productId=${product.id}&status=in_stock`);
+        const list = Array.isArray(res?.data?.data) ? res.data.data : [];
+        // Exclude IMEIs already in cart
+        const usedImeis = new Set(cart.filter((i) => i.imei).map((i) => String(i.imei)));
+        const available = list.find((row) => row.imei && !usedImeis.has(String(row.imei)));
+        if (!available) {
+          toast({
+            title: 'No available devices',
+            description: 'No in-stock IMEI found for this product at this branch.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        const cartId = `${product.id}-${available.imei}`;
+        setCart((prev) => [
+          ...prev,
+          {
+            cartId,
+            productId: product.id,
+            name: product.name,
+            price: product.price,
+            qty: 1,
+            color: product.color,
+            img: product.img,
+            inventory_type: 'unique',
+            imei: available.imei,
+            warranty_months: product.warranty_months ?? null,
+          },
+        ]);
+      } catch (e) {
+        toast({
+          title: 'Could not load IMEIs',
+          description: e?.message || 'Please try again',
+          variant: 'destructive',
+        });
+      }
+      return;
+    }
+
+    // Quantity products: normal increment by productId
     setCart((prev) => {
-      const ex = prev.find((i) => i.id === product.id);
-      if (ex) return prev.map((i) => (i.id === product.id ? { ...i, qty: i.qty + 1 } : i));
-      return [...prev, { ...product, qty: 1 }];
+      const ex = prev.find((i) => i.productId === product.id && i.inventory_type !== 'unique');
+      if (ex) {
+        return prev.map((i) =>
+          i === ex ? { ...i, qty: i.qty + 1 } : i
+        );
+      }
+      const cartId = `q-${product.id}`;
+      return [
+        ...prev,
+        {
+          cartId,
+          productId: product.id,
+          name: product.name,
+          price: product.price,
+          qty: 1,
+          color: product.color,
+          img: product.img,
+          inventory_type: product.inventory_type || 'quantity',
+          imei: null,
+          warranty_months: product.warranty_months ?? null,
+        },
+      ];
     });
   };
 
-  const updateQty = (id, delta) => {
+  const updateQty = (cartId, delta) => {
     setCart((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, qty: Math.max(0, i.qty + delta) } : i)).filter((i) => i.qty > 0)
+      prev
+        .map((i) => {
+          if (i.cartId !== cartId) return i;
+          // Unique items must stay at qty = 1
+          if (i.inventory_type === 'unique') return i;
+          return { ...i, qty: Math.max(0, i.qty + delta) };
+        })
+        .filter((i) => i.qty > 0)
     );
   };
 
-  const removeItem = (id) => setCart((prev) => prev.filter((i) => i.id !== id));
+  const removeItem = (cartId) => setCart((prev) => prev.filter((i) => i.cartId !== cartId));
 
   const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
   const discountAmt = parseFloat(discount) || 0;
@@ -253,10 +324,11 @@ export default function PhoneShopPOS() {
     try {
       const customerId = await resolveCustomerId();
       const items = cart.map((i) => ({
-        productId: i.id,
-        quantity: i.qty,
+        productId: i.productId,
+        quantity: i.inventory_type === 'unique' ? 1 : i.qty,
         unitPrice: i.price,
         discount: 0,
+        ...(i.inventory_type === 'unique' && i.imei ? { imei: i.imei } : {}),
       }));
       const body = {
         items,
@@ -363,7 +435,7 @@ export default function PhoneShopPOS() {
               )}
               {!productsLoading && filtered.map((p) => {
                 const isHovered = hoverCard === p.id;
-                const inCart = cart.find(i => i.id === p.id);
+                const inCart = cart.find(i => i.productId === p.id);
                 return (
                   <div key={p.id} className="prod-card"
                     onMouseEnter={() => setHoverCard(p.id)}
@@ -396,8 +468,8 @@ export default function PhoneShopPOS() {
                     {/* Name & price + circle add button row */}
                     <div style={{ width: "100%", padding: "12px 14px", background: "#13161e", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 6 }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: "#d1d9e6", lineHeight: 1.35, marginBottom: 4 }}>{p.name}</div>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: p.color }}>${p.price.toLocaleString()}</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "#d1d9e6", lineHeight: 1.35, marginBottom: 4 }}>{p.name}</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: p.color }}>${p.price.toLocaleString()}</div>
                       </div>
 
                       {/* Circle + button */}
@@ -497,23 +569,30 @@ export default function PhoneShopPOS() {
                   <div style={{ marginTop: 6, fontSize: 12, color: "#4a5568" }}>Tap + to add products</div>
                 </div>
               ) : cart.map((item) => (
-                <div key={item.id} style={{ display: "flex", alignItems: "center", padding: "12px 18px", gap: 12, borderBottom: "1px solid #1e2433" }}>
+                  <div key={item.cartId} style={{ display: "flex", alignItems: "center", padding: "12px 18px", gap: 12, borderBottom: "1px solid #1e2433" }}>
                   <CartThumb product={item} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 12, fontWeight: 600, color: "#d1d9e6", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.name}</div>
-                    <div style={{ fontSize: 11, color: "#8b9ab0", marginTop: 2 }}>${item.price.toLocaleString()} each</div>
+                    <div style={{ fontSize: 11, color: "#8b9ab0", marginTop: 2 }}>
+                      ${item.price.toLocaleString()} each
+                      {item.inventory_type === 'unique' && item.imei && (
+                        <span style={{ display: "block", marginTop: 2, fontSize: 10, color: "#9ca3af" }}>
+                          IMEI: {item.imei}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <button onClick={() => updateQty(item.id, -1)}
+                    <button onClick={() => updateQty(item.cartId, -1)}
                       style={{ background: "#1c1e24", border: "1px solid #303338", color: "#d1d9e6", borderRadius: 6, width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: SYS_FONT }}>−</button>
                     <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", minWidth: 20, textAlign: "center" }}>{item.qty}</span>
-                    <button onClick={() => updateQty(item.id, 1)}
+                    <button onClick={() => updateQty(item.cartId, 1)}
                       style={{ background: "#1c1e24", border: "1px solid #303338", color: "#d1d9e6", borderRadius: 6, width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, fontWeight: 700, fontFamily: SYS_FONT }}>+</button>
                   </div>
                   <div style={{ fontWeight: 700, fontSize: 13, color: item.color, minWidth: 60, textAlign: "right" }}>
                     ${(item.price * item.qty).toLocaleString()}
                   </div>
-                  <button onClick={() => removeItem(item.id)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 2, display: "flex", alignItems: "center" }}>
+                  <button onClick={() => removeItem(item.cartId)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 2, display: "flex", alignItems: "center" }}>
                     <IconTrash />
                   </button>
                 </div>

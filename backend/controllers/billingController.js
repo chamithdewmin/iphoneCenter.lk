@@ -274,7 +274,7 @@ const createSale = async (req, res, next) => {
         );
 
         const [saleItemsData] = await executeQuery(
-            `SELECT si.*, p.name as product_name, p.sku
+            `SELECT si.*, p.name as product_name, p.sku, p.warranty_months
              FROM sale_items si
              INNER JOIN products p ON si.product_id = p.id
              WHERE si.sale_id = ?`,
