@@ -19,6 +19,7 @@ import {
 } from 'recharts';
 import { getStorageData } from '@/utils/storage';
 import { getPrintHtml } from '@/utils/pdfPrint';
+import AnalyticsAccessGuard from '@/components/AnalyticsAccessGuard';
 
 const downloadCsv = (filename, rows) => {
   if (!rows || rows.length === 0) return;
@@ -209,24 +210,25 @@ const ExpenseReport = () => {
       title="Expense Report"
       subtitle="Track all business expenses and cost analysis"
     >
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-        <BranchFilter id="expense-branch" value={selectedBranchId} onChange={setSelectedBranchId} />
-        <div className="flex flex-wrap gap-2 justify-end">
-          <Button variant="outline" size="sm" onClick={handleRefresh}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleExportCsv}>
-            <Download className="w-4 h-4 mr-2" />
-            Export CSV
-          </Button>
-          <Button size="sm" onClick={handleDownloadPdf}>
-            <Download className="w-4 h-4 mr-2" />
-            Download PDF
-          </Button>
+      <AnalyticsAccessGuard>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <BranchFilter id="expense-branch" value={selectedBranchId} onChange={setSelectedBranchId} />
+          <div className="flex flex-wrap gap-2 justify-end">
+            <Button variant="outline" size="sm" onClick={handleRefresh}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportCsv}>
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </Button>
+            <Button size="sm" onClick={handleDownloadPdf}>
+              <Download className="w-4 h-4 mr-2" />
+              Download PDF
+            </Button>
+          </div>
         </div>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
           label="Total Expenses"
           value={`LKR ${total.toLocaleString()}`}
@@ -257,9 +259,9 @@ const ExpenseReport = () => {
           changeType="up"
           icon={TrendingDown}
         />
-      </div>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <div className="report-card lg:col-span-2">
           <h3 className="text-foreground font-semibold mb-4">
             Monthly Expense Trend
@@ -347,9 +349,9 @@ const ExpenseReport = () => {
             ))}
           </div>
         </div>
-      </div>
+        </div>
 
-      <div className="report-card">
+        <div className="report-card">
         <h3 className="text-foreground font-semibold mb-4">
           Recent Expenses
         </h3>
@@ -400,7 +402,8 @@ const ExpenseReport = () => {
             </tbody>
           </table>
         </div>
-      </div>
+        </div>
+      </AnalyticsAccessGuard>
     </ReportLayout>
   );
 };
