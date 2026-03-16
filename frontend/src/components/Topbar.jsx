@@ -495,7 +495,7 @@ const Topbar = ({ onMenuClick }) => {
     <header
       style={{
         padding: '14px 24px 10px 16px',
-        background: c.cardBg,
+        background: 'transparent',
         position: 'sticky',
         top: 0,
         zIndex: 30,
