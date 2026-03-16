@@ -5,14 +5,7 @@ import { authFetch } from '@/lib/api';
 
 const initialDigits = ['', '', '', '', '', ''];
 
-/**
- * SecurityVerificationModal
- * - Option 1: confirm password (recommended)
- * - Option 2: OTP to registered phone
- */
 const AnalyticsOtpModal = ({ open, onClose, onVerified, phoneMasked = 'your registered phone' }) => {
-  const [mode, setMode] = useState('password'); // 'password' | 'otp'
-  const [password, setPassword] = useState('');
   const [step, setStep] = useState('idle'); // for OTP: idle | sending | otpSent | verifying | error
   const [digits, setDigits] = useState(initialDigits);
   const [resendCountdown, setResendCountdown] = useState(0);
@@ -22,8 +15,6 @@ const AnalyticsOtpModal = ({ open, onClose, onVerified, phoneMasked = 'your regi
 
   useEffect(() => {
     if (!open) {
-      setMode('password');
-      setPassword('');
       setStep('idle');
       setDigits(initialDigits);
       setError('');
@@ -41,34 +32,6 @@ const AnalyticsOtpModal = ({ open, onClose, onVerified, phoneMasked = 'your regi
     }, 1000);
     return () => clearInterval(t);
   }, [open, resendCountdown]);
-
-  const handleUnlockWithPassword = async () => {
-    setError('');
-    if (!password.trim()) {
-      setError('Please enter your account password.');
-      return;
-    }
-    setLoading(true);
-    const { ok, data } = await authFetch('/api/analytics/password/unlock', {
-      method: 'POST',
-      body: JSON.stringify({ password }),
-    });
-    setLoading(false);
-    if (!ok || !data?.success) {
-      setError(data?.message || 'Password verification failed.');
-      return;
-    }
-    try {
-      if (data.grantedUntil) {
-        const ts = new Date(data.grantedUntil).getTime();
-        window.analyticsAccessUntil = ts;
-      }
-    } catch {
-      // ignore
-    }
-    onVerified?.(data?.grantedUntil || null);
-    onClose();
-  };
 
   const handleSendOtp = async () => {
     setError('');
@@ -159,117 +122,70 @@ const AnalyticsOtpModal = ({ open, onClose, onVerified, phoneMasked = 'your regi
             </button>
           </div>
 
-          {/* Mode toggle */}
-          <div className="flex gap-2 text-xs font-medium">
-            <button
-              type="button"
-              className={`flex-1 py-2 rounded-lg border ${
-                mode === 'password'
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-secondary text-muted-foreground'
-              }`}
-              onClick={() => setMode('password')}
-            >
-              Use Password
-            </button>
-            <button
-              type="button"
-              className={`flex-1 py-2 rounded-lg border ${
-                mode === 'otp'
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-secondary text-muted-foreground'
-              }`}
-              onClick={() => setMode('otp')}
-            >
-              Send OTP
-            </button>
-          </div>
+          {/* OTP-only verification */}
+          <div className="space-y-3 mt-2">
+            <p className="text-xs text-muted-foreground">
+              We will send a 6-digit code to <span className="font-semibold">{phoneMasked}</span>.
+            </p>
 
-          {mode === 'password' && (
-            <div className="space-y-3">
-              <label className="text-xs text-muted-foreground">Account password</label>
-              <input
-                type="password"
-                className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+            {(step === 'idle' || step === 'sending') && (
               <button
                 type="button"
-                onClick={handleUnlockWithPassword}
-                disabled={loading}
-                className="w-full inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-semibold py-2.5 disabled:opacity-60"
+                onClick={handleSendOtp}
+                disabled={step === 'sending'}
+                className="w-full inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-semibold py-2.5 hover:brightness-105 disabled:opacity-60"
               >
-                {loading ? 'Verifying...' : 'Verify & Unlock'}
+                {step === 'sending' ? 'Sending...' : 'Send OTP'}
               </button>
-            </div>
-          )}
+            )}
 
-          {mode === 'otp' && (
-            <div className="space-y-3 mt-2">
-              <p className="text-xs text-muted-foreground">
-                We will send a 6-digit code to <span className="font-semibold">{phoneMasked}</span>.
-              </p>
+            {(step === 'otpSent' || step === 'verifying' || step === 'error') && (
+              <>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-muted-foreground">
+                    Enter the 6-digit code we sent to your phone.
+                  </span>
+                  {resendCountdown > 0 ? (
+                    <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <Clock className="w-3 h-3" />
+                      Resend in {resendCountdown}s
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                      className="text-[11px] text-primary hover:underline"
+                    >
+                      Resend code
+                    </button>
+                  )}
+                </div>
 
-              {(step === 'idle' || step === 'sending') && (
+                <div className="flex justify-between gap-1">
+                  {digits.map((d, idx) => (
+                    <input
+                      key={idx}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={d}
+                      onChange={(e) => handleDigitChange(idx, e.target.value)}
+                      className="w-10 h-10 rounded-lg border border-input bg-background text-center text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  ))}
+                </div>
+
                 <button
                   type="button"
-                  onClick={handleSendOtp}
-                  disabled={step === 'sending'}
+                  onClick={handleVerifyOtp}
+                  disabled={step === 'verifying'}
                   className="w-full inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-semibold py-2.5 hover:brightness-105 disabled:opacity-60"
                 >
-                  {step === 'sending' ? 'Sending...' : 'Send OTP'}
+                  {step === 'verifying' ? 'Verifying...' : 'Verify & Continue'}
                 </button>
-              )}
-
-              {(step === 'otpSent' || step === 'verifying' || step === 'error') && (
-                <>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-muted-foreground">
-                      Enter the 6-digit code we sent to your phone.
-                    </span>
-                    {resendCountdown > 0 ? (
-                      <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        Resend in {resendCountdown}s
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleSendOtp}
-                        className="text-[11px] text-primary hover:underline"
-                      >
-                        Resend code
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="flex justify-between gap-1">
-                    {digits.map((d, idx) => (
-                      <input
-                        key={idx}
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={1}
-                        value={d}
-                        onChange={(e) => handleDigitChange(idx, e.target.value)}
-                        className="w-10 h-10 rounded-lg border border-input bg-background text-center text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-                      />
-                    ))}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleVerifyOtp}
-                    disabled={step === 'verifying'}
-                    className="w-full inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-semibold py-2.5 hover:brightness-105 disabled:opacity-60"
-                  >
-                    {step === 'verifying' ? 'Verifying...' : 'Verify & Continue'}
-                  </button>
-                </>
-              )}
-            </div>
-          )}
+              </>
+            )}
+          </div>
 
           {info && (
             <p className="text-xs text-emerald-400 mt-1">
