@@ -31,6 +31,23 @@ const Layout = () => {
     }
   }, [user?.role, pathname, navigate]);
 
+  // On first load, restore analytics access window from localStorage if still valid
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined') return;
+      const stored = window.localStorage?.getItem('analyticsAccessUntil');
+      if (!stored) return;
+      const ts = Number(stored);
+      if (Number.isFinite(ts) && ts > Date.now()) {
+        setAnalyticsAccessUntil(ts);
+      } else {
+        window.localStorage?.removeItem('analyticsAccessUntil');
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   // Expose analytics access time globally for convenience (optional)
   useEffect(() => {
     try {
@@ -39,8 +56,18 @@ const Layout = () => {
         window.dispatchEvent(
           new CustomEvent('analytics-access-granted', { detail: analyticsAccessUntil })
         );
+        try {
+          window.localStorage?.setItem('analyticsAccessUntil', String(analyticsAccessUntil));
+        } catch {
+          // ignore
+        }
       } else {
         window.analyticsAccessUntil = null;
+        try {
+          window.localStorage?.removeItem('analyticsAccessUntil');
+        } catch {
+          // ignore
+        }
       }
     } catch {
       // ignore
@@ -53,6 +80,7 @@ const Layout = () => {
     if (!analyticsAccessUntil) return;
     const remaining = analyticsAccessUntil - Date.now();
     if (remaining <= 0) {
+      setAnalyticsAccessUntil(null);
       setAnalyticsModalOpen(true);
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('analytics-access-expired'));
@@ -60,6 +88,7 @@ const Layout = () => {
       return;
     }
     const timer = setTimeout(() => {
+      setAnalyticsAccessUntil(null);
       setAnalyticsModalOpen(true);
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('analytics-access-expired'));

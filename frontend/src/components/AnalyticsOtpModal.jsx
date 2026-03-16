@@ -91,7 +91,14 @@ const AnalyticsOtpModal = ({ open, onClose, onVerified, phoneMasked = 'your regi
     try {
       if (data.grantedUntil) {
         const ts = new Date(data.grantedUntil).getTime();
-        window.analyticsAccessUntil = ts;
+        if (typeof window !== 'undefined') {
+          window.analyticsAccessUntil = ts;
+        }
+        try {
+          window.localStorage?.setItem('analyticsAccessUntil', String(ts));
+        } catch {
+          // ignore storage errors
+        }
       }
     } catch {
       // ignore

@@ -132,6 +132,7 @@ export const AuthProvider = ({ children }) => {
     try {
       if (typeof window !== 'undefined') {
         window.analyticsAccessUntil = null;
+        window.localStorage?.removeItem('analyticsAccessUntil');
         window.dispatchEvent(new Event('analytics-access-expired'));
       }
     } catch {
