@@ -82,11 +82,6 @@ const Dashboard = () => {
       </Helmet>
 
       <div className="space-y-6">
-        {loadError && (
-          <div className="rounded-lg border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-            <strong>Dashboard load error:</strong> {loadError}
-          </div>
-        )}
         {/* Header + Branch filter (Admin only) */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
