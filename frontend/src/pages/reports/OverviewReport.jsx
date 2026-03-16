@@ -34,7 +34,7 @@ import {
 import { authFetch } from "@/lib/api";
 import { getStorageData } from "@/utils/storage";
 import { getPrintHtml } from "@/utils/pdfPrint";
-import { useAnalyticsGate } from "@/hooks/useAnalyticsGate";
+import AnalyticsAccessGuard from "@/components/AnalyticsAccessGuard";
 
 const COLORS = [
   "hsl(187,80%,48%)",
@@ -86,7 +86,6 @@ function getMonthKeyLabel(raw) {
 }
 
 const OverviewReport = () => {
-  const analyticsAllowed = useAnalyticsGate();
   const [sales, setSales] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [purchases, setPurchases] = useState([]);
@@ -96,11 +95,6 @@ const OverviewReport = () => {
   const { selectedBranchId, setSelectedBranchId } = useBranchFilter();
 
   useEffect(() => {
-    if (!analyticsAllowed) {
-      // Don't load any data until analytics OTP is verified
-      return;
-    }
-
     let cancelled = false;
 
     (async () => {
@@ -146,7 +140,7 @@ const OverviewReport = () => {
     return () => {
       cancelled = true;
     };
-  }, [selectedBranchId, refreshKey, analyticsAllowed]);
+  }, [selectedBranchId, refreshKey]);
 
   const monthlyOverview = useMemo(() => {
     const map = new Map();
@@ -402,7 +396,8 @@ const OverviewReport = () => {
       title="Overview Report"
       subtitle="Complete business performance at a glance"
     >
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+      <AnalyticsAccessGuard>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
         <BranchFilter id="overview-branch" value={selectedBranchId} onChange={setSelectedBranchId} />
         <div className="flex flex-wrap gap-2 justify-end">
           <Button
@@ -429,8 +424,8 @@ const OverviewReport = () => {
             Download PDF
           </Button>
         </div>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
           label="Total Revenue"
           value={
@@ -471,9 +466,9 @@ const OverviewReport = () => {
           changeType="up"
           icon={Users}
         />
-      </div>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <div className="report-card lg:col-span-2">
           <h3 className="text-foreground font-semibold mb-4">
             Revenue vs Expenses vs Profit
@@ -669,7 +664,8 @@ const OverviewReport = () => {
             ))}
           </div>
         </div>
-      </div>
+        </div>
+      </AnalyticsAccessGuard>
     </ReportLayout>
   );
 };

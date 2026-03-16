@@ -47,14 +47,6 @@ const Layout = () => {
     }
   }, [analyticsAccessUntil]);
 
-  // When entering any Analytics route, require OTP if there is no active access window
-  useEffect(() => {
-    if (!pathname.startsWith('/reports')) return;
-    if (!analyticsAccessUntil || Date.now() > analyticsAccessUntil) {
-      setAnalyticsModalOpen(true);
-    }
-  }, [pathname, analyticsAccessUntil]);
-
   // Auto‑reopen OTP modal when the 15‑minute window expires while user is on Analytics
   useEffect(() => {
     if (!pathname.startsWith('/reports')) return;
@@ -75,6 +67,16 @@ const Layout = () => {
     }, remaining);
     return () => clearTimeout(timer);
   }, [pathname, analyticsAccessUntil]);
+
+  // Allow reports pages or sidebar to explicitly request Analytics verification
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handler = () => {
+      setAnalyticsModalOpen(true);
+    };
+    window.addEventListener('analytics-request-access', handler);
+    return () => window.removeEventListener('analytics-request-access', handler);
+  }, []);
 
   const isPOSFullScreen = pathname === '/phone-shop-pos';
 
