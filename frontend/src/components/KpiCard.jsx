@@ -34,7 +34,7 @@ const KpiCard = ({ title, value, icon: Icon, trend, trendUp }) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4, boxShadow: '0 10px 30px rgba(255, 106, 0, 0.2)' }}
+      whileHover={{ y: -4, boxShadow: '0 10px 30px rgba(14, 92, 255, 0.18)' }}
       transition={{ duration: 0.2 }}
       className="bg-card rounded-lg p-6 border border-secondary"
     >
