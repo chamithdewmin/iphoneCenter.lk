@@ -13,7 +13,10 @@ import {
 
 // Helper to get colors based on light/dark theme
 const getColors = () => {
-  const isDark = document.documentElement.classList.contains('dark');
+  const root = document.documentElement;
+  // If light class is present, always treat as light even if "dark" is also present
+  const isLight = root.classList.contains('light');
+  const isDark = !isLight && root.classList.contains('dark');
   return {
     border: isDark ? '#171717' : '#e2e8f0',
     text: isDark ? '#ffffff' : '#0f172a',
@@ -492,7 +495,7 @@ const Topbar = ({ onMenuClick }) => {
     <header
       style={{
         padding: '14px 24px 10px 16px',
-        background: c.pageBg,
+        background: c.cardBg,
         position: 'sticky',
         top: 0,
         zIndex: 30,
