@@ -167,20 +167,34 @@ export default function PhoneShopPOS() {
             if (invType === 'unique') {
               // One card per available IMEI device
               try {
-                const imeiRes = await authFetch(`/api/inventory/imei?productId=${p.id}&status=in_stock`);
-                const imeiList = Array.isArray(imeiRes?.data?.data) ? imeiRes.data.data : [];
-                for (const row of imeiList) {
-                  if (!row?.imei) continue;
+                const { ok: imeiOk, data: imeiData } = await authFetch(
+                  `/api/inventory/imei?productId=${p.id}&status=in_stock`
+                );
+                const imeiList = imeiOk && Array.isArray(imeiData?.data) ? imeiData.data : [];
+
+                if (imeiList.length > 0) {
+                  for (const row of imeiList) {
+                    if (!row?.imei) continue;
+                    deviceCards.push({
+                      id: `u-${p.id}-${row.imei}`,
+                      name: `${baseName} – ${row.imei}`,
+                      inventory_type: 'unique',
+                      imei: row.imei,
+                      ...common,
+                    });
+                  }
+                } else {
+                  // Backend returned error or no IMEIs – show a single generic card
                   deviceCards.push({
-                    id: `u-${p.id}-${row.imei}`,
-                    name: `${baseName} – ${row.imei}`,
+                    id: `u-${p.id}`,
+                    name: String(baseName),
                     inventory_type: 'unique',
-                    imei: row.imei,
+                    imei: null,
                     ...common,
                   });
                 }
               } catch {
-                // If IMEI load fails, fall back to a single generic card
+                // If IMEI load throws, also fall back to a single generic card
                 deviceCards.push({
                   id: `u-${p.id}`,
                   name: String(baseName),
