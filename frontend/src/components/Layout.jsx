@@ -36,6 +36,9 @@ const Layout = () => {
     try {
       if (analyticsAccessUntil) {
         window.analyticsAccessUntil = analyticsAccessUntil;
+        window.dispatchEvent(
+          new CustomEvent('analytics-access-granted', { detail: analyticsAccessUntil })
+        );
       } else {
         window.analyticsAccessUntil = null;
       }
@@ -59,10 +62,16 @@ const Layout = () => {
     const remaining = analyticsAccessUntil - Date.now();
     if (remaining <= 0) {
       setAnalyticsModalOpen(true);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('analytics-access-expired'));
+      }
       return;
     }
     const timer = setTimeout(() => {
       setAnalyticsModalOpen(true);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('analytics-access-expired'));
+      }
     }, remaining);
     return () => clearTimeout(timer);
   }, [pathname, analyticsAccessUntil]);

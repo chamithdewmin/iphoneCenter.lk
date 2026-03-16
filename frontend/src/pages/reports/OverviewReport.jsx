@@ -34,6 +34,7 @@ import {
 import { authFetch } from "@/lib/api";
 import { getStorageData } from "@/utils/storage";
 import { getPrintHtml } from "@/utils/pdfPrint";
+import { useAnalyticsGate } from "@/hooks/useAnalyticsGate";
 
 const COLORS = [
   "hsl(187,80%,48%)",
@@ -85,6 +86,7 @@ function getMonthKeyLabel(raw) {
 }
 
 const OverviewReport = () => {
+  const analyticsAllowed = useAnalyticsGate();
   const [sales, setSales] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [purchases, setPurchases] = useState([]);
@@ -94,6 +96,11 @@ const OverviewReport = () => {
   const { selectedBranchId, setSelectedBranchId } = useBranchFilter();
 
   useEffect(() => {
+    if (!analyticsAllowed) {
+      // Don't load any data until analytics OTP is verified
+      return;
+    }
+
     let cancelled = false;
 
     (async () => {
@@ -139,7 +146,7 @@ const OverviewReport = () => {
     return () => {
       cancelled = true;
     };
-  }, [selectedBranchId, refreshKey]);
+  }, [selectedBranchId, refreshKey, analyticsAllowed]);
 
   const monthlyOverview = useMemo(() => {
     const map = new Map();
