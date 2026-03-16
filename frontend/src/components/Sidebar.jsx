@@ -194,7 +194,7 @@ function filterMenuGroups(groups, permissions, userRole) {
     .filter((group) => group.items.length > 0);
 }
 
-const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = false, onAnalyticsClick }) => {
+const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = false }) => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -286,22 +286,7 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
     return (
       <div>
         <button
-          onClick={() => {
-            // For Analytics menu: require OTP before expanding if access window is not active
-            if (item.label === 'Analytics' && typeof onAnalyticsClick === 'function') {
-              try {
-                const until = window.analyticsAccessUntil;
-                if (!until || until <= Date.now()) {
-                  onAnalyticsClick();
-                  return;
-                }
-              } catch {
-                onAnalyticsClick();
-                return;
-              }
-            }
-            setIsOpen(!isOpen);
-          }}
+          onClick={() => setIsOpen(!isOpen)}
           className={cn(
             "w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md transition-all duration-150 text-base font-medium",
             "hover:bg-secondary",
@@ -372,7 +357,7 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
   );
 };
 
-const Sidebar = ({ isOpen, onClose, onRequireAnalyticsOtp }) => {
+const Sidebar = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
@@ -474,13 +459,7 @@ const Sidebar = ({ isOpen, onClose, onRequireAnalyticsOtp }) => {
                 )}
                 <div className="space-y-1">
                   {group.items.map((item, idx) => (
-                    <MenuItem
-                      key={idx}
-                      item={item}
-                      onClose={onClose}
-                      isCollapsed={collapsed}
-                      onAnalyticsClick={item.label === 'Analytics' ? onRequireAnalyticsOtp : undefined}
-                    />
+                    <MenuItem key={idx} item={item} onClose={onClose} isCollapsed={collapsed} />
                   ))}
                 </div>
               </div>
