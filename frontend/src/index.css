@@ -10,121 +10,121 @@
   html.dark {
     --sidebar-width: 240px;
     /* Background Colors */
-    --background: #0c0e14;               /* Page background */
-    --card: #13161e;                     /* Card background */
-    --topbar-bg: #0f1117;                /* Topbar & table header */
-    --secondary: #111419;                /* Table odd row */
-    --muted: #1a1d27;                    /* Table hover */
+    --background: #000000;               /* Page background */
+    --card: #0a0a0a;                     /* Card background */
+    --topbar-bg: #0a0a0a;                /* Topbar & header background */
+    --secondary: #111419;                /* Secondary surfaces (tables, panels) */
+    --muted: #1a1d27;                    /* Subtle surfaces / hovers */
     --accent: #1c1e24;                   /* Button background */
-    --input: #1e2433;                    /* Input background */
+    --input: #1e293b;                    /* Input background */
     
     /* Borders */
-    --border: #1e2433;                   /* Border/divider */
-    --table-border: #2a3347;             /* Table border */
-    --button-border: #303338;             /* Button border */
+    --border: #171717;                   /* Border/divider */
+    --table-border: #171717;             /* Table border */
+    --button-border: #171717;            /* Button border */
     
-    /* Text Colors - all full white for dark theme */
+    /* Text Colors */
     --foreground: #ffffff;               /* Primary text */
     --card-foreground: #ffffff;          /* Text on cards */
     --primary-foreground: #ffffff;       /* White text on primary */
     --secondary-foreground: #ffffff;     /* Body text */
-    --muted-foreground: #ffffff;         /* Label text */
-    --accent-foreground: #ffffff;        /* Muted text */
+    --muted-foreground: #8b9ab0;         /* Muted / secondary text */
+    --accent-foreground: #ffffff;        /* Muted text on accent */
     --destructive-foreground: #ffffff;   /* White text on destructive */
     
-    /* Primary/Accent Colors - Blue gradient */
-    --primary: #3b82f6;                  /* Bright Blue */
-    --primary-mid: #2563eb;              /* Deep Blue */
-    --primary-dark: #1d4ed8;             /* Dark Blue */
-    --primary-darkest: #1e40af;          /* Darker accent */
-    --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 54%, #1d4ed8 100%);
-    --sidebar-active-bg: #2a3a4f;        /* Sidebar active background */
-    --sidebar-active-accent: #ff8040;    /* Sidebar active accent */
+    /* Primary / Accent Colors (brand blue) */
+    --primary: #0e5cff;                  /* Primary blue */
+    --primary-mid: #0b4fd6;              /* Slightly deeper blue */
+    --primary-dark: #0839a3;             /* Dark blue */
+    --primary-darkest: #05256f;          /* Darkest accent */
+    --primary-gradient: linear-gradient(135deg, #0e5cff 0%, #0839a3 100%);
+    --sidebar-active-bg: rgba(14, 92, 255, 0.15);   /* Active item background */
+    --sidebar-active-accent: #0e5cff;               /* Active icon/text */
     
     /* Status Colors */
     --success: #22c55e;                  /* Success/Income green */
-    --destructive: #ef4444;              /* Error/Expense red */
+    --destructive: #ef4444;             /* Error/Expense red */
     --warning: #eab308;                  /* Warning yellow */
     --cyan: #22d3ee;                     /* Cyan */
     --purple: #a78bfa;                   /* Purple */
-    --orange: #3b82f6;                   /* Primary blue */
+    --orange: #f97316;                   /* Orange */
     
     /* Focus Ring */
-    --ring: #3b82f6;                     /* Focus ring color */
+    --ring: #0e5cff;                     /* Focus ring color */
 
     /* Table Colors */
-    --table-header-bg: #0f1117;          /* Table header background */
+    --table-header-bg: #0a0a0a;          /* Table header background */
     --table-row-odd: #111419;            /* Odd row background */
     --table-row-even: #13161e;           /* Even row background */
     --table-row-hover: #1a1d27;          /* Row hover background */
-    --table-divider: #1e2433;            /* Table divider/border */
+    --table-divider: #171717;            /* Table divider/border */
     
-    /* Text Colors (duplicate for clarity) - all full white */
-    --text-primary: #ffffff;              /* Primary headings & values */
+    /* Text Colors (duplicates for clarity) */
+    --text-primary: #ffffff;             /* Primary headings & values */
     --text-body: #ffffff;                /* Body text, source names */
-    --text-label: #ffffff;               /* Labels, secondary text */
-    --text-muted: #ffffff;               /* Muted text, notes */
+    --text-label: #6b7280;               /* Labels, secondary text */
+    --text-muted: #8b9ab0;               /* Muted text, notes */
     --text-placeholder: #9ca3af;         /* Placeholder text (slightly muted for inputs only) */
     --input-text: #b8c0cc;               /* Light gray: text inside every input/select/textarea (all pages) */
     
     /* UI Elements */
     --button-bg: #1c1e24;                /* Button background */
-    --button-border: #303338;            /* Button border */
-    --scrollbar-track: #111;              /* Scrollbar track */
-    --scrollbar-thumb: #333;              /* Scrollbar thumb */
-    --scrollbar-thumb-hover: #444;       /* Scrollbar hover */
+    --button-border: #171717;            /* Button border */
+    --scrollbar-track: #1a1a1a;          /* Scrollbar track */
+    --scrollbar-thumb: #333333;          /* Scrollbar thumb */
+    --scrollbar-thumb-hover: #444444;    /* Scrollbar hover */
   }
 
   /* Light theme (applied when html has class "light") */
   html.light {
     --sidebar-width: 240px;
-    --background: #f4f5f7;
-    --card: #ffffff;
-    --topbar-bg: #ffffff;
-    --secondary: #eef0f3;
-    --muted: #e4e6eb;
-    --accent: #e4e6eb;
-    --input: #ffffff;
-    --border: #d1d5db;
-    --table-border: #e5e7eb;
-    --button-border: #d1d5db;
-    --foreground: #111827;
-    --card-foreground: #111827;
-    --primary-foreground: #ffffff;
-    --secondary-foreground: #374151;
-    --muted-foreground: #6b7280;
-    --accent-foreground: #4b5563;
+    --background: #f8fafc;               /* Page background */
+    --card: #ffffff;                     /* Card background */
+    --topbar-bg: #ffffff;                /* Topbar & header */
+    --secondary: #eef0f3;                /* Secondary surfaces */
+    --muted: #e4e6eb;                    /* Subtle surfaces / hovers */
+    --accent: #e4e6eb;                   /* Button background */
+    --input: #ffffff;                    /* Input background */
+    --border: #e2e8f0;                   /* Border/divider */
+    --table-border: #e2e8f0;             /* Table border */
+    --button-border: #e2e8f0;            /* Button border */
+    --foreground: #0f172a;               /* Primary text */
+    --card-foreground: #0f172a;          /* Text on cards */
+    --primary-foreground: #ffffff;       /* White on primary */
+    --secondary-foreground: #374151;     /* Body text */
+    --muted-foreground: #64748b;         /* Muted text */
+    --accent-foreground: #4b5563;        /* Accent text */
     --destructive-foreground: #ffffff;
-    --primary: #3b82f6;
-    --primary-mid: #2563eb;
-    --primary-dark: #1d4ed8;
-    --primary-darkest: #1e40af;
-    --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 54%, #1d4ed8 100%);
-    --sidebar-active-bg: #fef3eb;
-    --sidebar-active-accent: #3b82f6;
-    --success: #16a34a;
-    --destructive: #dc2626;
-    --warning: #ca8a04;
-    --cyan: #0891b2;
-    --purple: #7c3aed;
-    --orange: #3b82f6;
-    --ring: #3b82f6;
+    --primary: #0e5cff;
+    --primary-mid: #0b4fd6;
+    --primary-dark: #0839a3;
+    --primary-darkest: #05256f;
+    --primary-gradient: linear-gradient(135deg, #0e5cff 0%, #0839a3 100%);
+    --sidebar-active-bg: rgba(14, 92, 255, 0.1);
+    --sidebar-active-accent: #0e5cff;
+    --success: #22c55e;
+    --destructive: #ef4444;
+    --warning: #eab308;
+    --cyan: #22d3ee;
+    --purple: #a78bfa;
+    --orange: #f97316;
+    --ring: #0e5cff;
     --table-header-bg: #f9fafb;
     --table-row-odd: #ffffff;
     --table-row-even: #f9fafb;
     --table-row-hover: #f3f4f6;
     --table-divider: #e5e7eb;
-    --text-primary: #111827;
+    --text-primary: #0f172a;
     --text-body: #374151;
-    --text-label: #6b7280;
-    --text-muted: #4b5563;
+    --text-label: #64748b;
+    --text-muted: #94a3b8;
     --text-placeholder: #9ca3af;
-    --input-text: #9ca3af;               /* Light gray: text inside every input/select/textarea (all pages) */
+    --input-text: #111827;               /* Text inside inputs */
     --button-bg: #f3f4f6;
-    --button-border: #d1d5db;
-    --scrollbar-track: #e5e7eb;
-    --scrollbar-thumb: #9ca3af;
-    --scrollbar-thumb-hover: #6b7280;
+    --button-border: #e2e8f0;
+    --scrollbar-track: #f1f1f1;
+    --scrollbar-thumb: #c1c1c1;
+    --scrollbar-thumb-hover: #9ca3af;
   }
 
   * {
