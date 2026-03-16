@@ -30,6 +30,7 @@ import {
 import { authFetch } from "@/lib/api";
 import { getStorageData } from "@/utils/storage";
 import { getPrintHtml } from "@/utils/pdfPrint";
+import AnalyticsAccessGuard from "@/components/AnalyticsAccessGuard";
 
 function getMonthKeyLabel(raw) {
   const d = raw ? new Date(raw) : null;
@@ -358,34 +359,35 @@ const ProfitLossReport = () => {
       title="Profit & Loss Report"
       subtitle="Comprehensive income statement analysis and margin tracking"
     >
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-        <BranchFilter id="pl-branch" value={selectedBranchId} onChange={setSelectedBranchId} />
-        <div className="flex flex-wrap gap-2 justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportCsv}
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Export CSV
-          </Button>
-          <Button
-            size="sm"
-            onClick={handleDownloadPdf}
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Download PDF
-          </Button>
+      <AnalyticsAccessGuard>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <BranchFilter id="pl-branch" value={selectedBranchId} onChange={setSelectedBranchId} />
+          <div className="flex flex-wrap gap-2 justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportCsv}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleDownloadPdf}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download PDF
+            </Button>
+          </div>
         </div>
-      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
           label="Net Revenue"
@@ -675,6 +677,7 @@ const ProfitLossReport = () => {
           </div>
         </div>
       </div>
+      </AnalyticsAccessGuard>
     </ReportLayout>
   );
 };

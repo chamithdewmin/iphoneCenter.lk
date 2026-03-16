@@ -22,6 +22,7 @@ import { BranchFilter } from '@/components/BranchFilter';
 import { useBranchFilter } from '@/hooks/useBranchFilter';
 import { authFetch } from '@/lib/api';
 import { getPrintHtml } from '@/utils/pdfPrint';
+import AnalyticsAccessGuard from '@/components/AnalyticsAccessGuard';
 
 const downloadCsv = (filename, rows) => {
   if (!rows || rows.length === 0) return;
@@ -237,23 +238,24 @@ const SaleReport = () => {
         title="Sales Report"
         subtitle="Monitor sales performance, revenue trends and channel insights"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-          <BranchFilter id="sale-branch" value={selectedBranchId} onChange={setSelectedBranchId} />
-          <div className="flex flex-wrap gap-2 justify-end">
-            <Button variant="outline" size="sm" onClick={handleRefresh}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleExportCsv}>
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV
-            </Button>
-            <Button size="sm" onClick={handleDownloadPdf}>
-              <Download className="w-4 h-4 mr-2" />
-              Download PDF
-            </Button>
+        <AnalyticsAccessGuard>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <BranchFilter id="sale-branch" value={selectedBranchId} onChange={setSelectedBranchId} />
+            <div className="flex flex-wrap gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={handleRefresh}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExportCsv}>
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
+              <Button size="sm" onClick={handleDownloadPdf}>
+                <Download className="w-4 h-4 mr-2" />
+                Download PDF
+              </Button>
+            </div>
           </div>
-        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard
             label="Total Revenue"
@@ -486,6 +488,7 @@ const SaleReport = () => {
             </div>
           </div>
         </div>
+        </AnalyticsAccessGuard>
       </ReportLayout>
     </>
   );
