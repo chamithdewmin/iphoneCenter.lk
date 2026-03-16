@@ -403,7 +403,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-2 bottom-2 left-2 z-50 bg-card border border-secondary rounded-2xl shadow-xl transition-all duration-200 lg:translate-x-0",
+          "fixed top-2 bottom-2 left-2 z-50 bg-card border border-secondary rounded-2xl transition-all duration-200 lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
         style={{ width: sidebarWidth }}

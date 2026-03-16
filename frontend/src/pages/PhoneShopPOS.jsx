@@ -50,23 +50,26 @@ const IconRefresh = () => (
   </svg>
 );
 
+// Brand blue used across POS UI
+const BRAND_BLUE = '#0e5cff';
+
 // Fallback when API returns no products (e.g. offline or empty DB)
 const FALLBACK_PRODUCTS = [
-  { id: 1,  name: "iPhone 15 Pro Max",   price: 1199, category: "iPhone",   color: "#ff8040", img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 2,  name: "iPhone 15 Pro",       price: 999,  category: "iPhone",   color: "#ff8040", img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 3,  name: "iPhone 15",           price: 799,  category: "iPhone",   color: "#ff8040", img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 4,  name: "iPhone 14",           price: 699,  category: "iPhone",   color: "#ff8040", img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 5,  name: "AirPods Pro 2",       price: 249,  category: "AirPods",  color: "#ff8040", img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 6,  name: "AirPods 3rd Gen",     price: 179,  category: "AirPods",  color: "#ff8040", img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 7,  name: "AirPods Max",         price: 549,  category: "AirPods",  color: "#ff8040", img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 8,  name: "Apple Watch Ultra 2", price: 799,  category: "Watch",    color: "#ff8040", img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 9,  name: "Apple Watch S9",      price: 399,  category: "Watch",    color: "#ff8040", img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 10, name: 'iPad Pro 12.9"',      price: 1099, category: "iPad",     color: "#ff8040", img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 11, name: "iPad Air",            price: 599,  category: "iPad",     color: "#ff8040", img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 12, name: "MacBook Air M3",      price: 1299, category: "Mac",      color: "#ff8040", img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
+  { id: 1,  name: "iPhone 15 Pro Max",   price: 1199, category: "iPhone",   color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
+  { id: 2,  name: "iPhone 15 Pro",       price: 999,  category: "iPhone",   color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
+  { id: 3,  name: "iPhone 15",           price: 799,  category: "iPhone",   color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
+  { id: 4,  name: "iPhone 14",           price: 699,  category: "iPhone",   color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
+  { id: 5,  name: "AirPods Pro 2",       price: 249,  category: "AirPods",  color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
+  { id: 6,  name: "AirPods 3rd Gen",     price: 179,  category: "AirPods",  color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
+  { id: 7,  name: "AirPods Max",         price: 549,  category: "AirPods",  color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
+  { id: 8,  name: "Apple Watch Ultra 2", price: 799,  category: "Watch",    color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
+  { id: 9,  name: "Apple Watch S9",      price: 399,  category: "Watch",    color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
+  { id: 10, name: 'iPad Pro 12.9"',      price: 1099, category: "iPad",     color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
+  { id: 11, name: "iPad Air",            price: 599,  category: "iPad",     color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
+  { id: 12, name: "MacBook Air M3",      price: 1299, category: "Mac",      color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
 ];
 
-const PLACEHOLDER_IMG = "https://via.placeholder.com/200x200/1e2433/ff8040?text=Product";
+const PLACEHOLDER_IMG = "https://via.placeholder.com/200x200/1e2433/0e5cff?text=Product";
 
 // ── Product Image Component ───────────────────────────────────────────────────
 const ProductImage = ({ product }) => {
@@ -299,11 +302,11 @@ export default function PhoneShopPOS() {
 
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #0c0e14; font-family: ${SYS_FONT}; }
+        body { background: var(--background); font-family: ${SYS_FONT}; }
         ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: #111; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #444; }
+        ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
         .prod-card { transition: all 0.18s ease; }
@@ -312,7 +315,7 @@ export default function PhoneShopPOS() {
         .add-btn:hover { opacity: 0.9; }
       `}</style>
 
-      <div style={{ fontFamily: SYS_FONT, background: "#0c0e14", color: "#fff", height: "100%", minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div style={{ fontFamily: SYS_FONT, background: "var(--background)", color: "var(--foreground)", height: "100%", minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ display: "flex", flex: 1, minHeight: 0, overflow: "hidden" }}>
 
           {/* ── LEFT: Products ── */}
@@ -336,10 +339,15 @@ export default function PhoneShopPOS() {
               {categories.map((c) => (
                 <button key={c} onClick={() => setCategory(c)}
                   style={{
-                    padding: "6px 15px", borderRadius: 20, cursor: "pointer", fontFamily: SYS_FONT,
-                    fontSize: 12, fontWeight: category === c ? 600 : 400, transition: "all 0.15s",
-                    border: category === c ? "none" : "1px solid #303338",
-                    background: category === c ? "linear-gradient(135deg, #ff8040 0%, #c03800 100%)" : "#1c1e24",
+                    padding: "6px 15px",
+                    borderRadius: 20,
+                    cursor: "pointer",
+                    fontFamily: SYS_FONT,
+                    fontSize: 12,
+                    fontWeight: category === c ? 600 : 400,
+                    transition: "all 0.15s",
+                    border: category === c ? "none" : "1px solid var(--button-border)",
+                    background: category === c ? "var(--primary-gradient)" : "var(--accent)",
                     color: category === c ? "#fff" : "#8b9ab0",
                   }}>
                   {c}
@@ -414,10 +422,10 @@ export default function PhoneShopPOS() {
           </div>
 
           {/* ── RIGHT: Order panel — fits viewport; only cart list scrolls when many items ── */}
-          <div style={{ width: 480, flexShrink: 0, background: "#13161e", borderLeft: "1px solid #1e2433", display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
+          <div style={{ width: 480, flexShrink: 0, background: "var(--card)", borderLeft: "1px solid var(--border)", display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
 
             {/* Header */}
-            <div style={{ background: "#0f1117", borderBottom: "1px solid #1e2433", padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ background: "var(--card)", borderBottom: "1px solid var(--border)", padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
                 <div style={{ fontWeight: 700, fontSize: 15 }}>Order Details</div>
                 <div style={{ color: "#8b9ab0", fontSize: 11, marginTop: 2 }}>{cart.reduce((s, i) => s + i.qty, 0)} items · ${subtotal.toFixed(2)}</div>
@@ -465,13 +473,13 @@ export default function PhoneShopPOS() {
             </div>
 
             {/* Tabs */}
-            <div style={{ display: "flex", borderBottom: "1px solid #1e2433" }}>
+            <div style={{ display: "flex", borderBottom: "1px solid var(--border)" }}>
               {["Walk-In", "Pick Up", "Delivery"].map((t) => (
                 <button key={t} onClick={() => setTab(t)}
                   style={{
                     flex: 1, padding: "11px 0", textAlign: "center", fontSize: 11, fontWeight: tab === t ? 700 : 400,
-                    color: tab === t ? "#ff8040" : "#6b7a99",
-                    borderBottom: tab === t ? "2px solid #ff8040" : "2px solid transparent",
+                    color: tab === t ? "var(--primary)" : "#6b7a99",
+                    borderBottom: tab === t ? "2px solid var(--primary)" : "2px solid transparent",
                     cursor: "pointer", background: "transparent", border: "none",
                     fontFamily: SYS_FONT, transition: "all 0.15s",
                   }}>
@@ -513,7 +521,7 @@ export default function PhoneShopPOS() {
             </div>
 
             {/* Summary */}
-            <div style={{ borderTop: "1px solid #1e2433", padding: "8px 18px 10px", display: "flex", flexDirection: "column", gap: 5 }}>
+            <div style={{ borderTop: "1px solid var(--border)", padding: "8px 18px 10px", display: "flex", flexDirection: "column", gap: 5 }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#8b9ab0" }}>
                 <span>Sub Total</span>
                 <span style={{ color: "#d1d9e6", fontWeight: 600 }}>${subtotal.toFixed(2)}</span>
@@ -522,7 +530,7 @@ export default function PhoneShopPOS() {
               <div style={{ position: "relative" }}>
                 <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}><IconTag /></span>
                 <input
-                  style={{ background: "#1e2433", border: "1px solid #2a3347", borderRadius: 8, padding: "5px 10px 5px 28px", height: 32, color: "#d1d9e6", fontSize: 13, width: "100%", outline: "none", fontFamily: SYS_FONT, boxSizing: "border-box" }}
+                  style={{ background: "var(--input)", border: "1px solid var(--border)", borderRadius: 8, padding: "5px 10px 5px 28px", height: 32, color: "var(--input-text)", fontSize: 13, width: "100%", outline: "none", fontFamily: SYS_FONT, boxSizing: "border-box" }}
                   placeholder="Discount amount ($)"
                   value={discount}
                   onChange={(e) => setDiscount(e.target.value)}
@@ -534,9 +542,9 @@ export default function PhoneShopPOS() {
                 <span>Discount</span>
                 <span style={{ color: "#ef4444", fontWeight: 600 }}>−${discountAmt.toFixed(2)}</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 17, fontWeight: 800, color: "#fff", borderTop: "1px solid #1e2433", paddingTop: 6, marginTop: 2 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 17, fontWeight: 800, color: "#fff", borderTop: "1px solid var(--border)", paddingTop: 6, marginTop: 2 }}>
                 <span>Total Payment</span>
-                <span style={{ color: "#ff8040" }}>${total.toFixed(2)}</span>
+                <span style={{ color: "var(--primary)" }}>${total.toFixed(2)}</span>
               </div>
             </div>
 
@@ -550,7 +558,7 @@ export default function PhoneShopPOS() {
                   flex: 2, border: "none", borderRadius: 10, fontWeight: 700, fontSize: 14, padding: "14px 0",
                   cursor: payNowDisabled ? "not-allowed" : "pointer", fontFamily: SYS_FONT,
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  background: payNowDisabled ? "#1c1e24" : "linear-gradient(135deg, #ff8040 0%, #e05010 54%, #c03800 100%)",
+                  background: payNowDisabled ? "#1c1e24" : "var(--primary-gradient)",
                   color: payNowDisabled ? "#4a5568" : "#fff",
                   transition: "opacity 0.15s",
                 }}>
