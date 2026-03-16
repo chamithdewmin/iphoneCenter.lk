@@ -13,6 +13,7 @@ const Layout = () => {
   const { pathname } = location;
   const navigate = useNavigate();
   const [analyticsModalOpen, setAnalyticsModalOpen] = useState(false);
+  const [analyticsAccessUntil, setAnalyticsAccessUntil] = useState(null);
   useEffect(() => {
     if (user?.role === 'cashier' && !CASHIER_ALLOWED_PATHS.has(pathname)) {
       navigate('/dashboard', { replace: true });
@@ -30,6 +31,42 @@ const Layout = () => {
     }
   }, [user?.role, pathname, navigate]);
 
+  // Expose analytics access time globally for convenience (optional)
+  useEffect(() => {
+    try {
+      if (analyticsAccessUntil) {
+        window.analyticsAccessUntil = analyticsAccessUntil;
+      } else {
+        window.analyticsAccessUntil = null;
+      }
+    } catch {
+      // ignore
+    }
+  }, [analyticsAccessUntil]);
+
+  // When entering any Analytics route, require OTP if there is no active access window
+  useEffect(() => {
+    if (!pathname.startsWith('/reports')) return;
+    if (!analyticsAccessUntil || Date.now() > analyticsAccessUntil) {
+      setAnalyticsModalOpen(true);
+    }
+  }, [pathname, analyticsAccessUntil]);
+
+  // Auto‑reopen OTP modal when the 15‑minute window expires while user is on Analytics
+  useEffect(() => {
+    if (!pathname.startsWith('/reports')) return;
+    if (!analyticsAccessUntil) return;
+    const remaining = analyticsAccessUntil - Date.now();
+    if (remaining <= 0) {
+      setAnalyticsModalOpen(true);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setAnalyticsModalOpen(true);
+    }, remaining);
+    return () => clearTimeout(timer);
+  }, [pathname, analyticsAccessUntil]);
+
   const isPOSFullScreen = pathname === '/phone-shop-pos';
 
   return (
@@ -45,7 +82,19 @@ const Layout = () => {
       <AnalyticsOtpModal
         open={analyticsModalOpen && pathname.startsWith('/reports')}
         onClose={() => setAnalyticsModalOpen(false)}
-        onVerified={() => {
+        onVerified={(grantedUntil) => {
+          if (grantedUntil) {
+            try {
+              const ts = typeof grantedUntil === 'string'
+                ? new Date(grantedUntil).getTime()
+                : new Date(grantedUntil).getTime();
+              setAnalyticsAccessUntil(ts);
+            } catch {
+              setAnalyticsAccessUntil(null);
+            }
+          } else {
+            setAnalyticsAccessUntil(null);
+          }
           setAnalyticsModalOpen(false);
         }}
       />
