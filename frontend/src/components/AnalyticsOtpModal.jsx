@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Clock } from 'lucide-react';
 import { authFetch } from '@/lib/api';
@@ -12,6 +12,7 @@ const AnalyticsOtpModal = ({ open, onClose, onVerified, phoneMasked = 'your regi
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
+  const inputsRef = useRef([]);
 
   useEffect(() => {
     if (!open) {
@@ -57,6 +58,15 @@ const AnalyticsOtpModal = ({ open, onClose, onVerified, phoneMasked = 'your regi
     next[index] = value;
     setDigits(next);
     setError('');
+
+    // Move focus to next box when a digit is typed
+    if (value && index < inputsRef.current.length - 1) {
+      const nextInput = inputsRef.current[index + 1];
+      if (nextInput) {
+        nextInput.focus();
+        nextInput.select?.();
+      }
+    }
   };
 
   const otpComplete = digits.every((d) => d !== '');
@@ -168,8 +178,20 @@ const AnalyticsOtpModal = ({ open, onClose, onVerified, phoneMasked = 'your regi
                       type="text"
                       inputMode="numeric"
                       maxLength={1}
+                      ref={(el) => {
+                        inputsRef.current[idx] = el;
+                      }}
                       value={d}
                       onChange={(e) => handleDigitChange(idx, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Backspace' && !digits[idx] && idx > 0) {
+                          const prevInput = inputsRef.current[idx - 1];
+                          if (prevInput) {
+                            prevInput.focus();
+                            prevInput.select?.();
+                          }
+                        }
+                      }}
                       className="w-10 h-10 rounded-lg border border-input bg-background text-center text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                     />
                   ))}
