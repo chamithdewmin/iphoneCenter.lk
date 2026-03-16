@@ -153,13 +153,19 @@ const AddDevices = () => {
       </Helmet>
 
       <div className="space-y-6 max-w-3xl mx-auto">
-        <div>
+        <div className="space-y-2">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
             Add Devices (IMEI)
           </h1>
           <p className="text-muted-foreground mt-1">
             Add stock for unique (IMEI-tracked) products. Only products with inventory type &quot;Unique&quot; appear here.
           </p>
+          <div className="inline-flex items-start gap-2 rounded-lg border border-secondary bg-secondary/20 px-3 py-2 text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground">Tip:</span>
+            <span>
+              Devices added here use the product&apos;s pricing and warranty settings. Switch branches above to add IMEIs to a different shop.
+            </span>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card rounded-xl border border-secondary shadow-sm p-6">

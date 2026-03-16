@@ -443,63 +443,65 @@ const AddProduct = () => {
               </div>
 
               {/* Additional Details */}
-              <div className="border-t border-secondary pt-6">
-                <h2 className="text-xl font-semibold mb-4">Additional Details</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="md:col-span-2 lg:col-span-3">
-                    <Label htmlFor="description">Description</Label>
-                    <textarea
-                      id="description"
-                      name="description"
-                      value={formData.description}
-                      onChange={handleChange}
-                      placeholder="Product description..."
-                      rows="4"
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="warranty_months">Warranty period</Label>
-                    <select
-                      id="warranty_months"
-                      name="warranty_months"
-                      value={formData.warranty_months}
-                      onChange={handleChange}
-                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
-                    >
-                      <option value="">No warranty</option>
-                      <option value="3">3 months</option>
-                      <option value="6">6 months</option>
-                      <option value="12">12 months</option>
-                      <option value="18">18 months</option>
-                      <option value="24">24 months</option>
-                      <option value="36">36 months</option>
-                    </select>
-                  </div>
-                  <div>
-                    <Label htmlFor="colors">Colors (comma-separated)</Label>
-                    <Input
-                      id="colors"
-                      name="colors"
-                      value={formData.colors}
-                      onChange={handleChange}
-                      placeholder="e.g., Black, White, Blue"
-                      className="mt-1 text-foreground bg-background"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <Label htmlFor="images">Image URLs (comma-separated)</Label>
-                    <Input
-                      id="images"
-                      name="images"
-                      value={formData.images}
-                      onChange={handleChange}
-                      placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                      className="mt-1 text-foreground bg-background"
-                    />
+              {formData.inventory_type === 'quantity' && (
+                <div className="border-t border-secondary pt-6">
+                  <h2 className="text-xl font-semibold mb-4">Additional Details</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="md:col-span-2 lg:col-span-3">
+                      <Label htmlFor="description">Description</Label>
+                      <textarea
+                        id="description"
+                        name="description"
+                        value={formData.description}
+                        onChange={handleChange}
+                        placeholder="Product description..."
+                        rows="4"
+                        className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="warranty_months">Warranty period</Label>
+                      <select
+                        id="warranty_months"
+                        name="warranty_months"
+                        value={formData.warranty_months}
+                        onChange={handleChange}
+                        className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                      >
+                        <option value="">No warranty</option>
+                        <option value="3">3 months</option>
+                        <option value="6">6 months</option>
+                        <option value="12">12 months</option>
+                        <option value="18">18 months</option>
+                        <option value="24">24 months</option>
+                        <option value="36">36 months</option>
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor="colors">Colors (comma-separated)</Label>
+                      <Input
+                        id="colors"
+                        name="colors"
+                        value={formData.colors}
+                        onChange={handleChange}
+                        placeholder="e.g., Black, White, Blue"
+                        className="mt-1 text-foreground bg-background"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="images">Image URLs (comma-separated)</Label>
+                      <Input
+                        id="images"
+                        name="images"
+                        value={formData.images}
+                        onChange={handleChange}
+                        placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                        className="mt-1 text-foreground bg-background"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Form Actions */}
