@@ -130,17 +130,15 @@ export default function PhoneShopPOS() {
     (async () => {
       setProductsLoading(true);
       try {
-        const res = await authFetch('/api/inventory/products');
+        const { ok, data } = await authFetch('/api/inventory/products');
         if (cancelled) return;
-        // Support multiple response shapes: { data: [...] }, { products: [...] }, or array
-        const raw = res?.data;
-        const list = Array.isArray(raw?.data)
-          ? raw.data
-          : Array.isArray(raw?.products)
-            ? raw.products
-            : Array.isArray(raw)
-              ? raw
-              : [];
+        if (!ok) {
+          console.error('Failed to load products for POS:', data);
+          setProducts([]);
+          return;
+        }
+
+        const list = Array.isArray(data?.data) ? data.data : [];
 
         if (list.length > 0) {
           const deviceCards = [];
