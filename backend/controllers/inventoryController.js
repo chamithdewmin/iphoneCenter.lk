@@ -310,14 +310,15 @@ const addIMEI = async (req, res, next) => {
         }
 
         const [productRows] = await connection.execute(
-            'SELECT id, inventory_type FROM products WHERE id = ? AND is_active = TRUE',
+            'SELECT id, inventory_type, wholesale_price, base_price FROM products WHERE id = ? AND is_active = TRUE',
             [productId]
         );
         if (productRows.length === 0) {
             await connection.rollback();
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
-        const invType = (productRows[0].inventory_type || 'quantity').toLowerCase();
+        const productRow = productRows[0];
+        const invType = (productRow.inventory_type || 'quantity').toLowerCase();
         if (invType !== 'unique') {
             await connection.rollback();
             return res.status(400).json({
@@ -332,6 +333,18 @@ const addIMEI = async (req, res, next) => {
                 success: false,
                 message: 'Branch is required. Set branch context or send branchId.'
             });
+        }
+
+        // Resolve effective purchase price: prefer explicit value, fall back to product wholesale/base
+        let defaultPurchasePrice = null;
+        if (purchasePrice != null && purchasePrice !== '') {
+            const n = Number(purchasePrice);
+            defaultPurchasePrice = Number.isNaN(n) ? null : n;
+        }
+        if (defaultPurchasePrice == null) {
+            const wholesale = productRow.wholesale_price != null ? Number(productRow.wholesale_price) : NaN;
+            const base = productRow.base_price != null ? Number(productRow.base_price) : NaN;
+            defaultPurchasePrice = !Number.isNaN(wholesale) ? wholesale : (!Number.isNaN(base) ? base : null);
         }
 
         const added = [];
@@ -354,7 +367,7 @@ const addIMEI = async (req, res, next) => {
             const [result] = await connection.execute(
                 `INSERT INTO product_imeis (product_id, branch_id, imei, color, purchase_price, status) 
                  VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
-                [productId, branchId, imei, color || null, purchasePrice || null, statusVal]
+                [productId, branchId, imei, color || null, defaultPurchasePrice, statusVal]
             );
             const id = result.insertId ?? (result.rows && result.rows[0] && result.rows[0].id);
             added.push({ id, imei });
