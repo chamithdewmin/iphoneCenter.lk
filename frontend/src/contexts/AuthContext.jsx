@@ -128,6 +128,15 @@ export const AuthProvider = ({ children }) => {
     }
     clearTokens();
     localStorage.removeItem('auth');
+    // Clear any Analytics access window on logout so new sessions must re-verify
+    try {
+      if (typeof window !== 'undefined') {
+        window.analyticsAccessUntil = null;
+        window.dispatchEvent(new Event('analytics-access-expired'));
+      }
+    } catch {
+      // ignore
+    }
     setUser(null);
     setIsAuthenticated(false);
   };

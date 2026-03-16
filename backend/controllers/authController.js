@@ -441,6 +441,22 @@ const logout = async (req, res, next) => {
             );
         }
 
+    // When user logs out, immediately revoke any active Analytics OTP sessions
+    if (userId && userId !== TEST_USER_ID) {
+      try {
+        await executeQuery(
+          'DELETE FROM analytics_otp_sessions WHERE user_id = ?',
+          [userId]
+        );
+      } catch (revokeError) {
+        // Don't block logout if analytics session cleanup fails – just log it
+        logger.error('Failed to revoke analytics sessions on logout:', {
+          userId,
+          message: revokeError?.message,
+        });
+      }
+    }
+
         // Update logout time for the most recent login log without logout time
         if (userId && userId !== TEST_USER_ID) {
             const [loginLogs] = await executeQuery(
