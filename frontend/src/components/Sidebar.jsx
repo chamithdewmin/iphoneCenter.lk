@@ -113,7 +113,7 @@ const menuGroups = [
     label: 'People & Partners',
     items: [
       { type: 'link', to: '/people/customers', icon: Users, label: 'Customers', permission: 'customers' },
-      { type: 'link', to: '/people/suppliers', icon: Building2, label: 'Suppliers', permission: 'customers' },
+      { type: 'link', to: '/people/suppliers', icon: Building2, label: 'Suppliers', permission: 'customers', includeRoles: ['admin'] },
       { type: 'link', to: '/users', icon: UserCog, label: 'Users', permission: 'users' },
     ],
   },
