@@ -5,14 +5,6 @@ import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 
 const STATUS_OPTIONS = [
   'Pending',
@@ -222,28 +214,27 @@ const WarrantyClaims = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-1">
                 <Label>Problem Description</Label>
-                <Textarea
+                <textarea
                   name="problem"
                   value={form.problem}
                   onChange={handleFormChange}
-                  className="min-h-[96px]"
+                  className="min-h-[96px] mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   placeholder="Describe the issue / fault reported by the customer"
                 />
               </div>
               <div>
                 <Label>Status</Label>
-                <Select value={form.status} onValueChange={handleStatusChange}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <select
+                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={form.status}
+                  onChange={(e) => handleStatusChange(e.target.value)}
+                >
+                  {STATUS_OPTIONS.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
