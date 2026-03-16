@@ -34,6 +34,7 @@ const AddProduct = () => {
     category: '',
     category_id: '',
     inventory_type: 'quantity',
+    warranty_months: '',
   });
 
   const fetchBrands = useCallback(async () => {
@@ -91,6 +92,7 @@ const AddProduct = () => {
               category: product.category || product.category_name || '',
               category_id: product.category_id ?? '',
               inventory_type: product.inventory_type || 'quantity',
+              warranty_months: product.warranty_months != null ? String(product.warranty_months) : '',
             });
           }
         } catch (error) {
@@ -122,6 +124,7 @@ const AddProduct = () => {
     const sku = formData.sku?.trim() || `SKU-${Date.now()}`;
     const wholesale = formData.wholesalePrice !== '' ? Number(formData.wholesalePrice) : NaN;
     const retail = formData.retailPrice !== '' ? Number(formData.retailPrice) : NaN;
+    const warrantyMonths = formData.warranty_months !== '' ? Number(formData.warranty_months) : null;
 
     if (Number.isNaN(wholesale) || wholesale < 0) {
       toast({ title: 'Validation Error', description: 'Valid wholesale price is required', variant: 'destructive' });
@@ -153,6 +156,7 @@ const AddProduct = () => {
         retailPrice: Number(retail),
         inventory_type: formData.inventory_type || 'quantity',
         category_id: formData.category_id || null,
+        warranty_months: warrantyMonths,
       };
       if (formData.inventory_type === 'quantity') {
         payload.stock = Math.max(0, parseInt(formData.stock, 10) || 0);
@@ -185,6 +189,7 @@ const AddProduct = () => {
           category_id: formData.category_id || null,
           initialQuantity,
           stock: initialQuantity,
+          warranty_months: warrantyMonths,
           ...(branchId ? { branchId } : {}),
         }),
       });
@@ -405,6 +410,24 @@ const AddProduct = () => {
                       rows="4"
                       className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
                     />
+                  </div>
+                  <div>
+                    <Label htmlFor="warranty_months">Warranty period</Label>
+                    <select
+                      id="warranty_months"
+                      name="warranty_months"
+                      value={formData.warranty_months}
+                      onChange={handleChange}
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                    >
+                      <option value="">No warranty</option>
+                      <option value="3">3 months</option>
+                      <option value="6">6 months</option>
+                      <option value="12">12 months</option>
+                      <option value="18">18 months</option>
+                      <option value="24">24 months</option>
+                      <option value="36">36 months</option>
+                    </select>
                   </div>
                   <div>
                     <Label htmlFor="colors">Colors (comma-separated)</Label>
