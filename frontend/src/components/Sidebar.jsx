@@ -49,7 +49,8 @@ import {
   Mail,
   LogOut,
   ShoppingCart,
-  ClipboardList
+  ClipboardList,
+  ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRolePermissions } from '@/constants/rolePermissions';
@@ -141,6 +142,23 @@ const menuGroups = [
           { to: '/reports/customer', label: 'Customer Report', icon: FileText },
           { to: '/reports/warehouse', label: 'Warehouse Report', icon: FileText },
           { to: '/reports/supplier', label: 'Supplier Report', icon: FileText },
+        ],
+      },
+    ],
+  },
+  {
+    label: 'Warranty',
+    items: [
+      {
+        type: 'menu',
+        icon: ShieldCheck,
+        label: 'Warranty',
+        permission: 'orders',
+        includeRoles: ['admin', 'manager', 'staff'],
+        children: [
+          { to: '/warranty/checker', label: 'Warranty Checker' },
+          { to: '/warranty/claims', label: 'Warranty Claims' },
+          { to: '/warranty/history', label: 'Warranty History' },
         ],
       },
     ],

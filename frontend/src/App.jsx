@@ -101,6 +101,11 @@ import AddPerOrder from './pages/per-order/AddPerOrder';
 import ListPerOrder from './pages/per-order/ListPerOrder';
 import Orders from './pages/per-order/Orders';
 
+// Warranty
+import WarrantyChecker from './pages/warranty/WarrantyChecker';
+import WarrantyClaims from './pages/warranty/WarrantyClaims';
+import WarrantyHistory from './pages/warranty/WarrantyHistory';
+
 // Simple admin-only route guard
 const RequireAdmin = ({ children }) => {
   const { user } = useAuth();
@@ -280,6 +285,12 @@ function App() {
         {/* Per Order */}
         <Route path="per-order/add" element={<AddPerOrder />} />
         <Route path="per-order/list" element={<ListPerOrder />} />
+
+        {/* Warranty */}
+        <Route path="warranty/checker" element={<WarrantyChecker />} />
+        <Route path="warranty/claims" element={<WarrantyClaims />} />
+        <Route path="warranty/claims/new" element={<WarrantyClaims />} />
+        <Route path="warranty/history" element={<WarrantyHistory />} />
       </Route>
     </Routes>
   );
