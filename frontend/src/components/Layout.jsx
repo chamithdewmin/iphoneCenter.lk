@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { CASHIER_ALLOWED_PATHS } from '@/constants/cashierPaths';
 import Sidebar from '@/components/Sidebar';
+import Topbar from '@/components/Topbar';
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -33,6 +34,7 @@ const Layout = () => {
     <div className="min-h-screen bg-background">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className={isPOSFullScreen ? 'h-screen overflow-hidden lg:pl-[var(--sidebar-width,240px)]' : 'lg:pl-[var(--sidebar-width,240px)] transition-all duration-200'}>
+        {!isPOSFullScreen && <Topbar onMenuClick={() => setSidebarOpen(true)} />}
         <main className={isPOSFullScreen ? 'h-full overflow-hidden p-0' : 'p-4 lg:p-6'}>
           <Outlet />
         </main>
