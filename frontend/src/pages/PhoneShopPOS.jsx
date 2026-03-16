@@ -69,7 +69,9 @@ const FALLBACK_PRODUCTS = [
   { id: 12, name: "MacBook Air M3",      price: 1299, category: "Mac",      color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
 ];
 
-const PLACEHOLDER_IMG = "https://via.placeholder.com/200x200/1e2433/0e5cff?text=Product";
+// Small inline SVG placeholder (no external network call)
+const PLACEHOLDER_IMG =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect width='200' height='200' fill='%231e2433'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%230e5cff' font-size='14' font-family='system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\"'%3EProduct%3C/text%3E%3C/svg%3E";
 
 // ── Product Image Component ───────────────────────────────────────────────────
 const ProductImage = ({ product }) => {
@@ -82,10 +84,10 @@ const ProductImage = ({ product }) => {
       position: "relative", overflow: "hidden",
     }}>
       <img
-        src={img}
+        src={img || PLACEHOLDER_IMG}
         alt={product.name}
         onError={(e) => {
-          e.target.src = `https://via.placeholder.com/200x200/1e2433/${color.replace('#', '')}?text=${encodeURIComponent(product.name)}`;
+          e.target.src = PLACEHOLDER_IMG;
         }}
         style={{
           width: "100%", height: "100%", objectFit: "cover", position: "relative", zIndex: 1,
@@ -101,10 +103,10 @@ const CartThumb = ({ product }) => {
   return (
     <div style={{ width: 44, height: 44, borderRadius: 8, background: `${color}10`, border: `1px solid ${color}25`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
       <img
-        src={img}
+        src={img || PLACEHOLDER_IMG}
         alt={name}
         onError={(e) => {
-          e.target.src = `https://via.placeholder.com/44x44/1e2433/${color.replace('#', '')}?text=${encodeURIComponent(name.charAt(0))}`;
+          e.target.src = PLACEHOLDER_IMG;
         }}
         style={{ width: "100%", height: "100%", objectFit: "contain", padding: 3 }}
       />
@@ -155,33 +157,71 @@ export default function PhoneShopPOS() {
             : Array.isArray(raw)
               ? raw
               : [];
+
         if (list.length > 0) {
+          const deviceCards = [];
           const seen = new Set();
-          const mapped = list
-            .filter((p) => {
-              const id = p.id;
-              if (seen.has(id)) return false;
-              seen.add(id);
-              return true;
-            })
-            .map((p) => {
-              const name = p.name ?? p.product_name ?? p.sku ?? 'Product';
-              const price = Number(
-                p.retail_price ?? p.retailPrice ?? p.base_price ?? p.basePrice ?? p.price ?? 0
-              );
-              const category = p.category ?? p.brand ?? 'Other';
-              return {
-                id: p.id,
-                name: String(name),
-                price: price >= 0 ? price : 0,
-                category: String(category),
-                color: BRAND_BLUE,
-                img: p.image_url ?? p.imageUrl ?? p.img ?? PLACEHOLDER_IMG,
-                inventory_type: (p.inventory_type || 'quantity').toLowerCase(),
-                warranty_months: p.warranty_months ?? null,
-              };
-            });
-          if (!cancelled) setProducts(mapped);
+
+          for (const p of list) {
+            if (!p || p.id == null) continue;
+            if (seen.has(p.id)) continue;
+            seen.add(p.id);
+
+            const baseName = p.name ?? p.product_name ?? p.sku ?? 'Product';
+            const price = Number(
+              p.retail_price ?? p.retailPrice ?? p.base_price ?? p.basePrice ?? p.price ?? 0
+            );
+            const category = p.category ?? p.brand ?? 'Other';
+            const common = {
+              productId: p.id,
+              price: price >= 0 ? price : 0,
+              category: String(category),
+              color: BRAND_BLUE,
+              img: p.image_url ?? p.imageUrl ?? p.img ?? PLACEHOLDER_IMG,
+              warranty_months: p.warranty_months ?? null,
+            };
+            const invType = (p.inventory_type || 'quantity').toLowerCase();
+
+            if (invType === 'unique') {
+              // One card per available IMEI device
+              try {
+                const imeiRes = await authFetch(`/api/inventory/imei?productId=${p.id}&status=in_stock`);
+                const imeiList = Array.isArray(imeiRes?.data?.data) ? imeiRes.data.data : [];
+                for (const row of imeiList) {
+                  if (!row?.imei) continue;
+                  deviceCards.push({
+                    id: `u-${p.id}-${row.imei}`,
+                    name: `${baseName} – ${row.imei}`,
+                    inventory_type: 'unique',
+                    imei: row.imei,
+                    ...common,
+                  });
+                }
+              } catch {
+                // If IMEI load fails, fall back to a single generic card
+                deviceCards.push({
+                  id: `u-${p.id}`,
+                  name: String(baseName),
+                  inventory_type: 'unique',
+                  imei: null,
+                  ...common,
+                });
+              }
+            } else {
+              // Quantity product: single card
+              deviceCards.push({
+                id: `q-${p.id}`,
+                name: String(baseName),
+                inventory_type: 'quantity',
+                imei: null,
+                ...common,
+              });
+            }
+          }
+
+          if (!cancelled && deviceCards.length > 0) {
+            setProducts(deviceCards);
+          }
         }
         // If API returned empty, keep fallback so POS still has something to show
       } catch (_) {
@@ -201,46 +241,36 @@ export default function PhoneShopPOS() {
       p.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const addToCart = async (product) => {
-    // Unique (IMEI) products: each item must be one device with a specific IMEI.
+  const addToCart = (product) => {
+    // Unique device (specific IMEI): one per line, cannot duplicate
     if ((product.inventory_type || 'quantity') === 'unique') {
-      try {
-        const res = await authFetch(`/api/inventory/imei?productId=${product.id}&status=in_stock`);
-        const list = Array.isArray(res?.data?.data) ? res.data.data : [];
-        // Exclude IMEIs already in cart
-        const usedImeis = new Set(cart.filter((i) => i.imei).map((i) => String(i.imei)));
-        const available = list.find((row) => row.imei && !usedImeis.has(String(row.imei)));
-        if (!available) {
-          toast({
-            title: 'No available devices',
-            description: 'No in-stock IMEI found for this product at this branch.',
-            variant: 'destructive',
-          });
-          return;
-        }
-        const cartId = `${product.id}-${available.imei}`;
-        setCart((prev) => [
-          ...prev,
-          {
-            cartId,
-            productId: product.id,
-            name: product.name,
-            price: product.price,
-            qty: 1,
-            color: product.color,
-            img: product.img,
-            inventory_type: 'unique',
-            imei: available.imei,
-            warranty_months: product.warranty_months ?? null,
-          },
-        ]);
-      } catch (e) {
+      const already = cart.find(
+        (i) => i.productId === product.productId && i.imei && product.imei && String(i.imei) === String(product.imei)
+      );
+      if (already) {
         toast({
-          title: 'Could not load IMEIs',
-          description: e?.message || 'Please try again',
+          title: 'Already in cart',
+          description: 'This IMEI is already added to the cart.',
           variant: 'destructive',
         });
+        return;
       }
+      const cartId = `u-${product.productId}-${product.imei || 'na'}`;
+      setCart((prev) => [
+        ...prev,
+        {
+          cartId,
+          productId: product.productId,
+          name: product.name,
+          price: product.price,
+          qty: 1,
+          color: product.color,
+          img: product.img,
+          inventory_type: 'unique',
+          imei: product.imei || null,
+          warranty_months: product.warranty_months ?? null,
+        },
+      ]);
       return;
     }
 
@@ -435,7 +465,7 @@ export default function PhoneShopPOS() {
               )}
               {!productsLoading && filtered.map((p) => {
                 const isHovered = hoverCard === p.id;
-                const inCart = cart.find(i => i.productId === p.id);
+                const inCart = cart.find(i => i.productId === p.productId && i.imei === p.imei);
                 return (
                   <div key={p.id} className="prod-card"
                     onMouseEnter={() => setHoverCard(p.id)}
