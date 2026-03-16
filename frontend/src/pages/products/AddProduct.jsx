@@ -17,8 +17,10 @@ const AddProduct = () => {
   const isEditMode = !!id;
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [loadingBrands, setLoadingBrands] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(false);
+  const [loadingBranches, setLoadingBranches] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     brand: '',
@@ -35,6 +37,7 @@ const AddProduct = () => {
     category_id: '',
     inventory_type: 'quantity',
     warranty_months: '',
+    branchId: '',
   });
 
   const fetchBrands = useCallback(async () => {
@@ -65,10 +68,27 @@ const AddProduct = () => {
     }
   }, []);
 
+  const fetchBranches = useCallback(async () => {
+    const isAdmin = user?.role === 'admin';
+    if (!isAdmin) return;
+    setLoadingBranches(true);
+    try {
+      const { ok, data } = await authFetch('/api/branches');
+      if (ok && Array.isArray(data?.data)) {
+        setBranches(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching branches:', error);
+    } finally {
+      setLoadingBranches(false);
+    }
+  }, [user?.role]);
+
   useEffect(() => {
     fetchBrands();
     fetchCategories();
-  }, [fetchBrands, fetchCategories]);
+    fetchBranches();
+  }, [fetchBrands, fetchCategories, fetchBranches]);
 
   // Load product data if editing
   useEffect(() => {
@@ -174,6 +194,10 @@ const AddProduct = () => {
     } else {
       const branchId = user?.branchId ?? '';
       const initialQuantity = formData.inventory_type === 'quantity' ? Math.max(0, parseInt(formData.stock, 10) || 0) : 0;
+      const effectiveBranchId =
+        formData.inventory_type === 'quantity'
+          ? (formData.branchId || user?.branchId || '')
+          : '';
       const { ok, data, status } = await authFetch('/api/inventory/products', {
         method: 'POST',
         body: JSON.stringify({
@@ -190,7 +214,7 @@ const AddProduct = () => {
           initialQuantity,
           stock: initialQuantity,
           warranty_months: warrantyMonths,
-          ...(branchId ? { branchId } : {}),
+          ...(effectiveBranchId ? { branchId: effectiveBranchId } : {}),
         }),
       });
       setLoading(false);
@@ -372,6 +396,29 @@ const AddProduct = () => {
                       required
                     />
                   </div>
+                  {formData.inventory_type === 'quantity' && user?.role === 'admin' && (
+                    <div>
+                      <Label htmlFor="branchId">Branch (for initial stock)</Label>
+                      <select
+                        id="branchId"
+                        name="branchId"
+                        value={formData.branchId}
+                        onChange={handleChange}
+                        disabled={loadingBranches}
+                        className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                      >
+                        <option value="">-- Select branch --</option>
+                        {branches.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.name} {b.code ? `(${b.code})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                      {loadingBranches && (
+                        <p className="text-sm text-muted-foreground mt-1">Loading branches…</p>
+                      )}
+                    </div>
+                  )}
                   {formData.inventory_type === 'quantity' && (
                     <div>
                       <Label htmlFor="stock">Stock quantity</Label>
