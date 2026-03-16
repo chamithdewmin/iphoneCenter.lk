@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { CASHIER_ALLOWED_PATHS } from '@/constants/cashierPaths';
-import Sidebar from '@/components/Sidebar';
+import Sidebar from '@/components/SidebarSimple';
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
