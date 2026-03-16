@@ -175,7 +175,7 @@ export default function PhoneShopPOS() {
                 name: String(name),
                 price: price >= 0 ? price : 0,
                 category: String(category),
-                color: '#ff8040',
+                color: BRAND_BLUE,
                 img: p.image_url ?? p.imageUrl ?? p.img ?? PLACEHOLDER_IMG,
               };
             });
@@ -620,7 +620,7 @@ export default function PhoneShopPOS() {
               <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #1e2433", fontSize: 13, color: "#8b9ab0" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}><span>Discount</span><span>−${Number(invoicePopupSale.discount_amount || 0).toFixed(2)}</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 15, color: "#fff", marginTop: 8 }}>
-                  <span>Total</span><span style={{ color: "#ff8040" }}>${Number(invoicePopupSale.total_amount || 0).toFixed(2)}</span>
+                  <span>Total</span><span style={{ color: "var(--primary)" }}>${Number(invoicePopupSale.total_amount || 0).toFixed(2)}</span>
                 </div>
                 <div style={{ marginTop: 4, color: "#8b9ab0" }}>Status: {String(invoicePopupSale.payment_status || '—')}</div>
               </div>
@@ -628,7 +628,7 @@ export default function PhoneShopPOS() {
             <div style={{ padding: 16, borderTop: "1px solid #1e2433", display: "flex", gap: 8, flexWrap: "wrap" }}>
               <button type="button" onClick={() => downloadInvoicePdf(invoicePopupSale)} style={{ flex: 1, minWidth: 120, background: "#1e2433", border: "1px solid #303338", borderRadius: 8, color: "#d1d9e6", padding: "10px 16px", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: SYS_FONT }}>Download PDF</button>
               <button type="button" onClick={() => printInvoicePdf(invoicePopupSale)} style={{ flex: 1, minWidth: 120, background: "#1e2433", border: "1px solid #303338", borderRadius: 8, color: "#d1d9e6", padding: "10px 16px", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: SYS_FONT }}>Print</button>
-              <button type="button" onClick={closeInvoicePopup} style={{ flex: 1, minWidth: 120, background: "linear-gradient(135deg, #ff8040 0%, #e05010 100%)", border: "none", borderRadius: 8, color: "#fff", padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: SYS_FONT }}>Done</button>
+              <button type="button" onClick={closeInvoicePopup} style={{ flex: 1, minWidth: 120, background: "var(--primary-gradient)", border: "none", borderRadius: 8, color: "#fff", padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: SYS_FONT }}>Done</button>
             </div>
           </div>
         </div>
