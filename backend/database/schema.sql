@@ -344,6 +344,41 @@ CREATE TABLE audit_logs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
+-- ANALYTICS OTP SECURITY
+-- ============================================
+
+CREATE TABLE analytics_otp_sessions (
+    id CHAR(36) PRIMARY KEY,
+    user_id INT NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    otp_hash VARCHAR(255) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    granted_until DATETIME NOT NULL,
+    consumed BOOLEAN DEFAULT FALSE,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    used_at DATETIME NULL,
+    INDEX idx_analytics_otp_user_expires (user_id, expires_at),
+    INDEX idx_analytics_otp_user_granted (user_id, granted_until),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE analytics_access_logs (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NULL,
+    action VARCHAR(50) NOT NULL,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    details JSON,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_analytics_access_logs_user_id (user_id),
+    INDEX idx_analytics_access_logs_action (action),
+    INDEX idx_analytics_access_logs_created_at (created_at),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
 -- INITIAL DATA
 -- ============================================
 

@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { CASHIER_ALLOWED_PATHS } from '@/constants/cashierPaths';
 import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
+import AnalyticsOtpModal from '@/components/AnalyticsOtpModal';
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -11,6 +12,7 @@ const Layout = () => {
   const location = useLocation();
   const { pathname } = location;
   const navigate = useNavigate();
+  const [analyticsModalOpen, setAnalyticsModalOpen] = useState(false);
   useEffect(() => {
     if (user?.role === 'cashier' && !CASHIER_ALLOWED_PATHS.has(pathname)) {
       navigate('/dashboard', { replace: true });
@@ -39,6 +41,14 @@ const Layout = () => {
           <Outlet />
         </main>
       </div>
+      {/* Analytics OTP modal – used by reports pages when needed */}
+      <AnalyticsOtpModal
+        open={analyticsModalOpen && pathname.startsWith('/reports')}
+        onClose={() => setAnalyticsModalOpen(false)}
+        onVerified={() => {
+          setAnalyticsModalOpen(false);
+        }}
+      />
     </div>
   );
 };

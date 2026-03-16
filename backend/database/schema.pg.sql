@@ -306,6 +306,39 @@ CREATE INDEX idx_audit_logs_entity_type ON audit_logs(entity_type);
 CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
 
 -- ============================================
+-- ANALYTICS OTP SECURITY
+-- ============================================
+
+CREATE TABLE analytics_otp_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    phone VARCHAR(20) NOT NULL,
+    otp_hash VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    granted_until TIMESTAMP NOT NULL,
+    consumed BOOLEAN DEFAULT FALSE,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    used_at TIMESTAMP NULL
+);
+CREATE INDEX idx_analytics_otp_user_expires ON analytics_otp_sessions(user_id, expires_at);
+CREATE INDEX idx_analytics_otp_user_granted ON analytics_otp_sessions(user_id, granted_until);
+
+CREATE TABLE analytics_access_logs (
+    id SERIAL PRIMARY KEY,
+    user_id INT NULL REFERENCES users(id) ON DELETE SET NULL,
+    action VARCHAR(50) NOT NULL, -- otp_sent, otp_verified, denied, timeout
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    details JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_analytics_access_logs_user_id ON analytics_access_logs(user_id);
+CREATE INDEX idx_analytics_access_logs_action ON analytics_access_logs(action);
+CREATE INDEX idx_analytics_access_logs_created_at ON analytics_access_logs(created_at);
+
+-- ============================================
 -- UPDATED_AT TRIGGER
 -- ============================================
 CREATE OR REPLACE FUNCTION set_updated_at()
