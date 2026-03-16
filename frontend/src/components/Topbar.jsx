@@ -18,13 +18,14 @@ const getColors = () => {
   const isLight = root.classList.contains('light');
   const isDark = !isLight && root.classList.contains('dark');
   return {
-    border: isDark ? '#171717' : '#e2e8f0',
-    text: isDark ? '#ffffff' : '#0f172a',
-    textMuted: isDark ? '#8b9ab0' : '#64748b',
-    inputBg: isDark ? '#1e293b' : '#f1f5f9',
-    cardBg: isDark ? '#0a0a0a' : '#ffffff',
-    pageBg: isDark ? '#000000' : '#f8fafc',
-    hoverBg: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+    // Dark theme: match app background and cards
+    border: isDark ? '#1e2433' : '#e2e8f0',
+    text: isDark ? '#f9fafb' : '#0f172a',
+    textMuted: isDark ? '#9ca3af' : '#64748b',
+    inputBg: isDark ? '#111827' : '#f1f5f9',
+    cardBg: isDark ? '#0b1120' : '#ffffff',
+    pageBg: isDark ? '#020617' : '#f8fafc',
+    hoverBg: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
     todayBg: '#0e5cff',
     blue: '#0e5cff',
   };
