@@ -53,22 +53,6 @@ const IconRefresh = () => (
 // Brand blue used across POS UI
 const BRAND_BLUE = '#0e5cff';
 
-// Fallback when API returns no products (e.g. offline or empty DB)
-const FALLBACK_PRODUCTS = [
-  { id: 1,  name: "iPhone 15 Pro Max",   price: 1199, category: "iPhone",   color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 2,  name: "iPhone 15 Pro",       price: 999,  category: "iPhone",   color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 3,  name: "iPhone 15",           price: 799,  category: "iPhone",   color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 4,  name: "iPhone 14",           price: 699,  category: "iPhone",   color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 5,  name: "AirPods Pro 2",       price: 249,  category: "AirPods",  color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 6,  name: "AirPods 3rd Gen",     price: 179,  category: "AirPods",  color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 7,  name: "AirPods Max",         price: 549,  category: "AirPods",  color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 8,  name: "Apple Watch Ultra 2", price: 799,  category: "Watch",    color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 9,  name: "Apple Watch S9",      price: 399,  category: "Watch",    color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 10, name: 'iPad Pro 12.9"',      price: 1099, category: "iPad",     color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 11, name: "iPad Air",            price: 599,  category: "iPad",     color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-  { id: 12, name: "MacBook Air M3",      price: 1299, category: "Mac",      color: BRAND_BLUE, img: "https://www.imagineonline.store/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN.jpg?v=1759733974&width=1445" },
-];
-
 // Small inline SVG placeholder (no external network call)
 const PLACEHOLDER_IMG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect width='200' height='200' fill='%231e2433'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%230e5cff' font-size='14' font-family='system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\"'%3EProduct%3C/text%3E%3C/svg%3E";
@@ -133,7 +117,7 @@ export default function PhoneShopPOS() {
   const [discount, setDiscount] = useState("");
   const [tab, setTab] = useState("Walk-In");
   const [hoverCard, setHoverCard] = useState(null);
-  const [products, setProducts] = useState(FALLBACK_PRODUCTS);
+  const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [customerName, setCustomerName] = useState("");
@@ -223,9 +207,8 @@ export default function PhoneShopPOS() {
             setProducts(deviceCards);
           }
         }
-        // If API returned empty, keep fallback so POS still has something to show
       } catch (_) {
-        if (!cancelled) setProducts(FALLBACK_PRODUCTS);
+        if (!cancelled) setProducts([]);
       } finally {
         if (!cancelled) setProductsLoading(false);
       }
