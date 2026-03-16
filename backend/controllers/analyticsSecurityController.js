@@ -28,6 +28,86 @@ async function logAnalyticsAccess({ userId, action, req, details = null }) {
 }
 
 /**
+ * POST /api/analytics/unlock-with-password
+ * Verify account password and create an analytics access window.
+ */
+const unlockWithPassword = async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+
+    const role = user.role ? String(user.role).toLowerCase() : '';
+    if (![ROLES.ADMIN, ROLES.MANAGER].includes(role)) {
+      await logAnalyticsAccess({ userId: user.id, action: 'denied', req, details: { reason: 'role_not_allowed_password' } });
+      return res.status(403).json({ success: false, message: 'Only admin/manager can access analytics.' });
+    }
+
+    const { password } = req.body || {};
+    if (!password || String(password).trim().length === 0) {
+      return res.status(400).json({ success: false, message: 'Password is required.' });
+    }
+
+    const [rows] = await executeQuery(
+      'SELECT password_hash, phone FROM users WHERE id = ? AND is_active = TRUE',
+      [user.id]
+    );
+    if (!rows || rows.length === 0) {
+      return res.status(400).json({ success: false, message: 'User not found.' });
+    }
+
+    const row = rows[0];
+    const match = await bcrypt.compare(String(password), row.password_hash);
+    if (!match) {
+      await logAnalyticsAccess({ userId: user.id, action: 'denied', req, details: { reason: 'bad_password' } });
+      return res.status(400).json({ success: false, message: 'Password incorrect.' });
+    }
+
+    const phone = row.phone ? String(row.phone).trim() : 'n/a';
+    const now = new Date();
+    const grantedUntil = new Date(now.getTime() + ANALYTICS_ACCESS_MINUTES * 60 * 1000);
+    const meta = getClientMeta(req);
+
+    const placeholderHash = await bcrypt.hash('analytics-password-unlock', 8);
+
+    await executeQuery(
+      `INSERT INTO analytics_otp_sessions
+        (user_id, phone, otp_hash, expires_at, granted_until, consumed, ip_address, user_agent)
+       VALUES (?, ?, ?, ?, ?, TRUE, ?, ?)`,
+      [
+        user.id,
+        phone,
+        placeholderHash,
+        now.toISOString(),
+        grantedUntil.toISOString(),
+        meta.ip,
+        meta.userAgent,
+      ]
+    );
+
+    await logAnalyticsAccess({
+      userId: user.id,
+      action: 'password_verified',
+      req,
+      details: { grantedUntil },
+    });
+
+    return res.json({
+      success: true,
+      message: 'Analytics access granted.',
+      grantedUntil,
+    });
+  } catch (error) {
+    logger.error('unlockWithPassword error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to verify password for analytics access',
+    });
+  }
+};
+
+/**
  * POST /api/analytics/otp/send
  * Sends a 6-digit OTP to the admin/manager phone number for Analytics access.
  */
@@ -203,6 +283,7 @@ const verifyAnalyticsOtp = async (req, res) => {
 };
 
 module.exports = {
+  unlockWithPassword,
   sendAnalyticsOtp,
   verifyAnalyticsOtp,
 };
