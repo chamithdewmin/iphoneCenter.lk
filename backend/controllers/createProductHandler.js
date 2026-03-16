@@ -70,33 +70,37 @@ async function createProduct(req, res, next) {
         connection = await getConnection();
         await connection.beginTransaction();
 
+        // Branch selection is only required for quantity-based products.
+        // Unique (IMEI/serial) products will get branch when adding devices via Add Devices.
         let branchIdForStock = null;
-        if (isAdmin(req) && bodyBranchId != null && bodyBranchId !== '') {
-            branchIdForStock = parseInt(bodyBranchId, 10);
-            if (Number.isNaN(branchIdForStock)) branchIdForStock = null;
-        } else if (req.user && req.user.branch_id != null) {
-            branchIdForStock = parseInt(req.user.branch_id, 10) || req.user.branch_id;
-        }
-        if (isAdmin(req) && !branchIdForStock) {
-            await connection.rollback();
-            return res.status(400).json({ success: false, message: 'Please select a branch for this product' });
-        }
-        if (!branchIdForStock) {
-            const [branches] = await connection.execute('SELECT id FROM branches WHERE is_active = TRUE ORDER BY id LIMIT 1');
-            branchIdForStock = branches.length > 0 ? branches[0].id : null;
-        }
-
-        if (branchIdForStock) {
-            const [branchRows] = await connection.execute(
-                'SELECT id FROM branches WHERE id = ? AND is_active = TRUE',
-                [branchIdForStock]
-            );
-            if (!branchRows || branchRows.length === 0) {
+        if (invType === 'quantity') {
+            if (isAdmin(req) && bodyBranchId != null && bodyBranchId !== '') {
+                branchIdForStock = parseInt(bodyBranchId, 10);
+                if (Number.isNaN(branchIdForStock)) branchIdForStock = null;
+            } else if (req.user && req.user.branch_id != null) {
+                branchIdForStock = parseInt(req.user.branch_id, 10) || req.user.branch_id;
+            }
+            if (isAdmin(req) && !branchIdForStock) {
                 await connection.rollback();
-                return res.status(400).json({
-                    success: false,
-                    message: 'Selected branch not found or inactive. Add a warehouse (branch) first in Warehouses.'
-                });
+                return res.status(400).json({ success: false, message: 'Please select a branch for this product' });
+            }
+            if (!branchIdForStock) {
+                const [branches] = await connection.execute('SELECT id FROM branches WHERE is_active = TRUE ORDER BY id LIMIT 1');
+                branchIdForStock = branches.length > 0 ? branches[0].id : null;
+            }
+
+            if (branchIdForStock) {
+                const [branchRows] = await connection.execute(
+                    'SELECT id FROM branches WHERE id = ? AND is_active = TRUE',
+                    [branchIdForStock]
+                );
+                if (!branchRows || branchRows.length === 0) {
+                    await connection.rollback();
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Selected branch not found or inactive. Add a warehouse (branch) first in Warehouses.'
+                    });
+                }
             }
         }
 
