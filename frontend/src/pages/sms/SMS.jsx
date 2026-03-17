@@ -85,14 +85,6 @@ const SMS = () => {
       return;
     }
 
-    if (
-      !window.confirm(
-        `Send this message to ${phoneNumbers.length} customer(s)?`
-      )
-    ) {
-      return;
-    }
-
     setSending(true);
     try {
       const { ok, data } = await authFetch('/api/sms/bulk', {

@@ -74,10 +74,6 @@ const CustomMessage = () => {
       return;
     }
 
-    if (!window.confirm(`Are you sure you want to send this message to ${selectedCustomersData.length} customer(s)?`)) {
-      return;
-    }
-
     setSending(true);
     try {
       const phoneNumbers = selectedCustomersData.map(c => c.phone);

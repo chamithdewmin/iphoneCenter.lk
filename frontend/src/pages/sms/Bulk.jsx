@@ -56,10 +56,6 @@ const Bulk = () => {
       return;
     }
 
-    if (!window.confirm(`Are you sure you want to send this message to ${customersWithPhone.length} customer(s)?`)) {
-      return;
-    }
-
     setSending(true);
     try {
       const phoneNumbers = customersWithPhone.map(c => c.phone);
