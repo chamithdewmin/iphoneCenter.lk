@@ -61,9 +61,16 @@ const sendBulk = async (req, res, next) => {
 
         const result = await sendBulkSMS(phoneNumbers, message);
 
+        // Friendlier success message for users
+        const baseMessage = `SMS sent to ${result.success} recipient(s).`;
+        const messageText =
+            result.failed && result.failed > 0
+                ? `${baseMessage} ${result.failed} failed.`
+                : baseMessage;
+
         res.json({
             success: true,
-            message: `SMS sent to ${result.success} recipient(s). ${result.failed} failed.`,
+            message: messageText,
             data: result
         });
     } catch (error) {
