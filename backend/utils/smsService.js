@@ -7,7 +7,7 @@ const logger = require('./logger');
  */
 const SMS_CONFIG = {
     userId: process.env.SMS_USER_ID || '295',
-    apiKey: process.env.SMS_API_KEY || 'c591f7e0-6a5c-4576-9e79-f87abbe622e4',
+    apiKey: process.env.SMS_API_KEY || 'bcc15040-18d5-4d7d-9252-7557ee9419bf',
     apiBaseUrl: process.env.SMS_API_BASE_URL || 'https://www.smslenz.lk/api',
     senderId: process.env.SMS_SENDER_ID || 'IPHONECENTR'
 };
