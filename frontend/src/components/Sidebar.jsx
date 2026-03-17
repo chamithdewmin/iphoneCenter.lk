@@ -396,7 +396,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     return filterMenuGroups(menuGroups, permissions, user?.role);
   }, [user?.role, permissionsVersion]);
 
-  const sidebarWidth = collapsed ? 56 : 240;
+  const sidebarWidth = collapsed ? 56 : 220;
 
   // Update CSS variable for sidebar width
   React.useEffect(() => {
