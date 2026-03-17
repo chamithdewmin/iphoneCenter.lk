@@ -495,7 +495,7 @@ const Topbar = ({ onMenuClick }) => {
   return (
     <header
       style={{
-        padding: '14px 24px 10px 16px',
+        padding: '14px 24px 10px 32px',
         // Use global page background so header matches dark/light theme exactly
         background: 'var(--background)',
         position: 'sticky',
