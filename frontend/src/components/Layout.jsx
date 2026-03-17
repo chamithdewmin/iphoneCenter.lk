@@ -114,7 +114,7 @@ const Layout = () => {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className={isPOSFullScreen ? 'h-screen overflow-hidden lg:pl-[var(--sidebar-width,240px)]' : 'lg:pl-[var(--sidebar-width,240px)] transition-all duration-200'}>
         {!isPOSFullScreen && <Topbar onMenuClick={() => setSidebarOpen(true)} />}
-        <main className={isPOSFullScreen ? 'h-full overflow-hidden p-0' : 'p-4 lg:p-6'}>
+        <main className={isPOSFullScreen ? 'h-full overflow-hidden p-0' : 'px-4 py-4 lg:pl-8 lg:pr-6 lg:pt-6 lg:pb-6'}>
           <Outlet />
         </main>
       </div>
