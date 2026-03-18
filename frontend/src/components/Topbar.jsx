@@ -20,7 +20,8 @@ const getColors = (theme) => {
     border: isDark ? '#1e2433' : '#e2e8f0',
     text: isDark ? '#f9fafb' : '#0f172a',
     textMuted: isDark ? '#9ca3af' : '#64748b',
-    inputBg: isDark ? '#111827' : '#f1f5f9',
+    // Light mode: keep search input same tone as date pill (card)
+    inputBg: isDark ? '#111827' : '#ffffff',
     cardBg: isDark ? '#0b1120' : '#ffffff',
     pageBg: isDark ? '#020617' : '#f8fafc',
     hoverBg: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
