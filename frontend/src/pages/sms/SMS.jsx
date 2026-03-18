@@ -152,26 +152,15 @@ const SMS = () => {
               <div>
                 <div className="font-semibold">Select customers</div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSelectAll}
-                  disabled={loading || filtered.length === 0}
-                  title="Select all customers with phone"
-                >
-                  Select all
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={fetchCustomers}
-                  disabled={loading}
-                  title="Refresh"
-                >
-                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={fetchCustomers}
+                disabled={loading}
+                title="Refresh"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
             </div>
 
             {/* Table + search */}
@@ -185,6 +174,27 @@ const SMS = () => {
                   className="pl-10 bg-[rgb(10,10,10)]"
                 />
               </div>
+
+                <div className="flex gap-2 mb-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSelectAll}
+                    disabled={loading || filtered.length === 0}
+                  >
+                    Select all
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDeselectAll}
+                    disabled={selectedIds.length === 0}
+                  >
+                    Deselect all
+                  </Button>
+                </div>
 
                 <div className="grid grid-cols-[30px_1fr_190px] gap-2 text-sm text-muted-foreground px-2 py-2 border border-secondary rounded-lg">
                 <div className="pl-2" />
