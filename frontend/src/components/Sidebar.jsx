@@ -242,15 +242,15 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
         className={({ isActive }) =>
           cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-150 text-base font-medium",
-            "hover:bg-secondary",
+            "hover:bg-secondary/60",
             isActive
-              ? "bg-primary-gradient text-primary-foreground"
-              : "text-secondary-foreground hover:text-primary"
+              ? "bg-primary/15 text-primary border border-primary/20 shadow-[0_0_0_1px_rgba(14,92,255,0.10)]"
+              : "text-muted-foreground hover:text-foreground"
           )
         }
         title={isCollapsed ? item.label : undefined}
       >
-        <item.icon className="w-5 h-5 flex-shrink-0 opacity-85" />
+        <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-primary opacity-100" : "opacity-85")} />
         {!isCollapsed && <span className="truncate">{item.label}</span>}
       </NavLink>
     );
@@ -273,14 +273,14 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
             <button
               className={cn(
                 "w-full flex items-center justify-center px-3 py-2.5 rounded-md transition-all duration-150",
-                "hover:bg-secondary",
+                "hover:bg-secondary/60",
                 hasActiveChild
-                  ? "bg-primary/10 text-primary border-l-2 border-primary"
-                  : "text-secondary-foreground hover:text-primary"
+                  ? "bg-primary/15 text-primary border border-primary/20 shadow-[0_0_0_1px_rgba(14,92,255,0.10)]"
+                  : "text-muted-foreground hover:text-foreground"
               )}
               title={item.label}
             >
-              <item.icon className="w-5 h-5 opacity-85" />
+              <item.icon className={cn("w-5 h-5", hasActiveChild ? "text-primary opacity-100" : "opacity-85")} />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="right" align="start" className="w-56">
@@ -307,14 +307,14 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
             "w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md transition-all duration-150 text-base font-medium",
-            "hover:bg-secondary",
+            "hover:bg-secondary/60",
             hasActiveChild
-              ? "bg-primary/10 text-primary border-l-2 border-primary"
-              : "text-secondary-foreground hover:text-primary"
+              ? "bg-primary/15 text-primary border border-primary/20 shadow-[0_0_0_1px_rgba(14,92,255,0.10)]"
+              : "text-muted-foreground hover:text-foreground"
           )}
         >
           <div className="flex items-center gap-3">
-            <item.icon className="w-5 h-5 flex-shrink-0 opacity-85" />
+            <item.icon className={cn("w-5 h-5 flex-shrink-0", hasActiveChild ? "text-primary opacity-100" : "opacity-85")} />
             <span className="truncate">{item.label}</span>
           </div>
           <motion.div
@@ -361,15 +361,22 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
       className={({ isActive }) =>
         cn(
           "flex items-center gap-2.5 px-3 py-2 rounded-md transition-all duration-150 text-sm",
-          "hover:bg-secondary",
+          "hover:bg-secondary/60",
           isActive
-            ? "bg-primary-gradient text-primary-foreground"
-            : "text-secondary-foreground hover:text-primary"
+            ? "bg-primary/15 text-primary border border-primary/20 shadow-[0_0_0_1px_rgba(14,92,255,0.10)]"
+            : "text-muted-foreground hover:text-foreground"
         )
       }
       title={isCollapsed ? item.label : undefined}
     >
-      {item.icon && <item.icon className="w-4 h-4 flex-shrink-0" />}
+      {item.icon && (
+        <item.icon
+          className={cn(
+            "w-4 h-4 flex-shrink-0",
+            isActive ? "text-primary opacity-100" : "opacity-85"
+          )}
+        />
+      )}
       {!isCollapsed && <span className="truncate">{item.label}</span>}
     </NavLink>
   );
