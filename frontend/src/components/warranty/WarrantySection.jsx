@@ -63,11 +63,6 @@ const WarrantySection = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productType, condition, isSmartPhoneCategory]);
 
-  const isAdvancedVisible =
-    isSmartPhoneCategory ||
-    productType === PRODUCT_TYPES.PHONE ||
-    warrantyState.warranty_mode === WARRANTY_MODES.COMPLEX;
-
   const handleModeChange = (mode) => {
     onWarrantyChange((prev) => ({
       ...prev,
@@ -105,143 +100,61 @@ const WarrantySection = ({
 
       {expanded && (
         <div className="p-4 space-y-4">
-          <p className="text-xs text-muted-foreground">
-            Configure how warranty behaves for this product. Keep it simple for
-            normal items, and use advanced warranty for phones or complex
-            services.
-          </p>
-
-          {/* Warranty mode selector */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="warranty_mode"
-                checked={warrantyState.warranty_mode === WARRANTY_MODES.NONE}
-                onChange={() => handleModeChange(WARRANTY_MODES.NONE)}
-                disabled={isSmartPhoneCategory}
-              />
-              <span>No Warranty</span>
-            </label>
-
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="warranty_mode"
-                checked={warrantyState.warranty_mode === WARRANTY_MODES.SIMPLE}
-                onChange={() => handleModeChange(WARRANTY_MODES.SIMPLE)}
-              />
-              <span>Simple Warranty</span>
-            </label>
-
-            {!isSmartPhoneCategory && (
-              <>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="warranty_mode"
-                    checked={
-                      warrantyState.warranty_mode === WARRANTY_MODES.STANDARD
-                    }
-                    onChange={() => handleModeChange(WARRANTY_MODES.STANDARD)}
-                    disabled={warrantyProfiles.length === 0}
-                  />
-                  <span>Standard Warranty</span>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="warranty_mode"
-                    checked={
-                      warrantyState.warranty_mode === WARRANTY_MODES.COMPLEX
-                    }
-                    onChange={() => handleModeChange(WARRANTY_MODES.COMPLEX)}
-                    disabled={!isAdvancedVisible}
-                  />
-                  <span>Advanced Warranty</span>
-                </label>
-              </>
-            )}
-
-            {isSmartPhoneCategory && (
-              <span className="text-xs text-muted-foreground col-span-2">
-                Smart Phone category uses fixed advanced warranty:
+          {isSmartPhoneCategory ? (
+            <>
+              <p className="text-xs text-muted-foreground">
+                Smart Phone category uses a fixed advanced warranty:
                 Phone-to-Phone 1.5 months, Software 2 years, Service 2 years,
                 Apple Care 1 year.
-              </span>
-            )}
-          </div>
-
-          {/* Simple mode */}
-          {warrantyState.warranty_mode === WARRANTY_MODES.SIMPLE && (
-            <div className="flex flex-col mt-1 max-w-xs">
-              <label className="text-xs font-medium text-muted-foreground mb-1">
-                Duration
-              </label>
-              <select
-                className="border rounded px-2 py-1 text-sm bg-background"
-                value={warrantyState.simple_duration_months || ''}
-                onChange={(e) =>
+              </p>
+              <WarrantyAdvancedBuilder
+                items={warrantyState.complex_items || []}
+                onChange={(items) =>
                   onWarrantyChange((prev) => ({
                     ...prev,
-                    simple_duration_months: Number(e.target.value) || null,
+                    complex_items: items,
                   }))
                 }
-              >
-                <option value="">Select duration</option>
-                {SIMPLE_WARRANTY_DURATIONS.map((d) => (
-                  <option key={d.value} value={d.value}>
-                    {d.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Standard / profile mode */}
-          {!isSmartPhoneCategory &&
-            warrantyState.warranty_mode === WARRANTY_MODES.STANDARD && (
-            <div className="flex flex-col mt-1 max-w-xs">
-              <label className="text-xs font-medium text-muted-foreground mb-1">
-                Warranty Profile
-              </label>
-              <select
-                className="border rounded px-2 py-1 text-sm bg-background"
-                value={warrantyState.warranty_profile_id || ''}
-                onChange={(e) =>
-                  onWarrantyChange((prev) => ({
-                    ...prev,
-                    warranty_profile_id: e.target.value || null,
-                  }))
-                }
-              >
-                <option value="">Select profile</option>
-                {warrantyProfiles.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-              {warrantyProfiles.length === 0 && (
-                <p className="text-xs text-amber-600 mt-1">
-                  No standard profiles configured yet for this product type.
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Advanced / complex mode */}
-          {warrantyState.warranty_mode === WARRANTY_MODES.COMPLEX && (
-            <WarrantyAdvancedBuilder
-              items={warrantyState.complex_items || []}
-              onChange={(items) =>
-                onWarrantyChange((prev) => ({
-                  ...prev,
-                  complex_items: items,
-                }))
-              }
-            />
+              />
+            </>
+          ) : (
+            <>
+              {/* Normal products: only a simple warranty period field */}
+              <div className="flex flex-col mt-1 max-w-xs">
+                <label className="text-xs font-medium text-muted-foreground mb-1">
+                  Warranty period
+                </label>
+                <select
+                  className="border rounded px-2 py-1 text-sm bg-background"
+                  value={warrantyState.simple_duration_months || ''}
+                  onChange={(e) => {
+                    const months = Number(e.target.value) || 0;
+                    if (!months) {
+                      onWarrantyChange({
+                        warranty_mode: WARRANTY_MODES.NONE,
+                        simple_duration_months: null,
+                        warranty_profile_id: null,
+                        complex_items: [],
+                      });
+                    } else {
+                      onWarrantyChange({
+                        warranty_mode: WARRANTY_MODES.SIMPLE,
+                        simple_duration_months: months,
+                        warranty_profile_id: null,
+                        complex_items: [],
+                      });
+                    }
+                  }}
+                >
+                  <option value="">No warranty</option>
+                  {SIMPLE_WARRANTY_DURATIONS.map((d) => (
+                    <option key={d.value} value={d.value}>
+                      {d.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
           )}
         </div>
       )}
