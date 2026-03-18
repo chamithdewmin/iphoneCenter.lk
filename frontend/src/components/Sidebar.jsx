@@ -242,9 +242,9 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
         className={({ isActive }) =>
           cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-150 text-base font-medium",
-            "hover:bg-secondary/60 active:bg-primary/15 active:text-primary active:border active:border-primary/20 active:shadow-[0_0_0_1px_rgba(14,92,255,0.10)]",
+            "hover:bg-secondary/60 active:bg-[var(--sidebar-active-bg)] active:text-primary",
             isActive
-              ? "bg-primary/15 text-primary border border-primary/20 shadow-[0_0_0_1px_rgba(14,92,255,0.10)]"
+              ? "bg-[var(--sidebar-active-bg)] text-primary"
               : "text-muted-foreground hover:text-foreground"
           )
         }
@@ -273,9 +273,9 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
             <button
               className={cn(
                 "w-full flex items-center justify-center px-3 py-2.5 rounded-md transition-all duration-150",
-                "hover:bg-secondary/60 active:bg-primary/15 active:text-primary active:border active:border-primary/20 active:shadow-[0_0_0_1px_rgba(14,92,255,0.10)]",
+                "hover:bg-secondary/60 active:bg-[var(--sidebar-active-bg)] active:text-primary",
                 hasActiveChild
-                  ? "bg-primary/15 text-primary border border-primary/20 shadow-[0_0_0_1px_rgba(14,92,255,0.10)]"
+                  ? "bg-[var(--sidebar-active-bg)] text-primary"
                   : "text-muted-foreground hover:text-foreground"
               )}
               title={item.label}
@@ -307,9 +307,9 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
             "w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md transition-all duration-150 text-base font-medium",
-            "hover:bg-secondary/60 active:bg-primary/15 active:text-primary active:border active:border-primary/20 active:shadow-[0_0_0_1px_rgba(14,92,255,0.10)]",
+            "hover:bg-secondary/60 active:bg-[var(--sidebar-active-bg)] active:text-primary",
             hasActiveChild
-              ? "bg-primary/15 text-primary border border-primary/20 shadow-[0_0_0_1px_rgba(14,92,255,0.10)]"
+              ? "bg-[var(--sidebar-active-bg)] text-primary"
               : "text-muted-foreground hover:text-foreground"
           )}
         >
@@ -361,9 +361,9 @@ const MenuItem = ({ item, onClose, level = 0, parentPath = '', isCollapsed = fal
       className={({ isActive }) =>
         cn(
           "flex items-center gap-2.5 px-3 py-2 rounded-md transition-all duration-150 text-sm",
-          "hover:bg-secondary/60 active:bg-primary/15 active:text-primary active:border active:border-primary/20 active:shadow-[0_0_0_1px_rgba(14,92,255,0.10)]",
+          "hover:bg-secondary/60 active:bg-[var(--sidebar-active-bg)] active:text-primary",
           isActive
-            ? "bg-primary/15 text-primary border border-primary/20 shadow-[0_0_0_1px_rgba(14,92,255,0.10)]"
+            ? "bg-[var(--sidebar-active-bg)] text-primary"
             : "text-muted-foreground hover:text-foreground"
         )
       }

@@ -38,7 +38,7 @@
     --primary-dark: #0839a3;             /* Dark blue */
     --primary-darkest: #05256f;          /* Darkest accent */
     --primary-gradient: linear-gradient(135deg, #0e5cff 0%, #0839a3 100%);
-    --sidebar-active-bg: rgba(14, 92, 255, 0.15);   /* Active item background */
+    --sidebar-active-bg: #041636;                   /* Active item background */
     --sidebar-active-accent: #0e5cff;               /* Active icon/text */
     
     /* Status Colors */
@@ -100,7 +100,7 @@
     --primary-dark: #0839a3;
     --primary-darkest: #05256f;
     --primary-gradient: linear-gradient(135deg, #0e5cff 0%, #0839a3 100%);
-    --sidebar-active-bg: rgba(14, 92, 255, 0.1);
+    --sidebar-active-bg: #B8BFCD;
     --sidebar-active-accent: #0e5cff;
     --success: #22c55e;
     --destructive: #ef4444;
