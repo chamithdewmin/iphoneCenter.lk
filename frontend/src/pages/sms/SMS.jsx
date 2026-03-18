@@ -137,8 +137,10 @@ const SMS = () => {
           {/* Header */}
           <div className="mb-4 flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-semibold">SMS</h1>
-              <p className="text-muted-foreground mt-1 text-sm">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                SMS
+              </h1>
+              <p className="text-muted-foreground mt-1">
                 Send bulk SMS to your customers. Set up your SMS gateway first.
               </p>
             </div>
@@ -172,7 +174,7 @@ const SMS = () => {
                   placeholder="Search by name or phone number..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-background/60"
+                  className="pl-10 bg-[rgb(10,10,10)]"
                 />
               </div>
 
@@ -250,7 +252,7 @@ const SMS = () => {
                   setMessage(e.target.value.slice(0, MAX_MESSAGE_CHARS))
                 }
                 placeholder="Type your message..."
-                className="w-full min-h-[220px] px-3 py-2 rounded-lg border border-secondary bg-secondary/30 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+                className="w-full min-h-[220px] px-3 py-2 rounded-lg border border-secondary bg-[rgb(10,10,10)] text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
               />
 
               <div className="flex items-center justify-between mt-3">
