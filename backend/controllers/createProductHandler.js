@@ -108,6 +108,28 @@ async function createProduct(req, res, next) {
         connection = await getConnection();
         await connection.beginTransaction();
 
+        // Backward-compatibility for databases created before product "condition"
+        // and warranty columns were added. The API inserts these fields, so older
+        // schemas would fail with: column "condition" of relation "products" does not exist.
+        await connection.execute(
+            "ALTER TABLE products ADD COLUMN IF NOT EXISTS inventory_type VARCHAR(20) DEFAULT 'quantity'"
+        );
+        await connection.execute(
+            "ALTER TABLE products ADD COLUMN IF NOT EXISTS stock INT DEFAULT 0"
+        );
+        await connection.execute(
+            "ALTER TABLE products ADD COLUMN IF NOT EXISTS category_id INT NULL REFERENCES categories(id) ON DELETE SET NULL"
+        );
+        await connection.execute(
+            "ALTER TABLE products ADD COLUMN IF NOT EXISTS condition VARCHAR(20) DEFAULT 'new'"
+        );
+        await connection.execute(
+            'ALTER TABLE products ADD COLUMN IF NOT EXISTS warranty_months INT NULL'
+        );
+        await connection.execute(
+            'ALTER TABLE products ADD COLUMN IF NOT EXISTS warranty_type VARCHAR(30) NULL'
+        );
+
         // Branch selection is only required for quantity-based products.
         // Unique (IMEI/serial) products will get branch when adding devices via Add Devices.
         let branchIdForStock = null;
