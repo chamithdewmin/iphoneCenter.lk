@@ -608,9 +608,6 @@ const AddProduct = () => {
           <aside className="bg-card rounded-xl border border-secondary shadow-sm lg:sticky lg:top-20 overflow-hidden">
             <div className="border-b border-secondary px-5 py-4">
               <h2 className="text-base font-semibold">Product Preview</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                See how this product will appear in POS and catalog while you fill in details.
-              </p>
             </div>
 
             {(() => {
