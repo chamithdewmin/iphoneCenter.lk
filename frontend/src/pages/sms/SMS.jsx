@@ -132,8 +132,8 @@ const SMS = () => {
         <meta name="description" content="Send SMS to customers" />
       </Helmet>
 
-      <div className="min-h-screen bg-background text-foreground px-4 py-6">
-        <div className="mx-auto w-full max-w-6xl">
+      <div className="min-h-screen bg-background text-foreground px-6 py-6">
+        <div className="mx-auto w-full max-w-7xl">
           {/* Header */}
           <div className="mb-4 flex items-start justify-between gap-4">
             <div>
@@ -146,7 +146,7 @@ const SMS = () => {
 
           {/* Main Card */}
           <div className="bg-card/40 border border-secondary rounded-xl overflow-hidden">
-            <div className="p-4 border-b border-secondary/70 flex items-start justify-between gap-3">
+            <div className="p-6 border-b border-secondary/70 flex items-start justify-between gap-3">
               <div>
                 <div className="font-semibold">Select customers</div>
                 <div className="text-xs text-muted-foreground mt-1">
@@ -165,7 +165,7 @@ const SMS = () => {
             </div>
 
             {/* Table + search */}
-            <div className="p-4">
+            <div className="p-6">
               <div className="relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -176,7 +176,7 @@ const SMS = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-[30px_1fr_170px] gap-2 text-xs text-muted-foreground px-2 py-2 border border-secondary rounded-lg">
+                <div className="grid grid-cols-[30px_1fr_190px] gap-2 text-xs text-muted-foreground px-2 py-2 border border-secondary rounded-lg">
                 <div className="pl-2" />
                 <div>Name</div>
                 <div className="text-right pr-3">Phone</div>
@@ -194,14 +194,14 @@ const SMS = () => {
                       : 'No customers with phone numbers'}
                   </div>
                 ) : (
-                  <div className="max-h-72 overflow-y-auto">
+                  <div className="max-h-80 overflow-y-auto">
                     {filtered.map((customer) => {
                       const selected = selectedIds.includes(customer.id);
                       return (
                         <div
                           key={customer.id}
                           onClick={() => toggleOne(customer.id)}
-                          className={`grid grid-cols-[30px_1fr_170px] gap-2 items-center px-2 py-2 border-t border-secondary/40 cursor-pointer transition-colors ${
+                          className={`grid grid-cols-[30px_1fr_190px] gap-2 items-center px-2 py-2 border-t border-secondary/40 cursor-pointer transition-colors ${
                             selected ? 'bg-primary/10' : 'bg-transparent hover:bg-secondary/20'
                           }`}
                         >
@@ -233,7 +233,7 @@ const SMS = () => {
             </div>
 
             {/* Message + send */}
-            <div className="p-4 border-t border-secondary/70">
+            <div className="p-6 border-t border-secondary/70">
               <div className="mb-2">
                 <Label
                   htmlFor="sms-message"
@@ -250,7 +250,7 @@ const SMS = () => {
                   setMessage(e.target.value.slice(0, MAX_MESSAGE_CHARS))
                 }
                 placeholder="Type your message..."
-                className="w-full min-h-[170px] px-3 py-2 rounded-lg border border-secondary bg-secondary/30 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+                className="w-full min-h-[220px] px-3 py-2 rounded-lg border border-secondary bg-secondary/30 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
               />
 
               <div className="flex items-center justify-between mt-3">
