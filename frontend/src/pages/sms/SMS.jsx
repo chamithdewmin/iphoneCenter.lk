@@ -132,8 +132,8 @@ const SMS = () => {
         <meta name="description" content="Send SMS to customers" />
       </Helmet>
 
-      <div className="min-h-screen bg-background text-foreground px-6 py-6">
-        <div className="mx-auto w-full max-w-7xl">
+      <div className="space-y-6">
+        <div className="w-full max-w-7xl">
           {/* Header */}
           <div className="mb-4 flex items-start justify-between gap-4">
             <div>
@@ -252,7 +252,7 @@ const SMS = () => {
                   setMessage(e.target.value.slice(0, MAX_MESSAGE_CHARS))
                 }
                 placeholder="Type your message..."
-                className="w-full min-h-[220px] px-3 py-2 rounded-lg border border-secondary bg-[rgb(10,10,10)] text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+                className="w-full min-h-[160px] px-3 py-2 rounded-lg border border-secondary bg-[rgb(10,10,10)] text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
               />
 
               <div className="flex items-center justify-between mt-3">
