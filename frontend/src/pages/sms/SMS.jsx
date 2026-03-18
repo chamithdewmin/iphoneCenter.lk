@@ -254,7 +254,7 @@ const SMS = () => {
                   setMessage(e.target.value.slice(0, MAX_MESSAGE_CHARS))
                 }
                 placeholder="Type your message..."
-                className="w-full min-h-[120px] px-3 py-2 rounded-lg border border-secondary bg-background/60 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+                className="w-full min-h-[120px] px-3 py-2 rounded-lg border border-secondary bg-secondary/30 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
               />
 
               <div className="flex items-center justify-end mt-4">
