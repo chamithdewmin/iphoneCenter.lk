@@ -151,7 +151,7 @@ const SMS = () => {
             <div className="p-6 border-b border-secondary/70 flex items-start justify-between gap-3">
               <div>
                 <div className="font-semibold">Select customers</div>
-                <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-sm text-muted-foreground mt-1">
                   {withPhone.length} customer(s) with phone numbers. Select recipients and enter your message.
                 </div>
               </div>
@@ -178,7 +178,7 @@ const SMS = () => {
                 />
               </div>
 
-                <div className="grid grid-cols-[30px_1fr_190px] gap-2 text-xs text-muted-foreground px-2 py-2 border border-secondary rounded-lg">
+                <div className="grid grid-cols-[30px_1fr_190px] gap-2 text-sm text-muted-foreground px-2 py-2 border border-secondary rounded-lg">
                 <div className="pl-2" />
                 <div>Name</div>
                 <div className="text-right pr-3">Phone</div>
@@ -220,10 +220,10 @@ const SMS = () => {
                               )}
                             </div>
                           </div>
-                          <div className="text-sm font-medium truncate">
+                          <div className="text-base font-medium truncate">
                             {customer.name || '—'}
                           </div>
-                          <div className="text-right pr-3 text-sm text-muted-foreground font-mono truncate">
+                          <div className="text-right pr-3 text-base text-muted-foreground font-mono truncate">
                             {customer.phone || '—'}
                           </div>
                         </div>
@@ -239,7 +239,7 @@ const SMS = () => {
               <div className="mb-2">
                 <Label
                   htmlFor="sms-message"
-                  className="text-sm text-muted-foreground"
+                  className="text-base text-muted-foreground"
                 >
                   Message (max {MAX_MESSAGE_CHARS} chars)
                 </Label>
@@ -252,11 +252,11 @@ const SMS = () => {
                   setMessage(e.target.value.slice(0, MAX_MESSAGE_CHARS))
                 }
                 placeholder="Type your message..."
-                className="w-full min-h-[160px] px-3 py-2 rounded-lg border border-secondary bg-[rgb(10,10,10)] text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+                className="w-full min-h-[160px] px-3 py-2 rounded-lg border border-secondary bg-[rgb(10,10,10)] text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
               />
 
               <div className="flex items-center justify-between mt-3">
-                <div className="text-xs text-muted-foreground">
+                <div className="text-sm text-muted-foreground">
                   {message.length}/{MAX_MESSAGE_CHARS}
                 </div>
                 <Button
