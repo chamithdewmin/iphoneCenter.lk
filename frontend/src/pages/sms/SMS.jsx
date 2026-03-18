@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
-import { Send, Search, RefreshCw, Users } from 'lucide-react';
+import { Send, Search, RefreshCw, Users, Pencil } from 'lucide-react';
 import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -135,28 +135,40 @@ const SMS = () => {
       <div className="min-h-screen bg-background text-foreground px-4 py-6">
         <div className="mx-auto w-full max-w-6xl">
           {/* Header */}
-          <div className="mb-4">
-            <h1 className="text-2xl font-semibold">Select customers</h1>
-            <p className="text-muted-foreground mt-1 text-sm">
-              {withPhone.length} customers(s) with phone numbers. Select recipients and enter your message.
-            </p>
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold">SMS</h1>
+              <p className="text-muted-foreground mt-1 text-sm">
+                Send bulk SMS to your customers. Set up your SMS gateway first.
+              </p>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="shrink-0"
+              title="Edit Gateway"
+              onClick={() => {
+                toast({
+                  title: 'SMS gateway',
+                  description: 'Configure SMS gateway in backend environment variables.',
+                });
+              }}
+            >
+              <Pencil className="w-4 h-4 mr-2" />
+              Edit Gateway
+            </Button>
           </div>
 
           {/* Main Card */}
           <div className="bg-card/40 border border-secondary rounded-xl overflow-hidden">
-            <div className="p-4 border-b border-secondary/70 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <div className="inline-flex w-8 h-8 items-center justify-center rounded-md bg-secondary/50 border border-secondary">
-                  <Users className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <div className="font-semibold">Select customers</div>
-                  <div className="text-xs text-muted-foreground">
-                    {phoneNumbers.length} recipient(s) selected
-                  </div>
+            <div className="p-4 border-b border-secondary/70 flex items-start justify-between gap-3">
+              <div>
+                <div className="font-semibold">Select customers</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {withPhone.length} customer(s) with phone numbers. Select recipients and enter your message.
                 </div>
               </div>
-
               <Button
                 variant="ghost"
                 size="sm"
@@ -238,13 +250,13 @@ const SMS = () => {
 
             {/* Message + send */}
             <div className="p-4 border-t border-secondary/70">
-              <div className="flex items-center justify-between mb-2">
-                <Label htmlFor="sms-message" className="text-sm text-muted-foreground">
+              <div className="mb-2">
+                <Label
+                  htmlFor="sms-message"
+                  className="text-sm text-muted-foreground"
+                >
                   Message (max {MAX_MESSAGE_CHARS} chars)
                 </Label>
-                <div className="text-xs text-muted-foreground">
-                  {message.length}/{MAX_MESSAGE_CHARS}
-                </div>
               </div>
 
               <textarea
@@ -257,11 +269,14 @@ const SMS = () => {
                 className="w-full min-h-[120px] px-3 py-2 rounded-lg border border-secondary bg-secondary/30 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
               />
 
-              <div className="flex items-center justify-end mt-4">
+              <div className="flex items-center justify-between mt-3">
+                <div className="text-xs text-muted-foreground">
+                  {message.length}/{MAX_MESSAGE_CHARS}
+                </div>
                 <Button
                   onClick={handleSend}
                   disabled={sending || !message.trim() || phoneNumbers.length === 0}
-                  className="min-w-[220px]"
+                  className="min-w-[220px] justify-center"
                 >
                   {sending ? (
                     <>
@@ -271,7 +286,7 @@ const SMS = () => {
                   ) : (
                     <>
                       <Send className="w-4 h-4 mr-2" />
-                      Send to {phoneNumbers.length} recipient{phoneNumbers.length === 1 ? '' : 's'}
+                      Send to {phoneNumbers.length} recipient(s)
                     </>
                   )}
                 </Button>
