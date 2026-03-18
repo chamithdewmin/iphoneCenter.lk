@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
-import { Send, Search, RefreshCw, Users, Pencil } from 'lucide-react';
+import { Send, Search, RefreshCw, Users } from 'lucide-react';
 import { authFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -142,22 +142,6 @@ const SMS = () => {
                 Send bulk SMS to your customers. Set up your SMS gateway first.
               </p>
             </div>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="shrink-0"
-              title="Edit Gateway"
-              onClick={() => {
-                toast({
-                  title: 'SMS gateway',
-                  description: 'Configure SMS gateway in backend environment variables.',
-                });
-              }}
-            >
-              <Pencil className="w-4 h-4 mr-2" />
-              Edit Gateway
-            </Button>
           </div>
 
           {/* Main Card */}
