@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Users, DollarSign, Package, ShoppingBag, FolderTree, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { Users, Package, ShoppingBag, FolderTree } from 'lucide-react';
 import { authFetch } from '@/lib/api';
 import KpiCard from '@/components/KpiCard';
 import { useBranchFilter } from '@/hooks/useBranchFilter';
@@ -12,13 +11,10 @@ const Dashboard = () => {
   const { selectedBranchId, setSelectedBranchId } = useBranchFilter();
   const [stats, setStats] = useState({
     totalCustomers: 0,
-    totalRevenue: 0,
     totalProducts: 0,
     totalOrders: 0,
     totalCategories: 0,
   });
-  const [salesData, setSalesData] = useState([]);
-  const [revenueData, setRevenueData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
 
@@ -27,19 +23,16 @@ const Dashboard = () => {
       setLoading(true);
       setLoadError(null);
       const salesUrl = selectedBranchId ? `/api/billing/sales?branchId=${selectedBranchId}` : '/api/billing/sales';
-      const dailyUrl = selectedBranchId ? `/api/reports/daily-summary?branchId=${selectedBranchId}` : '/api/reports/daily-summary';
-      const [customersRes, productsRes, salesRes, dailyRes, categoriesRes] = await Promise.all([
+      const [customersRes, productsRes, salesRes, categoriesRes] = await Promise.all([
         authFetch('/api/customers'),
         authFetch('/api/inventory/products'),
         authFetch(salesUrl),
-        authFetch(dailyUrl),
         authFetch('/api/categories'),
       ]);
       const resList = [
         { name: 'Customers', res: customersRes },
         { name: 'Products', res: productsRes },
         { name: 'Sales', res: salesRes },
-        { name: 'Daily summary', res: dailyRes },
         { name: 'Categories', res: categoriesRes },
       ];
       const failed = resList.find((r) => !r.res.ok);
@@ -51,25 +44,12 @@ const Dashboard = () => {
       const products = Array.isArray(productsRes.data?.data) ? productsRes.data.data : [];
       const sales = Array.isArray(salesRes.data?.data) ? salesRes.data.data : [];
       const categories = Array.isArray(categoriesRes.data?.data) ? categoriesRes.data.data : [];
-      const totalRevenue = sales.reduce((sum, s) => sum + (parseFloat(s.total_amount) || 0), 0);
-      const daily = dailyRes.data?.data != null && !Array.isArray(dailyRes.data?.data) ? [dailyRes.data.data] : (Array.isArray(dailyRes.data?.data) ? dailyRes.data.data : []);
       setStats({
         totalCustomers: customers.length,
-        totalRevenue,
         totalProducts: products.length,
         totalOrders: sales.length,
         totalCategories: categories.length,
       });
-      if (Array.isArray(daily) && daily.length > 0) {
-        const d0 = daily[0];
-        const chartData = [{ name: d0.sale_date || 'Today', sales: Number(d0.total_transactions) || 0, revenue: parseFloat(d0.total_revenue) || 0 }];
-        setSalesData(chartData);
-        setRevenueData(chartData);
-      } else {
-        const fallback = [{ name: 'Total', sales: sales.length, revenue: totalRevenue }];
-        setSalesData(fallback);
-        setRevenueData(fallback);
-      }
       setLoading(false);
     })();
   }, [selectedBranchId]);
@@ -147,125 +127,6 @@ const Dashboard = () => {
             />
           </motion.div>
         </div>
-
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Sales Overview */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="bg-card rounded-xl p-6 border border-secondary shadow-sm"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold">Sales Overview</h2>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <div className="w-3 h-3 rounded-full bg-primary"></div>
-                <span>Orders</span>
-              </div>
-            </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={salesData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-20" />
-                <XAxis dataKey="name" stroke="currentColor" className="text-xs" />
-                <YAxis stroke="currentColor" className="text-xs" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--card)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '0.5rem',
-                    color: 'var(--card-foreground)',
-                  }}
-                />
-                <Bar dataKey="sales" fill="var(--primary)" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </motion.div>
-
-          {/* Revenue Trend */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="bg-card rounded-xl p-6 border border-secondary shadow-sm"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold">Revenue Trend</h2>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <span>Revenue (LKR)</span>
-              </div>
-            </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-20" />
-                <XAxis dataKey="name" stroke="currentColor" className="text-xs" />
-                <YAxis stroke="currentColor" className="text-xs" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--card)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '0.5rem',
-                    color: 'var(--card-foreground)',
-                  }}
-                  formatter={(value) => `LKR ${value.toLocaleString()}`}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="revenue" 
-                  stroke="hsl(142 76% 36%)" 
-                  strokeWidth={2}
-                  dot={{ fill: 'hsl(142 76% 36%)', r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </motion.div>
-        </div>
-
-        {/* Quick Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
-        >
-          <div className="bg-card rounded-xl p-6 border border-secondary shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Average Order Value</p>
-                <p className="text-2xl font-bold">
-                  LKR {stats.totalOrders > 0 ? (stats.totalRevenue / stats.totalOrders).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '0'}
-                </p>
-              </div>
-              <div className="w-12 h-12 icon-circle-gradient rounded-lg flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-white" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-card rounded-xl p-6 border border-secondary shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Products in Stock</p>
-                <p className="text-2xl font-bold">{stats.totalProducts}</p>
-              </div>
-              <div className="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center">
-                <Package className="w-6 h-6 text-green-500" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-card rounded-xl p-6 border border-secondary shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Active Customers</p>
-                <p className="text-2xl font-bold">{stats.totalCustomers}</p>
-              </div>
-              <div className="w-12 h-12 icon-circle-gradient rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-white" />
-              </div>
-            </div>
-          </div>
-        </motion.div>
       </div>
     </>
   );
