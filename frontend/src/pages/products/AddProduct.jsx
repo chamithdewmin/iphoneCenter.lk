@@ -299,7 +299,7 @@ const AddProduct = () => {
   };
 
   return (
-    <React.Fragment>
+    <>
       <Helmet>
         <title>Add Product - iphone center.lk</title>
         <meta name="description" content="Add a new product to your inventory" />
@@ -601,6 +601,7 @@ const AddProduct = () => {
                 </Button>
               </div>
             </div>
+            </div>
           </form>
 
           {/* Live Preview (right) */}
@@ -746,7 +747,7 @@ const AddProduct = () => {
           </aside>
         </div>
       </div>
-    </React.Fragment>
+    </>
   );
 };
 
