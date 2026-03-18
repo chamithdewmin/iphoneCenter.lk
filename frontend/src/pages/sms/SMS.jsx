@@ -141,7 +141,7 @@ const SMS = () => {
                 SMS
               </h1>
               <p className="text-muted-foreground mt-1">
-                Send bulk SMS to your customers. Set up your SMS gateway first.
+                Send bulk SMS to your customers.
               </p>
             </div>
           </div>
@@ -150,7 +150,6 @@ const SMS = () => {
           <div className="bg-card/40 border border-secondary rounded-xl overflow-hidden">
             <div className="p-6 border-b border-secondary/70 flex items-start justify-between gap-3">
               <div>
-                <div className="font-semibold">Select customers</div>
               </div>
               <Button
                 variant="ghost"
