@@ -140,26 +140,15 @@ const SMS = () => {
               <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                 SMS
               </h1>
-              <p className="text-muted-foreground mt-1">
-                Send bulk SMS to your customers.
-              </p>
             </div>
           </div>
 
           {/* Main Card */}
           <div className="bg-card/40 border border-secondary rounded-xl overflow-hidden">
-            <div className="p-6 border-b border-secondary/70 flex items-start justify-between gap-3">
-              <div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={fetchCustomers}
-                disabled={loading}
-                title="Refresh"
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              </Button>
+            <div className="p-6 border-b border-secondary/70">
+              <p className="text-sm text-muted-foreground">
+                Send bulk SMS to your customers. Select recipients and enter your message.
+              </p>
             </div>
 
             {/* Table + search */}
@@ -170,8 +159,19 @@ const SMS = () => {
                   placeholder="Search by name or phone number..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-[rgb(10,10,10)]"
+                  className="pl-10 pr-10 bg-[rgb(10,10,10)]"
                 />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={fetchCustomers}
+                  disabled={loading}
+                  title="Refresh"
+                  className="absolute right-1 top-1/2 -translate-y-1/2"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                </Button>
               </div>
 
                 <div className="flex gap-2 mb-4">
