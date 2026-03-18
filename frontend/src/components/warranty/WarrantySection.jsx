@@ -4,6 +4,7 @@ import {
   WARRANTY_MODES,
   SIMPLE_WARRANTY_DURATIONS,
   getDefaultWarrantyForProduct,
+  WARRANTY_ITEM_TYPES,
 } from '@/lib/warranty';
 import WarrantyAdvancedBuilder from '@/components/warranty/WarrantyAdvancedBuilder';
 
@@ -13,6 +14,7 @@ const WarrantySection = ({
   warrantyState,
   onWarrantyChange,
   warrantyProfiles = [],
+  isSmartPhoneCategory = false,
 }) => {
   const [expanded, setExpanded] = useState(
     productType === PRODUCT_TYPES.PHONE
@@ -20,14 +22,49 @@ const WarrantySection = ({
 
   useEffect(() => {
     const defaults = getDefaultWarrantyForProduct(productType, condition);
+
+    // For smart phone category, pre-fill complex warranty with fixed items
+    if (isSmartPhoneCategory) {
+      onWarrantyChange({
+        warranty_mode: WARRANTY_MODES.COMPLEX,
+        simple_duration_months: null,
+        warranty_profile_id: null,
+        complex_items: [
+          {
+            type: WARRANTY_ITEM_TYPES.PHONE_TO_PHONE,
+            // 1.5 months ≈ 45 days
+            duration: 45,
+            duration_unit: 'days',
+          },
+          {
+            type: WARRANTY_ITEM_TYPES.SOFTWARE,
+            duration: 24,
+            duration_unit: 'months', // 2 years
+          },
+          {
+            type: WARRANTY_ITEM_TYPES.SERVICE,
+            duration: 24,
+            duration_unit: 'months', // 2 years
+          },
+          {
+            type: WARRANTY_ITEM_TYPES.APPLE_CARE,
+            duration: 12,
+            duration_unit: 'months', // 1 year
+          },
+        ],
+      });
+      return;
+    }
+
     onWarrantyChange((prev) => ({
       ...prev,
       ...defaults,
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productType, condition]);
+  }, [productType, condition, isSmartPhoneCategory]);
 
   const isAdvancedVisible =
+    isSmartPhoneCategory ||
     productType === PRODUCT_TYPES.PHONE ||
     warrantyState.warranty_mode === WARRANTY_MODES.COMPLEX;
 
@@ -82,6 +119,7 @@ const WarrantySection = ({
                 name="warranty_mode"
                 checked={warrantyState.warranty_mode === WARRANTY_MODES.NONE}
                 onChange={() => handleModeChange(WARRANTY_MODES.NONE)}
+                disabled={isSmartPhoneCategory}
               />
               <span>No Warranty</span>
             </label>
@@ -96,27 +134,43 @@ const WarrantySection = ({
               <span>Simple Warranty</span>
             </label>
 
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="warranty_mode"
-                checked={warrantyState.warranty_mode === WARRANTY_MODES.STANDARD}
-                onChange={() => handleModeChange(WARRANTY_MODES.STANDARD)}
-                disabled={warrantyProfiles.length === 0}
-              />
-              <span>Standard Warranty</span>
-            </label>
+            {!isSmartPhoneCategory && (
+              <>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="warranty_mode"
+                    checked={
+                      warrantyState.warranty_mode === WARRANTY_MODES.STANDARD
+                    }
+                    onChange={() => handleModeChange(WARRANTY_MODES.STANDARD)}
+                    disabled={warrantyProfiles.length === 0}
+                  />
+                  <span>Standard Warranty</span>
+                </label>
 
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="warranty_mode"
-                checked={warrantyState.warranty_mode === WARRANTY_MODES.COMPLEX}
-                onChange={() => handleModeChange(WARRANTY_MODES.COMPLEX)}
-                disabled={!isAdvancedVisible}
-              />
-              <span>Advanced Warranty</span>
-            </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="warranty_mode"
+                    checked={
+                      warrantyState.warranty_mode === WARRANTY_MODES.COMPLEX
+                    }
+                    onChange={() => handleModeChange(WARRANTY_MODES.COMPLEX)}
+                    disabled={!isAdvancedVisible}
+                  />
+                  <span>Advanced Warranty</span>
+                </label>
+              </>
+            )}
+
+            {isSmartPhoneCategory && (
+              <span className="text-xs text-muted-foreground col-span-2">
+                Smart Phone category uses fixed advanced warranty:
+                Phone-to-Phone 1.5 months, Software 2 years, Service 2 years,
+                Apple Care 1 year.
+              </span>
+            )}
           </div>
 
           {/* Simple mode */}
@@ -146,7 +200,8 @@ const WarrantySection = ({
           )}
 
           {/* Standard / profile mode */}
-          {warrantyState.warranty_mode === WARRANTY_MODES.STANDARD && (
+          {!isSmartPhoneCategory &&
+            warrantyState.warranty_mode === WARRANTY_MODES.STANDARD && (
             <div className="flex flex-col mt-1 max-w-xs">
               <label className="text-xs font-medium text-muted-foreground mb-1">
                 Warranty Profile

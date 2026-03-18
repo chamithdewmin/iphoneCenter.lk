@@ -5,6 +5,7 @@ const WARRANTY_ITEM_TYPE_OPTIONS = [
   { value: WARRANTY_ITEM_TYPES.PHONE_TO_PHONE, label: 'Phone-to-Phone' },
   { value: WARRANTY_ITEM_TYPES.SOFTWARE, label: 'Software' },
   { value: WARRANTY_ITEM_TYPES.SERVICE, label: 'Service' },
+  { value: WARRANTY_ITEM_TYPES.APPLE_CARE, label: 'Apple Care' },
 ];
 
 const WarrantyAdvancedBuilder = ({ items, onChange }) => {

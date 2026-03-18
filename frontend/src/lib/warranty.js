@@ -15,6 +15,7 @@ export const WARRANTY_ITEM_TYPES = {
   PHONE_TO_PHONE: 'phone_to_phone',
   SOFTWARE: 'software',
   SERVICE: 'service',
+  APPLE_CARE: 'apple_care',
 };
 
 export const SIMPLE_WARRANTY_DURATIONS = [

@@ -528,23 +528,30 @@ const AddProduct = () => {
 
                   {/* Warranty configuration */}
                   <div className="md:col-span-2 lg:col-span-3">
+                    {(() => {
+                      const categoryName = (formData.category || '').trim();
+                      const isSmartPhoneCategory =
+                        categoryName.toLowerCase() === 'smart phones';
+                      const productType = isSmartPhoneCategory
+                        ? PRODUCT_TYPES.PHONE
+                        : PRODUCT_TYPES.NORMAL;
+                      return (
                     <WarrantySection
-                      productType={
-                        formData.inventory_type === 'unique'
-                          ? PRODUCT_TYPES.PHONE
-                          : PRODUCT_TYPES.NORMAL
-                      }
-                      condition={formData.condition || 'new'}
-                      warrantyState={warrantyState}
-                      onWarrantyChange={(updater) => {
-                        if (typeof updater === 'function') {
-                          setWarrantyState((prev) => updater(prev));
-                        } else {
-                          setWarrantyState(updater);
-                        }
-                      }}
-                      warrantyProfiles={[]}
-                    />
+                        productType={productType}
+                        condition={formData.condition || 'new'}
+                        warrantyState={warrantyState}
+                        onWarrantyChange={(updater) => {
+                          if (typeof updater === 'function') {
+                            setWarrantyState((prev) => updater(prev));
+                          } else {
+                            setWarrantyState(updater);
+                          }
+                        }}
+                        warrantyProfiles={[]}
+                        isSmartPhoneCategory={isSmartPhoneCategory}
+                      />
+                      );
+                    })()}
                   </div>
 
                   <div>

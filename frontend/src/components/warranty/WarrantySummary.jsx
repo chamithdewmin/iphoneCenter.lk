@@ -40,6 +40,8 @@ const WarrantySummary = ({ warranty }) => {
           return 'Software';
         case WARRANTY_ITEM_TYPES.SERVICE:
           return 'Service';
+        case WARRANTY_ITEM_TYPES.APPLE_CARE:
+          return 'Apple Care';
         default:
           return type;
       }
