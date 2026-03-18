@@ -835,14 +835,18 @@ const updateProduct = async (req, res, next) => {
         const condition = typeof bodyCondition === 'string' && bodyCondition.trim()
             ? bodyCondition.trim().toLowerCase()
             : null;
-        const warrantyType = typeof bodyWarrantyType === 'string' && bodyWarrantyType.trim()
-            ? bodyWarrantyType.trim().toLowerCase()
+        const rawWarrantyType = typeof bodyWarrantyType === 'string' && bodyWarrantyType.trim()
+            ? bodyWarrantyType.trim()
             : null;
+        const normalizedTypes = rawWarrantyType
+            ? rawWarrantyType.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean)
+            : [];
+        const hasAppleCare = normalizedTypes.includes('apple_care');
         let warrantyMonths = bodyWarrantyMonths === '' || bodyWarrantyMonths == null ? null : Number(bodyWarrantyMonths);
         if (Number.isNaN(warrantyMonths)) warrantyMonths = null;
 
         // Enforce Apple Care rule: only for NEW, fixed 12 months
-        if (warrantyType === 'apple_care') {
+        if (hasAppleCare) {
             if (condition && condition !== 'new') {
                 await connection.rollback();
                 return res.status(400).json({
@@ -872,7 +876,7 @@ const updateProduct = async (req, res, next) => {
              Number.isNaN(catId) ? null : catId,
              condition,
              warrantyMonths,
-             warrantyType,
+             rawWarrantyType,
              id]
         );
         if (invType === 'quantity' && stockNum !== null && !Number.isNaN(stockNum) && stockNum >= 0) {

@@ -82,15 +82,19 @@ async function createProduct(req, res, next) {
             ? bodyCondition.trim().toLowerCase()
             : 'new';
 
-        const warrantyType = typeof bodyWarrantyType === 'string' && bodyWarrantyType.trim()
-            ? bodyWarrantyType.trim().toLowerCase()
+        const rawWarrantyType = typeof bodyWarrantyType === 'string' && bodyWarrantyType.trim()
+            ? bodyWarrantyType.trim()
             : null;
+        const normalizedTypes = rawWarrantyType
+            ? rawWarrantyType.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean)
+            : [];
+        const hasAppleCare = normalizedTypes.includes('apple_care');
 
         let warrantyMonths = bodyWarrantyMonths === '' || bodyWarrantyMonths == null ? null : Number(bodyWarrantyMonths);
         if (Number.isNaN(warrantyMonths)) warrantyMonths = null;
 
         // Enforce Apple Care rule: only for NEW, fixed 12 months
-        if (warrantyType === 'apple_care') {
+        if (hasAppleCare) {
             if (condition !== 'new') {
                 return res.status(400).json({
                     success: false,
@@ -167,7 +171,7 @@ async function createProduct(req, res, next) {
                 invType === 'quantity' ? (Math.max(0, parseInt(initialStock, 10) || 0)) : 0,
                 condition,
                 warrantyMonths,
-                warrantyType
+                rawWarrantyType
             ]
         );
 
