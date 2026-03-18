@@ -10,13 +10,11 @@ import {
   ArrowRight,
   Menu,
 } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // Helper to get colors based on light/dark theme
-const getColors = () => {
-  const root = document.documentElement;
-  // If light class is present, always treat as light even if "dark" is also present
-  const isLight = root.classList.contains('light');
-  const isDark = !isLight && root.classList.contains('dark');
+const getColors = (theme) => {
+  const isDark = theme !== 'light';
   return {
     // Dark theme: match app background and cards
     border: isDark ? '#1e2433' : '#e2e8f0',
@@ -425,8 +423,9 @@ const SearchResults = ({ query, colors, onClose, onSelect }) => {
 };
 
 const Topbar = ({ onMenuClick }) => {
+  const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
-  const [colors, setColors] = useState(getColors);
+  const [colors, setColors] = useState(() => getColors(theme));
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const calendarRef = useRef(null);
@@ -434,12 +433,10 @@ const Topbar = ({ onMenuClick }) => {
   const inputRef = useRef(null);
   const c = colors;
 
-  // Sync colors when theme changes (requires custom 'theme-change' event in app)
+  // Sync immediately when theme toggles (no refresh needed)
   useEffect(() => {
-    const updateColors = () => setColors(getColors());
-    window.addEventListener('theme-change', updateColors);
-    return () => window.removeEventListener('theme-change', updateColors);
-  }, []);
+    setColors(getColors(theme));
+  }, [theme]);
 
   // Keyboard shortcut: Ctrl+K or Cmd+K focuses the search
   useEffect(() => {

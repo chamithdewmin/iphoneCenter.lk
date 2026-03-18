@@ -78,7 +78,7 @@
   /* Light theme (applied when html has class "light") */
   html.light {
     --sidebar-width: 240px;
-    --background: #f8fafc;               /* Page background */
+    --background: #F2F3F8;               /* Page background */
     --card: #ffffff;                     /* Card background */
     --topbar-bg: #ffffff;                /* Topbar & header */
     --secondary: #eef0f3;                /* Secondary surfaces */
