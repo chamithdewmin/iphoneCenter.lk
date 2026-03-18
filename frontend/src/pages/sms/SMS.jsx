@@ -151,19 +151,27 @@ const SMS = () => {
             <div className="p-6 border-b border-secondary/70 flex items-start justify-between gap-3">
               <div>
                 <div className="font-semibold">Select customers</div>
-                  <div className="text-sm text-muted-foreground mt-1">
-                  {withPhone.length} customer(s) with phone numbers. Select recipients and enter your message.
-                </div>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={fetchCustomers}
-                disabled={loading}
-                title="Refresh"
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSelectAll}
+                  disabled={loading || filtered.length === 0}
+                  title="Select all customers with phone"
+                >
+                  Select all
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={fetchCustomers}
+                  disabled={loading}
+                  title="Refresh"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
             </div>
 
             {/* Table + search */}
@@ -223,7 +231,7 @@ const SMS = () => {
                           <div className="text-base font-medium truncate">
                             {customer.name || '—'}
                           </div>
-                          <div className="text-right pr-3 text-base text-muted-foreground font-mono truncate">
+                          <div className="text-right pr-3 text-base text-muted-foreground font-medium font-mono truncate">
                             {customer.phone || '—'}
                           </div>
                         </div>
