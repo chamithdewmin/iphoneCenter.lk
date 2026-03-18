@@ -201,14 +201,14 @@ const Warehouses = () => {
   };
 
   const handleDelete = async (warehouse) => {
-    const ok = await confirm(`Are you sure you want to delete ${warehouse.name}?`);
-    if (!ok) return;
+    const confirmOk = await confirm(`Are you sure you want to delete ${warehouse.name}?`);
+    if (!confirmOk) return;
     
-    const { ok, data } = await authFetch(`/api/branches/${warehouse.id}`, {
+    const { ok: deleteOk, data } = await authFetch(`/api/branches/${warehouse.id}`, {
       method: 'DELETE',
     });
     
-    if (ok) {
+    if (deleteOk) {
       toast({
         title: 'Warehouse deleted',
         description: 'Warehouse has been deleted successfully.',

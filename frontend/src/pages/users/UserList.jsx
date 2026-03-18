@@ -57,12 +57,12 @@ const UserList = () => {
   }, [searchQuery, users]);
 
   const handleDelete = async (user) => {
-    const ok = await confirm(`Delete user "${user.full_name || user.username}"? This cannot be undone.`);
-    if (!ok) return;
+    const confirmOk = await confirm(`Delete user "${user.full_name || user.username}"? This cannot be undone.`);
+    if (!confirmOk) return;
     setDeletingId(user.id);
-    const { ok, data } = await authFetch(`/api/users/${user.id}`, { method: 'DELETE' });
+    const { ok: deleteOk, data } = await authFetch(`/api/users/${user.id}`, { method: 'DELETE' });
     setDeletingId(null);
-    if (!ok) {
+    if (!deleteOk) {
       toast({
         title: 'Delete failed',
         description: data?.message || 'Could not delete user',

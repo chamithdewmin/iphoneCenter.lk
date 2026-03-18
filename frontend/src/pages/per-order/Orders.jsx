@@ -268,10 +268,10 @@ const Orders = () => {
   };
 
   const handleDeleteOrder = async (orderId) => {
-    const ok = await confirm('Are you sure you want to delete this order?');
-    if (!ok) return;
-    const { ok, data } = await authFetch(`/api/per-orders/${orderId}`, { method: 'DELETE' });
-    if (!ok) {
+    const confirmOk = await confirm('Are you sure you want to delete this order?');
+    if (!confirmOk) return;
+    const { ok: deleteOk, data } = await authFetch(`/api/per-orders/${orderId}`, { method: 'DELETE' });
+    if (!deleteOk) {
       toast({ title: 'Delete failed', description: data?.message || 'Could not delete order', variant: 'destructive' });
       return;
     }

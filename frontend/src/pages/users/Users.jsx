@@ -278,14 +278,14 @@ const Users = () => {
   };
 
   const handleDelete = async (user) => {
-    const ok = await confirm(`Are you sure you want to delete ${user.full_name || user.username}?`);
-    if (!ok) return;
+    const confirmOk = await confirm(`Are you sure you want to delete ${user.full_name || user.username}?`);
+    if (!confirmOk) return;
     
-    const { ok, data } = await authFetch(`/api/users/${user.id}`, {
+    const { ok: deleteOk, data } = await authFetch(`/api/users/${user.id}`, {
       method: 'DELETE',
     });
     
-    if (ok) {
+    if (deleteOk) {
       toast({
         title: 'User deleted',
         description: 'User has been deleted successfully.',

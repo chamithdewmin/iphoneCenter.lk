@@ -162,14 +162,14 @@ const Categories = () => {
   };
 
   const handleDelete = async (category) => {
-    const ok = await confirm(`Are you sure you want to delete ${category.name}?`);
-    if (!ok) return;
+    const confirmOk = await confirm(`Are you sure you want to delete ${category.name}?`);
+    if (!confirmOk) return;
     
-    const { ok, data } = await authFetch(`/api/categories/${category.id}`, {
+    const { ok: deleteOk, data } = await authFetch(`/api/categories/${category.id}`, {
       method: 'DELETE',
     });
     
-    if (ok) {
+    if (deleteOk) {
       toast({
         title: 'Category deleted',
         description: 'Category has been deleted successfully.',
