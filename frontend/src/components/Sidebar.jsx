@@ -427,57 +427,95 @@ const Sidebar = ({ isOpen, onClose }) => {
         style={{ width: sidebarWidth }}
       >
         <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between px-3 py-4 border-b border-secondary min-h-[56px] relative">
+          {/* Header (match reference style) */}
+          <div className={cn("px-4 pt-4", collapsed && "px-3")}>
             {collapsed ? (
-              <>
-                <div className="w-7 h-7 flex items-center justify-center mx-auto flex-shrink-0">
-                  <img src={appleLogo} alt="iPhone Center" className="w-6 h-6 object-contain" />
+              <div className="flex items-center justify-center relative">
+                <div className="w-9 h-9 rounded-xl bg-secondary/60 border border-secondary flex items-center justify-center">
+                  <img src={appleLogo} alt="iPhone Center" className="w-5 h-5 object-contain" />
                 </div>
                 <button
                   onClick={() => setCollapsed(false)}
-                  className="w-7 h-7 rounded-md border border-secondary bg-transparent hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 absolute right-2 top-1/2 -translate-y-1/2 lg:block hidden"
+                  className="w-7 h-7 rounded-md border border-secondary bg-transparent hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 absolute right-0 top-1/2 -translate-y-1/2 lg:flex hidden"
                   title="Expand sidebar"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center gap-2.5 overflow-hidden flex-1 min-w-0">
-                  <img src={sidebarLogo} alt="iPhone Center" className="h-7 w-auto max-w-full object-contain object-left flex-shrink-0" />
-                </div>
                 <button
-                  onClick={() => setCollapsed(true)}
-                  className="w-7 h-7 rounded-md border border-secondary bg-transparent hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 lg:block hidden"
-                  title="Collapse sidebar"
+                  onClick={onClose}
+                  className="lg:hidden w-7 h-7 rounded-md hover:bg-secondary flex items-center justify-center transition-colors absolute left-0 top-1/2 -translate-y-1/2"
+                  title="Close"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <X className="w-4.5 h-4.5" />
                 </button>
-              </>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => navigate('/dashboard')}
+                  className="flex items-center gap-3 min-w-0"
+                  title="Go to dashboard"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-secondary/60 border border-secondary flex items-center justify-center flex-shrink-0">
+                    <img src={appleLogo} alt="iPhone Center" className="w-5 h-5 object-contain" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-foreground leading-tight truncate">
+                      iPhone Center
+                    </div>
+                    <div className="text-xs text-muted-foreground leading-tight truncate">
+                      cloud.iphonecenter.lk
+                    </div>
+                  </div>
+                </button>
+
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => setCollapsed(true)}
+                    className="w-9 h-9 rounded-xl border border-secondary bg-transparent hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors lg:flex hidden"
+                    title="Collapse"
+                  >
+                    <ChevronLeft className="w-4.5 h-4.5" />
+                  </button>
+                  <button
+                    onClick={onClose}
+                    className="lg:hidden w-9 h-9 rounded-xl border border-secondary bg-transparent hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                    title="Close"
+                  >
+                    <X className="w-4.5 h-4.5" />
+                  </button>
+                </div>
+              </div>
             )}
-            <button
-              onClick={onClose}
-              className="lg:hidden p-1 hover:bg-secondary rounded-md transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-2 py-2 overflow-y-auto sidebar-scroll">
+          <nav className={cn("flex-1 overflow-y-auto sidebar-scroll", collapsed ? "px-2 py-3" : "px-4 py-4")}>
+            {!collapsed && (
+              <div className="px-1 pb-3">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider opacity-70">
+                  Menu
+                </span>
+              </div>
+            )}
+
             {displayGroups.map((group, groupIdx) => (
-              <div key={groupIdx} className="mb-4">
-                {!collapsed && (
-                  <div className="px-2 py-1.5 mb-1">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider opacity-60">
-                      {group.label}
-                    </span>
-                  </div>
+              <div
+                key={groupIdx}
+                className={cn(
+                  "pb-3",
+                  groupIdx !== displayGroups.length - 1 && "mb-3 border-b border-secondary/70"
                 )}
-                <div className="space-y-1">
+              >
+                <div className={cn("space-y-1", collapsed && "space-y-1.5")}>
                   {group.items.map((item, idx) => (
-                    <MenuItem key={idx} item={item} onClose={onClose} isCollapsed={collapsed} />
+                    <MenuItem
+                      key={idx}
+                      item={item}
+                      onClose={onClose}
+                      isCollapsed={collapsed}
+                    />
                   ))}
                 </div>
               </div>
