@@ -299,7 +299,7 @@ const AddProduct = () => {
   };
 
   return (
-    <>
+    <React.Fragment>
       <Helmet>
         <title>Add Product - iphone center.lk</title>
         <meta name="description" content="Add a new product to your inventory" />
@@ -746,7 +746,7 @@ const AddProduct = () => {
           </aside>
         </div>
       </div>
-    </>
+    </React.Fragment>
   );
 };
 
