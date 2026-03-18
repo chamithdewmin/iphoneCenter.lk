@@ -9,6 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import WarrantySection from '@/components/warranty/WarrantySection';
+import {
+  PRODUCT_TYPES,
+  decodeWarrantyFromLegacy,
+  encodeWarrantyToLegacy,
+  WARRANTY_MODES,
+} from '@/lib/warranty';
 import appleLogoBlack from '@/assets/Apple_logo_black.svg';
 import appleLogoWhite from '@/assets/Apple_logo_white.svg';
 
@@ -43,9 +50,16 @@ const AddProduct = () => {
     category_id: '',
     inventory_type: 'quantity',
     condition: 'new',
+    // legacy fields kept for backwards compatibility
     warranty_types: [],
     warranty_months: '',
     branchId: '',
+  });
+  const [warrantyState, setWarrantyState] = useState({
+    warranty_mode: WARRANTY_MODES.NONE,
+    simple_duration_months: null,
+    warranty_profile_id: null,
+    complex_items: [],
   });
 
   const fetchBrands = useCallback(async () => {
@@ -106,9 +120,7 @@ const AddProduct = () => {
           const { ok, data } = await authFetch(`/api/inventory/products/${id}`);
           if (ok && data?.data) {
             const product = data.data;
-            const existingTypes = typeof product.warranty_type === 'string' && product.warranty_type.trim()
-              ? product.warranty_type.split(',').map((t) => t.trim()).filter(Boolean)
-              : [];
+            const decodedWarranty = decodeWarrantyFromLegacy(product);
             setFormData({
               brand: product.brand || '',
               model: '',
@@ -126,8 +138,14 @@ const AddProduct = () => {
               category_id: product.category_id ?? '',
               inventory_type: product.inventory_type || 'quantity',
               condition: product.condition || 'new',
-              warranty_types: existingTypes,
+              warranty_types: [],
               warranty_months: product.warranty_months != null ? String(product.warranty_months) : '',
+            });
+            setWarrantyState({
+              warranty_mode: decodedWarranty.warranty_mode,
+              simple_duration_months: decodedWarranty.simple_duration_months,
+              warranty_profile_id: decodedWarranty.warranty_profile_id,
+              complex_items: decodedWarranty.complex_items || [],
             });
           }
         } catch (error) {
@@ -188,15 +206,8 @@ const AddProduct = () => {
     const sku = formData.sku?.trim() || `SKU-${Date.now()}`;
     const wholesale = formData.wholesalePrice !== '' ? Number(formData.wholesalePrice) : NaN;
     const retail = formData.retailPrice !== '' ? Number(formData.retailPrice) : NaN;
-    const selectedTypes = Array.isArray(formData.warranty_types)
-      ? formData.warranty_types
-      : [];
-    const hasAppleCare = selectedTypes.includes('apple_care');
-    const warrantyMonths = hasAppleCare
-      ? 12
-      : formData.warranty_months !== ''
-        ? Number(formData.warranty_months)
-        : null;
+    // Encode the structured warranty state into legacy API fields
+    const legacyWarranty = encodeWarrantyToLegacy(warrantyState);
 
     if (Number.isNaN(wholesale) || wholesale < 0) {
       toast({ title: 'Validation Error', description: 'Valid wholesale price is required', variant: 'destructive' });
@@ -229,8 +240,8 @@ const AddProduct = () => {
         inventory_type: formData.inventory_type || 'quantity',
         category_id: formData.category_id || null,
         condition: formData.condition || 'new',
-        warranty_type: selectedTypes.length ? selectedTypes.join(',') : null,
-        warranty_months: warrantyMonths,
+        warranty_type: legacyWarranty.warranty_type,
+        warranty_months: legacyWarranty.warranty_months,
       };
       if (formData.inventory_type === 'quantity') {
         payload.stock = Math.max(0, parseInt(formData.stock, 10) || 0);
@@ -266,10 +277,10 @@ const AddProduct = () => {
           inventory_type: formData.inventory_type || 'quantity',
           category_id: formData.category_id || null,
           condition: formData.condition || 'new',
-          warranty_type: selectedTypes.length ? selectedTypes.join(',') : null,
+          warranty_type: legacyWarranty.warranty_type,
           initialQuantity,
           stock: initialQuantity,
-          warranty_months: warrantyMonths,
+          warranty_months: legacyWarranty.warranty_months,
           ...(effectiveBranchId ? { branchId: effectiveBranchId } : {}),
         }),
       });
@@ -515,84 +526,25 @@ const AddProduct = () => {
                     />
                   </div>
 
-                  <div>
-                    <Label>Warranty types</Label>
-                    <div className="mt-2 space-y-2">
-                      <label className="flex items-center gap-2 text-sm cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-input bg-background"
-                          checked={formData.warranty_types.includes('phone_to_phone')}
-                          onChange={() => handleWarrantyTypeToggle('phone_to_phone')}
-                        />
-                        <span>Phone to Phone warranty</span>
-                      </label>
-                      <label className="flex items-center gap-2 text-sm cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-input bg-background"
-                          checked={formData.warranty_types.includes('software')}
-                          onChange={() => handleWarrantyTypeToggle('software')}
-                        />
-                        <span>Software warranty</span>
-                      </label>
-                      <label className="flex items-center gap-2 text-sm cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-input bg-background"
-                          checked={formData.warranty_types.includes('services')}
-                          onChange={() => handleWarrantyTypeToggle('services')}
-                        />
-                        <span>Services warranty</span>
-                      </label>
-                      <label className="flex items-center gap-2 text-sm cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-input bg-background"
-                          checked={formData.warranty_types.includes('apple_care')}
-                          onChange={() => handleWarrantyTypeToggle('apple_care')}
-                          disabled={(formData.condition || 'new') !== 'new'}
-                        />
-                        <span className="flex items-center gap-2">
-                          <img
-                            src={theme === 'light' ? appleLogoBlack : appleLogoWhite}
-                            alt="Apple"
-                            className="w-3.5 h-3.5 object-contain"
-                          />
-                          Apple Care warranty (1 year)
-                        </span>
-                      </label>
-                    </div>
-                    {formData.warranty_types.includes('apple_care') && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Apple Care is fixed to 1 year and only available when Condition is New.
-                      </p>
-                    )}
-                    {(formData.condition || 'new') !== 'new' && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Apple Care is only available for <strong>New</strong> phones.
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="warranty_months">Warranty period</Label>
-                    <select
-                      id="warranty_months"
-                      name="warranty_months"
-                      value={formData.warranty_types.includes('apple_care') ? '12' : formData.warranty_months}
-                      onChange={handleChange}
-                      disabled={formData.warranty_types.includes('apple_care')}
-                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1 disabled:opacity-70"
-                    >
-                      <option value="">No warranty</option>
-                      <option value="3">3 months</option>
-                      <option value="6">6 months</option>
-                      <option value="12">12 months</option>
-                      <option value="18">18 months</option>
-                      <option value="24">24 months</option>
-                      <option value="36">36 months</option>
-                    </select>
+                  {/* Warranty configuration */}
+                  <div className="md:col-span-2 lg:col-span-3">
+                    <WarrantySection
+                      productType={
+                        formData.inventory_type === 'unique'
+                          ? PRODUCT_TYPES.PHONE
+                          : PRODUCT_TYPES.NORMAL
+                      }
+                      condition={formData.condition || 'new'}
+                      warrantyState={warrantyState}
+                      onWarrantyChange={(updater) => {
+                        if (typeof updater === 'function') {
+                          setWarrantyState((prev) => updater(prev));
+                        } else {
+                          setWarrantyState(updater);
+                        }
+                      }}
+                      warrantyProfiles={[]}
+                    />
                   </div>
 
                   <div>
