@@ -637,7 +637,7 @@ const AddProduct = () => {
               return (
                 <div className="flex flex-col">
                   {/* Image */}
-                  <div className="relative h-52 bg-secondary overflow-hidden">
+                  <div className="relative aspect-square bg-secondary overflow-hidden">
                     <img
                       src={mainImage}
                       alt={nameFallback}
