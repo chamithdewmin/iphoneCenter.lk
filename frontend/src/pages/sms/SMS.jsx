@@ -133,7 +133,7 @@ const SMS = () => {
       </Helmet>
 
       <div className="min-h-screen bg-background text-foreground px-4 py-6">
-        <div className="mx-auto w-full max-w-5xl">
+        <div className="mx-auto w-full max-w-6xl">
           {/* Header */}
           <div className="mb-4">
             <h1 className="text-2xl font-semibold">Select customers</h1>
