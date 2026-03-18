@@ -146,9 +146,6 @@ const SMS = () => {
           {/* Main Card */}
           <div className="bg-card/40 border border-secondary rounded-xl overflow-hidden">
             <div className="p-6 border-b border-secondary/70">
-              <p className="text-sm text-muted-foreground">
-                Send bulk SMS to your customers. Select recipients and enter your message.
-              </p>
             </div>
 
             {/* Table + search */}
