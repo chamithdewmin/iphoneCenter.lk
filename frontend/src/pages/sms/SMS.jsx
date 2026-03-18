@@ -140,6 +140,9 @@ const SMS = () => {
               <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                 SMS
               </h1>
+              <p className="text-muted-foreground mt-1">
+                Send bulk SMS to your customers. Select recipients and enter your message.
+              </p>
             </div>
           </div>
 
