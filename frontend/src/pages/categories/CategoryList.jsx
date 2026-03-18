@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import Loading from '@/components/Loading';
+import { useConfirmDialog } from '@/contexts/ConfirmDialogContext';
 
 const CategoryList = () => {
   const [categories, setCategories] = useState([]);
@@ -16,6 +17,7 @@ const CategoryList = () => {
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(null);
   const { toast } = useToast();
+  const { confirm } = useConfirmDialog();
 
   const fetchCategories = useCallback(async () => {
     setLoading(true);
@@ -75,8 +77,11 @@ const CategoryList = () => {
     }
   }, [searchQuery, categories]);
 
-  const handleDeleteClick = (category) => {
-    if (window.confirm(`Are you sure you want to delete "${category.name}"? This action cannot be undone.`)) {
+  const handleDeleteClick = async (category) => {
+    const ok = await confirm(
+      `Are you sure you want to delete "${category.name}"? This action cannot be undone.`
+    );
+    if (ok) {
       handleDeleteCategory(category.id);
     }
   };

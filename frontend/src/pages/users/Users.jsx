@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import { useConfirmDialog } from '@/contexts/ConfirmDialogContext';
 import DataTable from '@/components/DataTable';
 import {
   Dialog,
@@ -56,6 +57,7 @@ const getPasswordRuleState = (password, name, username) => {
 
 const Users = () => {
   const { toast } = useToast();
+  const { confirm } = useConfirmDialog();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -276,7 +278,8 @@ const Users = () => {
   };
 
   const handleDelete = async (user) => {
-    if (!confirm(`Are you sure you want to delete ${user.full_name || user.username}?`)) return;
+    const ok = await confirm(`Are you sure you want to delete ${user.full_name || user.username}?`);
+    if (!ok) return;
     
     const { ok, data } = await authFetch(`/api/users/${user.id}`, {
       method: 'DELETE',

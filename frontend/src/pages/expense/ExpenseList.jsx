@@ -7,6 +7,7 @@ import { getStorageData, setStorageData } from '@/utils/storage';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { useConfirmDialog } from '@/contexts/ConfirmDialogContext';
 
 const ExpenseList = () => {
   const [expenses, setExpenses] = useState([]);
@@ -14,6 +15,7 @@ const ExpenseList = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const { toast } = useToast();
+  const { confirm } = useConfirmDialog();
 
   useEffect(() => {
     const loadedExpenses = getStorageData('expenses', []);
@@ -41,16 +43,17 @@ const ExpenseList = () => {
     setFilteredExpenses(filtered);
   }, [searchQuery, categoryFilter, expenses]);
 
-  const handleDelete = (expenseId) => {
-    if (window.confirm('Are you sure you want to delete this expense?')) {
-      const updatedExpenses = expenses.filter(e => e.id !== expenseId);
-      setExpenses(updatedExpenses);
-      setStorageData('expenses', updatedExpenses);
-      toast({
-        title: "Expense Deleted",
-        description: "The expense has been deleted successfully",
-      });
-    }
+  const handleDelete = async (expenseId) => {
+    const ok = await confirm('Are you sure you want to delete this expense?');
+    if (!ok) return;
+
+    const updatedExpenses = expenses.filter((e) => e.id !== expenseId);
+    setExpenses(updatedExpenses);
+    setStorageData('expenses', updatedExpenses);
+    toast({
+      title: "Expense Deleted",
+      description: "The expense has been deleted successfully",
+    });
   };
 
   const formatDate = (dateString) => {

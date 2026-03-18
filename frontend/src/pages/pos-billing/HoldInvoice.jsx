@@ -6,12 +6,14 @@ import { getStorageData, setStorageData } from '@/utils/storage';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { useConfirmDialog } from '@/contexts/ConfirmDialogContext';
 
 const HoldInvoice = () => {
   const [heldInvoices, setHeldInvoices] = useState([]);
   const [filteredInvoices, setFilteredInvoices] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
+  const { confirm } = useConfirmDialog();
 
   useEffect(() => {
     const loadedHeld = getStorageData('heldInvoices', []);
@@ -38,17 +40,18 @@ const HoldInvoice = () => {
     });
   };
 
-  const handleDelete = (invoiceId) => {
-    if (window.confirm('Are you sure you want to delete this held invoice?')) {
-      const updated = heldInvoices.filter(inv => inv.id !== invoiceId);
-      setHeldInvoices(updated);
-      setFilteredInvoices(updated);
-      setStorageData('heldInvoices', updated);
-      toast({
-        title: "Invoice Deleted",
-        description: "Held invoice has been deleted",
-      });
-    }
+  const handleDelete = async (invoiceId) => {
+    const ok = await confirm('Are you sure you want to delete this held invoice?');
+    if (!ok) return;
+
+    const updated = heldInvoices.filter((inv) => inv.id !== invoiceId);
+    setHeldInvoices(updated);
+    setFilteredInvoices(updated);
+    setStorageData('heldInvoices', updated);
+    toast({
+      title: "Invoice Deleted",
+      description: "Held invoice has been deleted",
+    });
   };
 
   return (

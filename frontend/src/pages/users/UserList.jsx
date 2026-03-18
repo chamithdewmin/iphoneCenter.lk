@@ -8,10 +8,12 @@ import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Loading from '@/components/Loading';
+import { useConfirmDialog } from '@/contexts/ConfirmDialogContext';
 
 const UserList = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { confirm } = useConfirmDialog();
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,7 +57,8 @@ const UserList = () => {
   }, [searchQuery, users]);
 
   const handleDelete = async (user) => {
-    if (!window.confirm(`Delete user "${user.full_name || user.username}"? This cannot be undone.`)) return;
+    const ok = await confirm(`Delete user "${user.full_name || user.username}"? This cannot be undone.`);
+    if (!ok) return;
     setDeletingId(user.id);
     const { ok, data } = await authFetch(`/api/users/${user.id}`, { method: 'DELETE' });
     setDeletingId(null);

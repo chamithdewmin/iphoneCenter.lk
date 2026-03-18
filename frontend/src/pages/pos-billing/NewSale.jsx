@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Search, ScanLine, Plus, Minus, Trash2, ShoppingCart, CreditCard, Printer, User, X, Loader2, ShieldOff } from 'lucide-react';
 import { authFetch } from '@/lib/api';
-import { PLACEHOLDER_PRODUCT_IMAGE } from '@/lib/placeholder';
+import { getFirstProductImage } from '@/lib/productImages';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
@@ -478,7 +478,7 @@ const NewSale = () => {
                         >
                           <div className="aspect-square bg-secondary relative">
                             <img
-                              src={product.images?.[0] || product.image || PLACEHOLDER_PRODUCT_IMAGE}
+                              src={getFirstProductImage(product)}
                               alt={`${brand} ${model}`}
                               className="w-full h-full object-cover"
                               loading="lazy"
@@ -551,7 +551,7 @@ const NewSale = () => {
                     >
                       <div className="flex gap-2">
                         <img
-                          src={item.images?.[0] || item.image || PLACEHOLDER_PRODUCT_IMAGE}
+                          src={getFirstProductImage(item)}
                           alt={`${brand} ${model}`}
                           className="w-16 h-16 object-cover rounded"
                           loading="lazy"

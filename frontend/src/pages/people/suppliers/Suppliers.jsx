@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import DataTable from '@/components/DataTable';
 import Loading from '@/components/Loading';
+import { useConfirmDialog } from '@/contexts/ConfirmDialogContext';
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,7 @@ import {
 
 const Suppliers = () => {
   const { toast } = useToast();
+  const { confirm } = useConfirmDialog();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -167,7 +169,8 @@ const Suppliers = () => {
   };
 
   const handleDelete = async (supplier) => {
-    if (!confirm(`Are you sure you want to delete ${supplier.name}?`)) return;
+    const ok = await confirm(`Are you sure you want to delete ${supplier.name}?`);
+    if (!ok) return;
     
     const updatedSuppliers = suppliers.filter(s => s.id !== supplier.id);
     setSuppliers(updatedSuppliers);

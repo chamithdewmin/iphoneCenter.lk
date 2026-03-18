@@ -8,10 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import Loading from '@/components/Loading';
+import { useConfirmDialog } from '@/contexts/ConfirmDialogContext';
+import { getFirstProductImage } from '@/lib/productImages';
 
 const ProductList = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { confirm } = useConfirmDialog();
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,8 +61,11 @@ const ProductList = () => {
     navigate(`/products/edit/${product.id}`, { state: { product } });
   };
 
-  const handleDeleteClick = (product) => {
-    if (window.confirm(`Are you sure you want to permanently delete "${product.name}"?\n\nThis will permanently remove the product and all related data (stock, IMEIs, barcodes) from the database. This action cannot be undone.`)) {
+  const handleDeleteClick = async (product) => {
+    const ok = await confirm(
+      `Are you sure you want to permanently delete "${product.name}"?\n\nThis will permanently remove the product and all related data (stock, IMEIs, barcodes) from the database. This action cannot be undone.`
+    );
+    if (ok) {
       handleDeleteProduct(product.id);
     }
   };
@@ -186,8 +192,13 @@ const ProductList = () => {
                 whileHover={{ y: -4 }}
                 className="bg-card rounded-xl border border-secondary overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 group"
               >
-                <div className="relative h-48 bg-gradient-to-br from-secondary/50 to-secondary/20 overflow-hidden flex items-center justify-center">
-                  <Package className="w-16 h-16 text-muted-foreground opacity-30" />
+                <div className="relative h-48 bg-secondary overflow-hidden">
+                  <img
+                    src={getFirstProductImage(product)}
+                    alt={product.name || product.sku || 'Product'}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
                 </div>
 
                 <div className="p-5">

@@ -24,9 +24,11 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { useConfirmDialog } from '@/contexts/ConfirmDialogContext';
 
 const Categories = () => {
   const { toast } = useToast();
+  const { confirm } = useConfirmDialog();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [filteredCategories, setFilteredCategories] = useState([]);
@@ -160,7 +162,8 @@ const Categories = () => {
   };
 
   const handleDelete = async (category) => {
-    if (!confirm(`Are you sure you want to delete ${category.name}?`)) return;
+    const ok = await confirm(`Are you sure you want to delete ${category.name}?`);
+    if (!ok) return;
     
     const { ok, data } = await authFetch(`/api/categories/${category.id}`, {
       method: 'DELETE',

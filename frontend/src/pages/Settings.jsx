@@ -12,11 +12,13 @@ import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { authFetch } from '@/lib/api';
+import { useConfirmDialog } from '@/contexts/ConfirmDialogContext';
 
 const Settings = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { confirm } = useConfirmDialog();
   const role = user?.role != null ? String(user.role).toLowerCase() : '';
   const isAdmin = role === 'admin';
   const [formData, setFormData] = useState({
@@ -70,17 +72,20 @@ const Settings = () => {
   }, [resetDialogOpen, isAdmin, fetchBranches]);
 
 
-  const handleResetData = () => {
-    if (window.confirm('Are you sure you want to reset all demo data? This action cannot be undone.')) {
-      resetDemoData();
-      toast({
-        title: "Data Reset Successful",
-        description: "All demo data has been restored to defaults",
-      });
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    }
+  const handleResetData = async () => {
+    const ok = await confirm(
+      'Are you sure you want to reset all demo data? This action cannot be undone.'
+    );
+    if (!ok) return;
+
+    resetDemoData();
+    toast({
+      title: "Data Reset Successful",
+      description: "All demo data has been restored to defaults",
+    });
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
   };
 
   const handleResetBranchData = async () => {
@@ -98,7 +103,8 @@ const Settings = () => {
       ? 'Are you absolutely sure you want to delete ALL data from ALL branches? This will permanently delete all sales, stock, IMEIs, transfers, and audit logs for every branch. This action cannot be undone!'
       : 'Are you sure you want to delete all data for the selected branch? This action cannot be undone!';
 
-    if (!window.confirm(confirmMessage)) {
+    const ok = await confirm(confirmMessage);
+    if (!ok) {
       return;
     }
 

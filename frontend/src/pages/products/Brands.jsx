@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import Loading from '@/components/Loading';
+import { useConfirmDialog } from '@/contexts/ConfirmDialogContext';
 
 const Brands = () => {
   const [brands, setBrands] = useState([]);
@@ -20,6 +21,7 @@ const Brands = () => {
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(null);
   const { toast } = useToast();
+  const { confirm } = useConfirmDialog();
 
   const fetchBrands = useCallback(async () => {
     setLoading(true);
@@ -186,8 +188,11 @@ const Brands = () => {
     }
   };
 
-  const handleDeleteClick = (brand) => {
-    if (window.confirm(`Are you sure you want to delete "${brand.name}"? This action cannot be undone.`)) {
+  const handleDeleteClick = async (brand) => {
+    const ok = await confirm(
+      `Are you sure you want to delete "${brand.name}"? This action cannot be undone.`
+    );
+    if (ok) {
       handleDeleteBrand(brand.id);
     }
   };

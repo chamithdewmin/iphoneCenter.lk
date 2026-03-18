@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import DataTable from '@/components/DataTable';
 import Loading from '@/components/Loading';
+import { useConfirmDialog } from '@/contexts/ConfirmDialogContext';
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,7 @@ import {
 
 const Customers = () => {
   const { toast } = useToast();
+  const { confirm } = useConfirmDialog();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -170,7 +172,8 @@ const Customers = () => {
   };
 
   const handleDelete = async (customer) => {
-    if (!confirm(`Are you sure you want to delete ${customer.name}?`)) return;
+    const ok = await confirm(`Are you sure you want to delete ${customer.name}?`);
+    if (!ok) return;
     
     const { ok, data } = await authFetch(`/api/customers/${customer.id}`, {
       method: 'DELETE',

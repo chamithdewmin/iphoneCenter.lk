@@ -11,11 +11,13 @@ import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { authFetch } from '@/lib/api';
+import { useConfirmDialog } from '@/contexts/ConfirmDialogContext';
 
 const GeneralSetting = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { confirm } = useConfirmDialog();
   const role = user?.role != null ? String(user.role).toLowerCase() : '';
   const isAdmin = role === 'admin';
   const [formData, setFormData] = useState({
@@ -85,7 +87,8 @@ const GeneralSetting = () => {
       ? 'Are you absolutely sure you want to delete ALL data from ALL branches? This will permanently delete all sales, stock, IMEIs, transfers, and audit logs for every branch. This action cannot be undone!'
       : 'Are you sure you want to delete all data for the selected branch? This action cannot be undone!';
 
-    if (!window.confirm(confirmMessage)) {
+    const ok = await confirm(confirmMessage);
+    if (!ok) {
       return;
     }
 

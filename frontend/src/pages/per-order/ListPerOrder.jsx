@@ -7,6 +7,7 @@ import { useBranchFilter } from '@/hooks/useBranchFilter';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { useConfirmDialog } from '@/contexts/ConfirmDialogContext';
 
 const ListPerOrder = () => {
   const { isAdmin, selectedBranchId } = useBranchFilter();
@@ -16,6 +17,7 @@ const ListPerOrder = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const { toast } = useToast();
+  const { confirm } = useConfirmDialog();
 
   const fetchOrders = React.useCallback(async () => {
     setLoading(true);
@@ -54,7 +56,8 @@ const ListPerOrder = () => {
   }, [searchQuery, statusFilter, orders]);
 
   const handleDeleteOrder = async (orderId) => {
-    if (!window.confirm('Are you sure you want to delete this order?')) return;
+    const ok = await confirm('Are you sure you want to delete this order?');
+    if (!ok) return;
     const { ok, data } = await authFetch(`/api/per-orders/${orderId}`, { method: 'DELETE' });
     if (!ok) {
       toast({ title: 'Delete failed', description: data?.message || 'Could not delete order', variant: 'destructive' });

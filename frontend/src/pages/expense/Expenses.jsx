@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import DataTable from '@/components/DataTable';
 import Loading from '@/components/Loading';
+import { useConfirmDialog } from '@/contexts/ConfirmDialogContext';
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,7 @@ import {
 
 const Expenses = () => {
   const { toast } = useToast();
+  const { confirm } = useConfirmDialog();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -163,16 +165,17 @@ const Expenses = () => {
     setIsAddModalOpen(false);
   };
 
-  const handleDelete = (expenseId) => {
-    if (window.confirm('Are you sure you want to delete this expense?')) {
-      const updatedExpenses = expenses.filter(e => e.id !== expenseId);
-      setExpenses(updatedExpenses);
-      setStorageData('expenses', updatedExpenses);
-      toast({
-        title: "Expense Deleted",
-        description: "The expense has been deleted successfully",
-      });
-    }
+  const handleDelete = async (expenseId) => {
+    const ok = await confirm('Are you sure you want to delete this expense?');
+    if (!ok) return;
+
+    const updatedExpenses = expenses.filter((e) => e.id !== expenseId);
+    setExpenses(updatedExpenses);
+    setStorageData('expenses', updatedExpenses);
+    toast({
+      title: "Expense Deleted",
+      description: "The expense has been deleted successfully",
+    });
   };
 
   const formatDate = (dateString) => {

@@ -30,6 +30,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import DataTable from '@/components/DataTable';
 import Loading from '@/components/Loading';
+import { useConfirmDialog } from '@/contexts/ConfirmDialogContext';
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,7 @@ import {
 
 const Orders = () => {
   const { toast } = useToast();
+  const { confirm } = useConfirmDialog();
   const { user } = useAuth();
   const { isAdmin, branches, selectedBranchId } = useBranchFilter();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -266,7 +268,8 @@ const Orders = () => {
   };
 
   const handleDeleteOrder = async (orderId) => {
-    if (!window.confirm('Are you sure you want to delete this order?')) return;
+    const ok = await confirm('Are you sure you want to delete this order?');
+    if (!ok) return;
     const { ok, data } = await authFetch(`/api/per-orders/${orderId}`, { method: 'DELETE' });
     if (!ok) {
       toast({ title: 'Delete failed', description: data?.message || 'Could not delete order', variant: 'destructive' });
@@ -326,7 +329,7 @@ const Orders = () => {
 
   const handleCancelOrder = async () => {
     if (!viewedOrderFull) return;
-    const refund = window.confirm('Cancel this per order? Click OK to mark as refund, Cancel to cancel without refund.');
+    const refund = await confirm('Cancel this per order? Click OK to mark as refund, Cancel to cancel without refund.');
     const { ok, data } = await authFetch(`/api/per-orders/${viewedOrderFull.id}/cancel`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

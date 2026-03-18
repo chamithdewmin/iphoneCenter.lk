@@ -22,6 +22,7 @@ import { useBranchFilter } from '@/hooks/useBranchFilter';
 import { BranchFilter } from '@/components/BranchFilter';
 import DataTable from '@/components/DataTable';
 import Loading from '@/components/Loading';
+import { useConfirmDialog } from '@/contexts/ConfirmDialogContext';
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,7 @@ import {
 
 const Warehouses = () => {
   const { toast } = useToast();
+  const { confirm } = useConfirmDialog();
   const { isAdmin, selectedBranchId, setSelectedBranchId } = useBranchFilter();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -199,7 +201,8 @@ const Warehouses = () => {
   };
 
   const handleDelete = async (warehouse) => {
-    if (!confirm(`Are you sure you want to delete ${warehouse.name}?`)) return;
+    const ok = await confirm(`Are you sure you want to delete ${warehouse.name}?`);
+    if (!ok) return;
     
     const { ok, data } = await authFetch(`/api/branches/${warehouse.id}`, {
       method: 'DELETE',
