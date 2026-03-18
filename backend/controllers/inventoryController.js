@@ -729,7 +729,22 @@ const updateProduct = async (req, res, next) => {
         await connection.beginTransaction();
 
         const { id } = req.params;
-        const { name, sku, description, category, brand, basePrice, wholesalePrice, retailPrice, inventory_type: inventoryType, category_id: categoryId, stock: stockVal } = req.body;
+        const {
+            name,
+            sku,
+            description,
+            category,
+            brand,
+            basePrice,
+            wholesalePrice,
+            retailPrice,
+            inventory_type: inventoryType,
+            category_id: categoryId,
+            stock: stockVal,
+            condition: bodyCondition,
+            warranty_months: bodyWarrantyMonths,
+            warranty_type: bodyWarrantyType
+        } = req.body;
 
         if (!name || !name.trim()) {
             await connection.rollback();
@@ -817,12 +832,36 @@ const updateProduct = async (req, res, next) => {
         const catId = categoryId != null && categoryId !== '' ? parseInt(categoryId, 10) : null;
         const stockNum = stockVal != null && stockVal !== '' ? parseInt(stockVal, 10) : null;
 
+        const condition = typeof bodyCondition === 'string' && bodyCondition.trim()
+            ? bodyCondition.trim().toLowerCase()
+            : null;
+        const warrantyType = typeof bodyWarrantyType === 'string' && bodyWarrantyType.trim()
+            ? bodyWarrantyType.trim().toLowerCase()
+            : null;
+        let warrantyMonths = bodyWarrantyMonths === '' || bodyWarrantyMonths == null ? null : Number(bodyWarrantyMonths);
+        if (Number.isNaN(warrantyMonths)) warrantyMonths = null;
+
+        // Enforce Apple Care rule: only for NEW, fixed 12 months
+        if (warrantyType === 'apple_care') {
+            if (condition && condition !== 'new') {
+                await connection.rollback();
+                return res.status(400).json({
+                    success: false,
+                    message: 'Apple Care warranty is only available for NEW phones'
+                });
+            }
+            warrantyMonths = 12;
+        }
+
         await connection.execute(
             `UPDATE products 
              SET name = ?, sku = ?, description = ?, category = ?, brand = ?, 
                  wholesale_price = ?, retail_price = ?, base_price = ?,
                  inventory_type = COALESCE(?, inventory_type),
                  category_id = ?,
+                 condition = COALESCE(?, condition),
+                 warranty_months = ?,
+                 warranty_type = ?,
                  updated_at = CURRENT_TIMESTAMP
              WHERE id = ?`,
             [name.trim(), sku.trim(), description?.trim() || null, category?.trim() || null, brand?.trim() || null,
@@ -831,6 +870,9 @@ const updateProduct = async (req, res, next) => {
              base,
              invType || 'quantity',
              Number.isNaN(catId) ? null : catId,
+             condition,
+             warrantyMonths,
+             warrantyType,
              id]
         );
         if (invType === 'quantity' && stockNum !== null && !Number.isNaN(stockNum) && stockNum >= 0) {

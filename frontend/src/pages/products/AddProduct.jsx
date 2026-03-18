@@ -4,16 +4,20 @@ import { Save, Package, X } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { authFetch } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import appleLogoBlack from '@/assets/Apple_logo_black.svg';
+import appleLogoWhite from '@/assets/Apple_logo_white.svg';
 
 const AddProduct = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const isEditMode = !!id;
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -33,9 +37,13 @@ const AddProduct = () => {
     retailPrice: '',
     stock: '',
     description: '',
+    colors: '',
+    images: '',
     category: '',
     category_id: '',
     inventory_type: 'quantity',
+    condition: 'new',
+    warranty_type: '',
     warranty_months: '',
     branchId: '',
   });
@@ -109,9 +117,13 @@ const AddProduct = () => {
               retailPrice: product.retail_price || product.base_price || product.basePrice || '',
               stock: product.stock ?? product.quantity ?? '',
               description: product.description || '',
+              colors: product.colors || '',
+              images: product.images || '',
               category: product.category || product.category_name || '',
               category_id: product.category_id ?? '',
               inventory_type: product.inventory_type || 'quantity',
+              condition: product.condition || 'new',
+              warranty_type: product.warranty_type || '',
               warranty_months: product.warranty_months != null ? String(product.warranty_months) : '',
             });
           }
@@ -134,6 +146,16 @@ const AddProduct = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleWarrantyTypeChange = (e) => {
+    const value = e.target.value;
+    setFormData((prev) => {
+      if (value === 'apple_care') {
+        return { ...prev, warranty_type: value, warranty_months: '12' };
+      }
+      return { ...prev, warranty_type: value };
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const name = formData.name?.trim() || [formData.brand, formData.model].filter(Boolean).join(' ').trim();
@@ -144,7 +166,8 @@ const AddProduct = () => {
     const sku = formData.sku?.trim() || `SKU-${Date.now()}`;
     const wholesale = formData.wholesalePrice !== '' ? Number(formData.wholesalePrice) : NaN;
     const retail = formData.retailPrice !== '' ? Number(formData.retailPrice) : NaN;
-    const warrantyMonths = formData.warranty_months !== '' ? Number(formData.warranty_months) : null;
+    const isAppleCare = formData.warranty_type === 'apple_care';
+    const warrantyMonths = isAppleCare ? 12 : (formData.warranty_months !== '' ? Number(formData.warranty_months) : null);
 
     if (Number.isNaN(wholesale) || wholesale < 0) {
       toast({ title: 'Validation Error', description: 'Valid wholesale price is required', variant: 'destructive' });
@@ -176,6 +199,8 @@ const AddProduct = () => {
         retailPrice: Number(retail),
         inventory_type: formData.inventory_type || 'quantity',
         category_id: formData.category_id || null,
+        condition: formData.condition || 'new',
+        warranty_type: formData.warranty_type || null,
         warranty_months: warrantyMonths,
       };
       if (formData.inventory_type === 'quantity') {
@@ -211,6 +236,8 @@ const AddProduct = () => {
           retailPrice: Number(retail),
           inventory_type: formData.inventory_type || 'quantity',
           category_id: formData.category_id || null,
+          condition: formData.condition || 'new',
+          warranty_type: formData.warranty_type || null,
           initialQuantity,
           stock: initialQuantity,
           warranty_months: warrantyMonths,
@@ -443,65 +470,100 @@ const AddProduct = () => {
               </div>
 
               {/* Additional Details */}
-              {formData.inventory_type === 'quantity' && (
-                <div className="border-t border-secondary pt-6">
-                  <h2 className="text-xl font-semibold mb-4">Additional Details</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div className="md:col-span-2 lg:col-span-3">
-                      <Label htmlFor="description">Description</Label>
-                      <textarea
-                        id="description"
-                        name="description"
-                        value={formData.description}
-                        onChange={handleChange}
-                        placeholder="Product description..."
-                        rows="4"
-                        className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="warranty_months">Warranty period</Label>
-                      <select
-                        id="warranty_months"
-                        name="warranty_months"
-                        value={formData.warranty_months}
-                        onChange={handleChange}
-                        className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
-                      >
-                        <option value="">No warranty</option>
-                        <option value="3">3 months</option>
-                        <option value="6">6 months</option>
-                        <option value="12">12 months</option>
-                        <option value="18">18 months</option>
-                        <option value="24">24 months</option>
-                        <option value="36">36 months</option>
-                      </select>
-                    </div>
-                    <div>
-                      <Label htmlFor="colors">Colors (comma-separated)</Label>
-                      <Input
-                        id="colors"
-                        name="colors"
-                        value={formData.colors}
-                        onChange={handleChange}
-                        placeholder="e.g., Black, White, Blue"
-                        className="mt-1 text-foreground bg-background"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <Label htmlFor="images">Image URLs (comma-separated)</Label>
-                      <Input
-                        id="images"
-                        name="images"
-                        value={formData.images}
-                        onChange={handleChange}
-                        placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                        className="mt-1 text-foreground bg-background"
-                      />
-                    </div>
+              <div className="border-t border-secondary pt-6">
+                <h2 className="text-xl font-semibold mb-4">Additional Details</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="md:col-span-2 lg:col-span-3">
+                    <Label htmlFor="description">Description</Label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      value={formData.description}
+                      onChange={handleChange}
+                      placeholder="Product description..."
+                      rows="4"
+                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="warranty_type">Warranty type</Label>
+                    <select
+                      id="warranty_type"
+                      name="warranty_type"
+                      value={formData.warranty_type}
+                      onChange={handleWarrantyTypeChange}
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1"
+                    >
+                      <option value="">No warranty</option>
+                      <option value="phone_to_phone">Phone to Phone warranty</option>
+                      <option value="software">Software warranty</option>
+                      <option value="services">Services warranty</option>
+                      <option value="apple_care" disabled={(formData.condition || 'new') !== 'new'}>
+                        Apple Care warranty (1 year)
+                      </option>
+                    </select>
+                    {formData.warranty_type === 'apple_care' && (
+                      <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                        <img
+                          src={(theme === 'light' ? appleLogoBlack : appleLogoWhite)}
+                          alt="Apple"
+                          className="w-3.5 h-3.5 object-contain"
+                        />
+                        Apple Care is fixed to 1 year and only available when Condition is New.
+                      </div>
+                    )}
+                    {(formData.condition || 'new') !== 'new' && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Apple Care is only available for <strong>New</strong> phones.
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="warranty_months">Warranty period</Label>
+                    <select
+                      id="warranty_months"
+                      name="warranty_months"
+                      value={formData.warranty_type === 'apple_care' ? '12' : formData.warranty_months}
+                      onChange={handleChange}
+                      disabled={formData.warranty_type === 'apple_care'}
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1 disabled:opacity-70"
+                    >
+                      <option value="">No warranty</option>
+                      <option value="3">3 months</option>
+                      <option value="6">6 months</option>
+                      <option value="12">12 months</option>
+                      <option value="18">18 months</option>
+                      <option value="24">24 months</option>
+                      <option value="36">36 months</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="colors">Colors (comma-separated)</Label>
+                    <Input
+                      id="colors"
+                      name="colors"
+                      value={formData.colors}
+                      onChange={handleChange}
+                      placeholder="e.g., Black, White, Blue"
+                      className="mt-1 text-foreground bg-background"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="images">Image URLs (comma-separated)</Label>
+                    <Input
+                      id="images"
+                      name="images"
+                      value={formData.images}
+                      onChange={handleChange}
+                      placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                      className="mt-1 text-foreground bg-background"
+                    />
                   </div>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Form Actions */}

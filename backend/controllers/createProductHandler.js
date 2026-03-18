@@ -64,7 +64,41 @@ async function createProduct(req, res, next) {
             return res.status(400).json({ success: false, message: 'Wholesale price cannot be higher than retail price' });
         }
 
-        const { description, category, brand, initialQuantity, branchId: bodyBranchId, inventory_type: inventoryType, category_id: categoryId, stock: initialStock } = req.body || {};
+        const {
+            description,
+            category,
+            brand,
+            initialQuantity,
+            branchId: bodyBranchId,
+            inventory_type: inventoryType,
+            category_id: categoryId,
+            stock: initialStock,
+            condition: bodyCondition,
+            warranty_months: bodyWarrantyMonths,
+            warranty_type: bodyWarrantyType
+        } = req.body || {};
+
+        const condition = typeof bodyCondition === 'string' && bodyCondition.trim()
+            ? bodyCondition.trim().toLowerCase()
+            : 'new';
+
+        const warrantyType = typeof bodyWarrantyType === 'string' && bodyWarrantyType.trim()
+            ? bodyWarrantyType.trim().toLowerCase()
+            : null;
+
+        let warrantyMonths = bodyWarrantyMonths === '' || bodyWarrantyMonths == null ? null : Number(bodyWarrantyMonths);
+        if (Number.isNaN(warrantyMonths)) warrantyMonths = null;
+
+        // Enforce Apple Care rule: only for NEW, fixed 12 months
+        if (warrantyType === 'apple_care') {
+            if (condition !== 'new') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Apple Care warranty is only available for NEW phones'
+                });
+            }
+            warrantyMonths = 12;
+        }
         const invType = (inventoryType && String(inventoryType).toLowerCase()) === 'unique' ? 'unique' : 'quantity';
 
         connection = await getConnection();
@@ -112,9 +146,29 @@ async function createProduct(req, res, next) {
 
         const catId = categoryId != null && categoryId !== '' ? parseInt(categoryId, 10) : null;
         const [result] = await connection.execute(
-            `INSERT INTO products (name, sku, description, category, brand, wholesale_price, retail_price, base_price, inventory_type, category_id, stock)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
-            [name, sku, description || null, category || null, brand || null, wholesale_price ?? base_price, retail_price ?? base_price, base_price, invType, Number.isNaN(catId) ? null : catId, invType === 'quantity' ? (Math.max(0, parseInt(initialStock, 10) || 0)) : 0]
+            `INSERT INTO products (
+                name, sku, description, category, brand,
+                wholesale_price, retail_price, base_price,
+                inventory_type, category_id, stock,
+                condition, warranty_months, warranty_type
+             )
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+            [
+                name,
+                sku,
+                description || null,
+                category || null,
+                brand || null,
+                wholesale_price ?? base_price,
+                retail_price ?? base_price,
+                base_price,
+                invType,
+                Number.isNaN(catId) ? null : catId,
+                invType === 'quantity' ? (Math.max(0, parseInt(initialStock, 10) || 0)) : 0,
+                condition,
+                warrantyMonths,
+                warrantyType
+            ]
         );
 
         const productId = result.insertId || (result.rows && result.rows[0] && result.rows[0].id);
