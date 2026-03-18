@@ -10,12 +10,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import WarrantySection from '@/components/warranty/WarrantySection';
+import WarrantySummary from '@/components/warranty/WarrantySummary';
 import {
   PRODUCT_TYPES,
   decodeWarrantyFromLegacy,
   encodeWarrantyToLegacy,
   WARRANTY_MODES,
 } from '@/lib/warranty';
+import { PLACEHOLDER_PRODUCT_IMAGE } from '@/lib/placeholder';
 import appleLogoBlack from '@/assets/Apple_logo_black.svg';
 import appleLogoWhite from '@/assets/Apple_logo_white.svg';
 
@@ -314,10 +316,12 @@ const AddProduct = () => {
           </p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit}>
-          <div className="bg-card rounded-xl border border-secondary shadow-sm">
-            <div className="p-6 lg:p-8 space-y-6 lg:space-y-8">
+        {/* Two-column layout: left form, right live preview */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          {/* Form (left) */}
+          <form onSubmit={handleSubmit} className="lg:col-span-2">
+            <div className="bg-card rounded-xl border border-secondary shadow-sm">
+              <div className="p-6 lg:p-8 space-y-6 lg:space-y-8">
               {/* Basic Information */}
               <div>
                 <div className="flex items-center gap-2 mb-4">
@@ -581,7 +585,7 @@ const AddProduct = () => {
             </div>
 
             {/* Form Actions */}
-            <div className="border-t border-secondary p-6 bg-secondary/30">
+            <div className="border-t border-secondary p-6 bg-secondary/30 mt-4 rounded-xl bg-gradient-to-t from-secondary/40 to-secondary/10">
               <div className="flex items-center justify-end gap-3">
                 <Button
                   type="button"
@@ -597,8 +601,150 @@ const AddProduct = () => {
                 </Button>
               </div>
             </div>
-          </div>
-        </form>
+          </form>
+
+          {/* Live Preview (right) */}
+          <aside className="bg-card rounded-xl border border-secondary shadow-sm lg:sticky lg:top-20 overflow-hidden">
+            <div className="border-b border-secondary px-5 py-4">
+              <h2 className="text-base font-semibold">Product Preview</h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                See how this product will appear in POS and catalog while you fill in details.
+              </p>
+            </div>
+
+            {(() => {
+              const brand = (formData.brand || '').trim();
+              const model = (formData.model || '').trim();
+              const nameFallback = [brand, model].filter(Boolean).join(' ') || 'New Product';
+              const categoryName = (formData.category || '').trim() || 'No category';
+              const priceNumber = formData.retailPrice !== ''
+                ? Number(formData.retailPrice)
+                : formData.price !== ''
+                  ? Number(formData.price)
+                  : null;
+              const images = (formData.images || '')
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean);
+              const mainImage = images[0] || PLACEHOLDER_PRODUCT_IMAGE;
+
+              const colors = (formData.colors || '')
+                .split(',')
+                .map((c) => c.trim())
+                .filter(Boolean);
+
+              return (
+                <div className="flex flex-col">
+                  {/* Image */}
+                  <div className="relative h-52 bg-secondary overflow-hidden">
+                    <img
+                      src={mainImage}
+                      alt={nameFallback}
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Category pill */}
+                    <div className="absolute top-3 left-3 inline-flex items-center gap-2 rounded-full bg-black/50 backdrop-blur px-3 py-1">
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/80 text-[10px] font-semibold text-white uppercase">
+                        {categoryName.charAt(0) || 'C'}
+                      </span>
+                      <span className="text-[11px] font-medium text-white">
+                        {categoryName}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Details */}
+                  <div className="p-5 space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold truncate">
+                        {nameFallback}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {formData.year || new Date().getFullYear()} ·{' '}
+                        {formData.condition
+                          ? formData.condition.charAt(0).toUpperCase() +
+                            formData.condition.slice(1)
+                          : 'New'}
+                      </p>
+                    </div>
+
+                    {/* Price + stock summary */}
+                    <div className="flex items-center justify-between border border-secondary rounded-lg px-3 py-2 bg-secondary/40">
+                      <div className="flex flex-col">
+                        <span className="text-[11px] text-muted-foreground">
+                          Retail price
+                        </span>
+                        <span className="text-xl font-bold text-primary">
+                          {priceNumber != null && !Number.isNaN(priceNumber)
+                            ? `LKR ${priceNumber.toLocaleString()}`
+                            : 'Not set'}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[11px] text-muted-foreground block">
+                          Initial stock
+                        </span>
+                        <span className="text-sm font-semibold">
+                          {formData.stock !== '' ? formData.stock : 0}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Warranty summary */}
+                    <div className="border border-secondary rounded-lg px-3 py-2 bg-secondary/30 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold">Warranty</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-background/60 border border-secondary text-muted-foreground">
+                          Live preview
+                        </span>
+                      </div>
+                      <div className="mt-1">
+                        <WarrantySummary warranty={warrantyState} />
+                      </div>
+                    </div>
+
+                    {/* Brand + colors */}
+                    <div className="border border-secondary rounded-lg px-3 py-2 bg-secondary/20 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-[11px] text-muted-foreground block">
+                            Brand
+                          </span>
+                          <span className="text-sm font-semibold">
+                            {brand || 'Not set'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {colors.length > 0 && (
+                        <div className="pt-1">
+                          <span className="text-[11px] text-muted-foreground block mb-1">
+                            Colors
+                          </span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {colors.slice(0, 5).map((color, idx) => (
+                              <div
+                                key={idx}
+                                className="w-5 h-5 rounded-full border border-white/60 shadow-sm"
+                                style={{ backgroundColor: color }}
+                                title={color}
+                              />
+                            ))}
+                            {colors.length > 5 && (
+                              <span className="text-[10px] text-muted-foreground">
+                                +{colors.length - 5} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </aside>
+        </div>
       </div>
     </>
   );
