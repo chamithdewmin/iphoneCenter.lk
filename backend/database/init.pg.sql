@@ -177,7 +177,7 @@ ALTER TABLE products
 ALTER TABLE products
     ADD COLUMN IF NOT EXISTS warranty_months INT NULL;
 ALTER TABLE products
-    ADD COLUMN IF NOT EXISTS warranty_type VARCHAR(30) NULL;
+    ADD COLUMN IF NOT EXISTS warranty_type VARCHAR(255) NULL;
 -- Backfill: existing products are quantity; stock from branch_stock sum; category_id from category name
 UPDATE products SET inventory_type = COALESCE(NULLIF(TRIM(inventory_type), ''), 'quantity') WHERE inventory_type IS NULL OR TRIM(inventory_type) = '';
 UPDATE products p SET stock = COALESCE((SELECT SUM(bs.quantity) FROM branch_stock bs WHERE bs.product_id = p.id), 0) WHERE p.stock IS NULL OR p.inventory_type = 'quantity';

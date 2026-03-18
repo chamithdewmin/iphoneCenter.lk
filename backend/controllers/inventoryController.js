@@ -728,6 +728,27 @@ const updateProduct = async (req, res, next) => {
     try {
         await connection.beginTransaction();
 
+        // Ensure warranty_type can hold encoded warranty strings.
+        await connection.execute(
+            'ALTER TABLE products ADD COLUMN IF NOT EXISTS warranty_type VARCHAR(255) NULL'
+        );
+        await connection.execute(`
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_name = 'products'
+                      AND column_name = 'warranty_type'
+                      AND data_type = 'character varying'
+                      AND character_maximum_length IS NOT NULL
+                      AND character_maximum_length < 255
+                ) THEN
+                    ALTER TABLE products ALTER COLUMN warranty_type TYPE VARCHAR(255);
+                END IF;
+            END $$;
+        `);
+
         const { id } = req.params;
         const {
             name,

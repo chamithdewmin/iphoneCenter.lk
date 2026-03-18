@@ -127,8 +127,26 @@ async function createProduct(req, res, next) {
             'ALTER TABLE products ADD COLUMN IF NOT EXISTS warranty_months INT NULL'
         );
         await connection.execute(
-            'ALTER TABLE products ADD COLUMN IF NOT EXISTS warranty_type VARCHAR(30) NULL'
+            'ALTER TABLE products ADD COLUMN IF NOT EXISTS warranty_type VARCHAR(255) NULL'
         );
+        // warranty_type can contain encoded values like "complex:..." which can exceed 30 chars.
+        // Only widen if current column is narrower.
+        await connection.execute(`
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_name = 'products'
+                      AND column_name = 'warranty_type'
+                      AND data_type = 'character varying'
+                      AND character_maximum_length IS NOT NULL
+                      AND character_maximum_length < 255
+                ) THEN
+                    ALTER TABLE products ALTER COLUMN warranty_type TYPE VARCHAR(255);
+                END IF;
+            END $$;
+        `);
 
         // Branch selection is only required for quantity-based products.
         // Unique (IMEI/serial) products will get branch when adding devices via Add Devices.
