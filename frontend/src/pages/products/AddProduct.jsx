@@ -135,7 +135,10 @@ const AddProduct = () => {
               stock: product.stock ?? product.quantity ?? '',
               description: product.description || '',
               colors: product.colors || '',
-              images: product.images || '',
+              // Backend may return `images` as array, but the form input expects a string.
+              images: Array.isArray(product.images)
+                ? product.images.filter(Boolean).join(', ')
+                : product.images || product.image || '',
               category: product.category || product.category_name || '',
               category_id: product.category_id ?? '',
               inventory_type: product.inventory_type || 'quantity',
@@ -620,11 +623,13 @@ const AddProduct = () => {
                 : formData.price !== ''
                   ? Number(formData.price)
                   : null;
-              const images = (formData.images || '')
-                .split(',')
-                .map((s) => s.trim())
-                .filter(Boolean);
-              const mainImage = images[0] || PLACEHOLDER_PRODUCT_IMAGE;
+              const imagesList = Array.isArray(formData.images)
+                ? formData.images.filter(Boolean)
+                : String(formData.images || '')
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter(Boolean);
+              const mainImage = imagesList[0] || PLACEHOLDER_PRODUCT_IMAGE;
 
               const colors = (formData.colors || '')
                 .split(',')
